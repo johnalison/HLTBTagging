@@ -34,8 +34,43 @@ def FillVector(source,variables,minPt=pt_min):
                 elif name == "mult" :       var[variables.num[0]] = obj.chargedMultiplicity()+obj.neutralMultiplicity();
                 elif name == "neMult" :     var[variables.num[0]] = obj.neutralMultiplicity()
                 elif name == "chMult" :     var[variables.num[0]] = obj.chargedMultiplicity()
+                
             variables.num[0] += 1
 
+
+def FillMuonVector(source, variables, vertex, muonid = "tight"):
+    variables.num[0] = 0
+    for obj in source.productWithCheck():
+        for (name, var) in variables.__dict__.items():
+            #See https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2#Tight_Muon
+            if muonid == "tight":
+                if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
+                     obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
+                     obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
+                     abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
+                     abs(obj.obj.muonBestTrack().dz(vertex.position())) < 0.5 and
+                     obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
+                     obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
+                    if name == "pt" :           var[variables.num[0]] = obj.pt()
+                    elif name == "eta" :        var[variables.num[0]] = obj.eta()
+                    elif name == "phi" :        var[variables.num[0]] = obj.phi()
+                    elif name == "mass" :       var[variables.num[0]] = obj.mass()
+            if muonif == "loose":
+                if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
+                    if name == "pt" :           var[variables.num[0]] = obj.pt()
+                    elif name == "eta" :        var[variables.num[0]] = obj.eta()
+                    elif name == "phi" :        var[variables.num[0]] = obj.phi()
+                    elif name == "mass" :       var[variables.num[0]] = obj.mass()
+        variables.num[0] += 1
+
+def FillElectronVector(source, variables, electronid = "tight"):
+    variables.num[0] = 0
+    for obj in source.productWithCheck():
+        for (name, var) in variables.__dict__.items():
+            #see https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+            if electronid == "tight":
+                    pass
+    
 def FillBtag(btags_source, jets, jet_btags):
     for i in range(jets.num[0]):
         jet_btags[i] = -20.
@@ -173,14 +208,14 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
     ### list of input variables ###
 
-    triggerBits, triggerBitLabel = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
+    triggerBits, triggerBitLabel            = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
 
-    pileUp_source, pileUp_label = Handle("vector<PileupSummaryInfo>"), ("addPileupInfo")
+    pileUp_source, pileUp_label             = Handle("vector<PileupSummaryInfo>"), ("addPileupInfo")
 
     generator_source, generator_label       = Handle("GenEventInfoProduct"), ("generator")
 
     l1HT_source, l1HT_label                 = Handle("BXVector<l1t::EtSum>"), ("hltGtStage2Digis","EtSum")
-    l1Jets_source, l1Jets_label               = Handle("BXVector<l1t::Jet>"), ("hltGtStage2Digis","Jet")
+    l1Jets_source, l1Jets_label             = Handle("BXVector<l1t::Jet>"), ("hltGtStage2Digis","Jet")
 
     offMet_source, offMet_label             = Handle("vector<reco::PFMET>"), ("pfMet")
     genMet_source, genMet_label             = Handle("vector<reco::GenMET>"), ("genMetTrue")
@@ -192,22 +227,27 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     caloMht_source, caloMht_label           = Handle("vector<reco::MET>"), ("hltMht")
     caloMhtNoPU_source, caloMhtNoPU_label   = Handle("vector<reco::MET>"), ("hltMHTNoPU")
 
-    caloJets_source, caloJets_label           = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed")
+    offEle_source, offEle_label             = Handle("vector<reco::GsfElectron>"), ("gedGsfElectrons")
+    offMu_source, offMu_label               = Handle("vector<reco::Muon>"), ("muons")
+    #eleID_source, eleID_label               = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
+
+                     
+    caloJets_source, caloJets_label         = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed")
 
     calobtag_source, calobtag_label         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
-    calodeepbtag_source, calodeepbtag_label         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo")
+    calodeepbtag_source, calodeepbtag_label = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo")
 
     caloPUid_source, caloPUid_label         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCaloJetFromPV")
 
-    pfJets_source, pfJets_label               = Handle("vector<reco::PFJet>"), ("hltAK4PFJetsLooseIDCorrected")
+    pfJets_source, pfJets_label             = Handle("vector<reco::PFJet>"), ("hltAK4PFJetsLooseIDCorrected")
     pfbtag_source, pfbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsPF")
-    pfdeepbtag_source, pfdeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF")
+    pfdeepbtag_source, pfdeepbtag_label     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF")
 
 
-    genJets_source, genJets_label         = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
-    offJets_source, offJets_label         = Handle("vector<reco::PFJet>"), ("ak4PFJets")
-    offbtag_source, offbtag_label         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("pfCombinedInclusiveSecondaryVertexV2BJetTags")
-    offdeepbtag_source, offdeepbtag_label         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("pfDeepCSVJetTags:probb")
+    genJets_source, genJets_label           = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
+    offJets_source, offJets_label           = Handle("vector<reco::PFJet>"), ("ak4PFJets")
+    offbtag_source, offbtag_label           = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("pfCombinedInclusiveSecondaryVertexV2BJetTags")
+    offdeepbtag_source, offdeepbtag_label   = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("pfDeepCSVJetTags:probb")
 
     FastPrimaryVertex_source, FastPrimaryVertex_label   = Handle("vector<reco::Vertex>"), ("hltFastPrimaryVertex")
     FPVPixelVertices_source, FPVPixelVertices_label     = Handle("vector<reco::Vertex>"), ("hltFastPVPixelVertices")
@@ -234,6 +274,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     l1Mht       = SetVariable(tree,'l1Mht')
     l1Mht_phi   = SetVariable(tree,'l1Mht')
 
+    offElectrons = BookVector(tree, "offElectrons", ['pt','eta', 'phi'])
+    
     genJets  = BookVector(tree,"genJets",['pt','eta','phi','mass','mcFlavour','mcPt'])
     offJets  = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','matchGen'])
     offMet  = BookVector(tree,"offMet",['pt','phi'])
@@ -282,6 +324,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         event.getByLabel(caloMhtNoPU_label, caloMhtNoPU_source)
         event.getByLabel(pfMet_label, pfMet_source)
         event.getByLabel(pfMht_label, pfMht_source)
+        event.getByLabel(offEle_label, offEle_source)
+        event.getByLabel(offMu_label, offMu_source)
+        #event.getByLabel(eleID_label , eleID_source)
         event.getByLabel(pfJets_label, pfJets_source)
         event.getByLabel(pfbtag_label, pfbtag_source)
         event.getByLabel(pfdeepbtag_label, pfdeepbtag_source)
@@ -321,6 +366,16 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         if isMC:
             trueVertex[0] = genParticles_source.productWithCheck().at(2).vertex().z()
 
+        for ele in offEle_source.product():
+            print ele
+        for mu in offMu_source.productWithCheck():
+            print mu
+
+            #print eleID_source[]
+        #for jet in pfJets_source.productWithCheck():
+        #    print jet
+            
+            
         FillVector(caloJets_source,caloJets)
         FillVector(pfJets_source,pfJets)
         FillVector(l1Jets_source,l1Jets)
