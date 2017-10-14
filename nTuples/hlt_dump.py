@@ -14979,27 +14979,52 @@ process.NoFilter_PFBTagDeepCSV_v1 = cms.Path(process.HLTBeginSequence+process.hl
 process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScalersRawToDigi+process.hltFEDSelector+process.hltTriggerSummaryAOD+process.hltTriggerSummaryRAW+process.hltBoolFalse)
 
 
-process.DQMOutput = cms.EndPath(process.dqmOutput)
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+# turn on VID producer, indicate data format  to be
+# DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
+dataFormat = DataFormat.AOD
+
+switchOnVIDElectronIdProducer(process, dataFormat)
+
+# define which IDs we want to produce
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV60_cff']
+
+#add them to the VID producer
+for idmod in my_id_modules:
+    setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
+process.p = cms.Path(process.egmGsfElectronIDSequence)
+
+
+#process.DQMOutput = cms.EndPath(process.dqmOutput)
 
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
     dataset = cms.untracked.PSet(
     ),
     fileName = cms.untracked.string('./cmsswPreProcessing.root'),
     outputCommands = cms.untracked.vstring('drop *',
-        'keep l1t*_*_*_*',
-        'keep *_*Ht*_*_*',
-        'keep *Jet*_*_*_*',
-        'keep *MET*_*_*_*',
-        'keep *Vertex*_*_*_*',
-        'keep *_genParticles_*_*',
-        'keep *genParticles_*_*_*',
-        'keep *Trigger*_*_*_*',
-        'keep recoJetedmRefToBaseProdTofloatsAssociationVector_*_*_*',
-        'keep *_addPileupInfo_*_*',
-        'drop *_*Digis*_*_*',
-        'drop triggerTriggerEvent_*_*_*',
-        'keep *_hltGtStage2Digis_*_*',
-        'keep *_generator_*_*')
+                                           'keep *Egamma*_*_*_*',
+                                           'keep hlt*_*_*_*',
+                                           'keep bool*ValueMap*_*_*_*',
+                                           'keep l1t*_*_*_*',
+                                           'keep *_*Ht*_*_*',
+                                           'keep *Jet*_*_*_*',
+                                           'keep *Electron*_*_*_*',
+                                           'keep *Muon*_*_*_*',
+                                           'keep *Track*_*_*_*',
+                                           'keep *SuperCluster*_*_*_*',
+                                           'keep *MET*_*_*_*',
+                                           'keep *Vertex*_*_*_*',
+                                           'keep *_genParticles_*_*',
+                                           'keep *genParticles_*_*_*',
+                                           'keep *Trigger*_*_*_*',
+                                           'keep recoJetedmRefToBaseProdTofloatsAssociationVector_*_*_*',
+                                           'keep *_addPileupInfo_*_*',
+                                           'drop *_*Digis*_*_*',
+                                           'drop triggerTriggerEvent_*_*_*',
+                                           'keep *_hltGtStage2Digis_*_*',
+                                           'keep *_generator_*_*')
+                                        
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 

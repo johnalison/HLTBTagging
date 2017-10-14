@@ -5,7 +5,7 @@
 Setting up CMSSW like described in [GuideGlobalHLT](https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideGlobalHLT)
 
 ```bash
-export SCRAM_ARCH=slc6_amd64_gcc630
+export SCRAM_ARCH=slc6_amd64_gcc530 #Important! With gcc630 referneces to jets for btagging are not working
 cmsrel CMSSW_9_2_12_patch1
 cd CMSSW_9_2_12_patch1/src
 cmsenv
