@@ -97,18 +97,22 @@ def FillMuonVector(source, variables, vertex, muonid = "tight"):
     variables.num[0] = 0
     for obj in source.productWithCheck():
         passesID = False
-        if muonid == "tight":
-            if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
-                 obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
-                 obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
-                 abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
-                 abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
-                 obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
-                 obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
-                passesID = True
-        if muonid == "loose":
-            if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
-                passesID = True
+        #Sometimes (in MC) there is no track saved/accessable for the muon. This prevents to code from crashing
+        if obj.globalTrack().isNull():
+            print "Track is NULL"
+        else:
+            if muonid == "tight":
+                if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
+                     obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
+                     obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
+                     abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
+                     abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
+                     obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
+                     obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
+                    passesID = True
+            if muonid == "loose":
+                if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
+                    passesID = True
         if passesID:
             for (name, var) in variables.__dict__.items():
                 #See https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2#Tight_Muon
@@ -176,7 +180,7 @@ def BookVector(tree,name="vector",listMembers=[]):
 
     ##########################################################################
 
-def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0):
+def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0, MC = False):
     bunchCrossing   = 12
     print "filesInput: ",filesInput
     print "fileOutput: ",fileOutput
@@ -185,7 +189,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
 
-    isMC = False
+    doTriggerCut = True
+    if doTriggerCut:
+        print "TriggerCut is active. All events passing none of the triggers in the menu are discarded!"
+        print " Note: If --setup is used only the path in the actual menu are considered for this." 
+        print "       Not the ones in the setup."
+    
+    isMC = MC
     Signal = False
     if len(filesInput)>0 and ('QCD' in filesInput[0]):
         isMC = True
@@ -199,7 +209,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     if preProcessing:
         from PhysicsTools.Heppy.utils.cmsswPreprocessor import CmsswPreprocessor
         from PhysicsTools.HeppyCore.framework.config import MCComponent
-        cmsRun_config = "hlt_dump.py"
+        if not isMC:
+            cmsRun_config = "hlt_dump.py"
+        else:
+            cmsRun_config = "hlt_dump_mc.py"
         preprocessor = CmsswPreprocessor(cmsRun_config)
         cfg = MCComponent("OutputHLT",filesInput, secondaryfiles=secondaryFiles)
         print "Run cmsswPreProcessing using:"
@@ -284,7 +297,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     #Gen
     genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
     genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
-    genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("prunedGenParticles")
+    genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("genParticles")
     generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
     
     #The rest
@@ -420,6 +433,30 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
 
         event.getByLabel(triggerBitLabel, triggerBits)
+
+
+        #####################################################
+        #####################################################
+        
+        names = event.object().triggerNames(triggerBits.product())
+        triggerspassing = []
+        for i,triggerName in enumerate(triggerNames):
+            index = names.triggerIndex(triggerName)
+#            print "index=",index
+            if checkTriggerIndex(triggerName,index,names.triggerNames()):
+                triggerVars[triggerName][0] = triggerBits.product().accept(index)
+                print triggerName,"acc:",triggerBits.product().accept(index)
+                if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
+                    if triggerBits.product().accept(index):
+                        triggerspassing.append(triggerName)
+            else:
+                triggerVars[triggerName][0] = 0
+
+        # NOTE: Remove this if no trigger selection is required
+        if doTriggerCut:
+            if len(triggerspassing) < 1: 
+                continue
+
         ####################################################
         ####################################################
 
@@ -617,17 +654,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             maxPUptHat[0] = -1
             for ptHat_ in pileUp_source.productWithCheck().at(bunchCrossing).getPU_pT_hats():
                 maxPUptHat[0] = max(maxPUptHat[0],ptHat_)
-
-        names = event.object().triggerNames(triggerBits.product())
-        for i,triggerName in enumerate(triggerNames):
-            index = names.triggerIndex(triggerName)
-#            print "index=",index
-            if checkTriggerIndex(triggerName,index,names.triggerNames()):
-                triggerVars[triggerName][0] = triggerBits.product().accept(index)
-#                print "acc:",triggerBits.product().accept(index)
-            else:
-                triggerVars[triggerName][0] = 0
-
+                
         if iev%10==1: print "Event: ",iev," done."
         tree.Fill()
 
@@ -635,8 +662,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     f.Close()
 
 if __name__ == "__main__":
-    secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/trigger/data/MuonEG_Run299368_v1_Run2017C_RAW_LS-79to90.root"]
-    filesInput = ["file:/afs/cern.ch/work/k/koschwei/trigger/data/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
+    secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_GEN-SIM-RAW_LS-1803to1803-2332to2332-2870to2871.root"]
+    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/trigger/data/MuonEG_Run299368_v1_Run2017C_RAW_LS-79to90.root"]
+    filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_AODSIM_LS-1803to1803-2134to2134-2332to2332-2870to2871-4384to4385-6032to6033-6481to6481.root"]
+    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/trigger/data/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
     fileOutput = "tree.root"
     maxEvents = 100
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False)
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False, MC=True)
