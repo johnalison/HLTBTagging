@@ -191,19 +191,25 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
     doTriggerCut = True
     if doTriggerCut:
-        print "TriggerCut is active. All events passing none of the triggers in the menu are discarded!"
-        print " Note: If --setup is used only the path in the actual menu are considered for this." 
-        print "       Not the ones in the setup."
-    
-    isMC = MC
-    Signal = False
-    if len(filesInput)>0 and ('QCD' in filesInput[0]):
-        isMC = True
-        Signal = False
-    if len(filesInput)>0 and not('SIM' in filesInput[0]):
+        print "+-----------------------------------------------------------------------------------------+"
+        print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
+        print "| Note: If --setup is used only the path in the actual menu are considered for this.      |" 
+        print "|       Not the ones in the setup.                                                        |"
+        print "+-----------------------------------------------------------------------------------------+"
+
+    dataflags = ["MuonEG"] #NOTE: Add more flags if different data datasets are considered
+        
+    #isMC = bool(MC)
+
+    if len(filesInput)>0 and (len(filter(lambda x: x in filesInput[0], dataflags)) >= 1):
+        print "filesinput[0] has at least on of {0}".format(dataflags)
         isMC = False
         Signal = False
-    print "Signal=",Signal
+    else:
+        isMC = True
+        Signal = False
+
+    print "isMC = {0}".format(isMC)
 
     ## Pre-processing
     if preProcessing:
@@ -213,6 +219,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             cmsRun_config = "hlt_dump.py"
         else:
             cmsRun_config = "hlt_dump_mc.py"
+        print "Using: {0}".format(cmsRun_config)
         preprocessor = CmsswPreprocessor(cmsRun_config)
         cfg = MCComponent("OutputHLT",filesInput, secondaryfiles=secondaryFiles)
         print "Run cmsswPreProcessing using:"
@@ -369,10 +376,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         tree.Branch( trigger, triggerVars[trigger], trigger+'/O' )
 
     ##event loop
+    print "Starting event loop"
     for iev,event in enumerate(events):
         #raw_input("start event")
         if iev>maxEvents and maxEvents>=0: break
-        print "Event: {0}".format(iev)
+        #print "Event: {0}".format(iev)
         ####################################################
         ####################################################
         #Getting L1 handles
@@ -445,7 +453,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 #            print "index=",index
             if checkTriggerIndex(triggerName,index,names.triggerNames()):
                 triggerVars[triggerName][0] = triggerBits.product().accept(index)
-                print triggerName,"acc:",triggerBits.product().accept(index)
+                #print triggerName,"acc:",triggerBits.product().accept(index)
                 if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
                     if triggerBits.product().accept(index):
                         triggerspassing.append(triggerName)

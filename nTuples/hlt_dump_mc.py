@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root'),
+    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50000/0E7B7DB0-0EA1-E711-B23E-02163E00C2C1.root'),
     inputCommands = cms.untracked.vstring('keep *')
 )
 process.HLTConfigVersion = cms.PSet(
@@ -20519,7 +20519,7 @@ process.GlobalTag = cms.ESSource("PoolDBESSource",
     RefreshEachRun = cms.untracked.bool(False),
     RefreshOpenIOVs = cms.untracked.bool(False),
     connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
-    globaltag = cms.string('92X_dataRun2_HLT_relval_v8'),
+    globaltag = cms.string('92X_upgrade2017_realistic_v11'),
     pfnPostfix = cms.untracked.string('None'),
     snapshotTime = cms.string(''),
     toGet = cms.VPSet(cms.PSet(
@@ -20939,7 +20939,6 @@ process.NoFilter_CaloBTagCSV_v1 = cms.Path(process.HLTBeginSequence+process.hltP
 
 process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScalersRawToDigi+process.hltFEDSelector+process.hltTriggerSummaryAOD+process.hltTriggerSummaryRAW+process.hltBoolFalse)
 
-
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
 # turn on VID producer, indicate data format  to be
 # DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
@@ -20986,6 +20985,4 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
 
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
-
-
 

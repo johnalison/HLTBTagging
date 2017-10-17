@@ -55,17 +55,18 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
     dataset = cms.untracked.PSet(
     ),
     fileName = cms.untracked.string('./cmsswPreProcessing.root'),
-    outputCommands = cms.untracked.vstring('drop *',
+	outputCommands = cms.untracked.vstring('drop *',
                                            'keep *Egamma*_*_*_*',
-                                           'keep hlt*_*_*_*',
-                                           'keep bool*ValueMap*_*_*_*',
+                                           'keep bool*ValueMap*_*Electron*_*_*',
                                            'keep l1t*_*_*_*',
                                            'keep *_*Ht*_*_*',
                                            'keep *Jet*_*_*_*',
                                            'keep *Electron*_*_*_*',
                                            'keep *Muon*_*_*_*',
                                            'keep *Track*_*_*_*',
-					   'keep *SuperCluster*_*_*_*',
+                                           'drop *Track*_hlt*_*_*',
+                                           'drop SimTracks_*_*_*',
+										   'keep *SuperCluster*_*_*_*',
                                            'keep *MET*_*_*_*',
                                            'keep *Vertex*_*_*_*',
                                            'keep *_genParticles_*_*',
@@ -77,13 +78,33 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                            'drop triggerTriggerEvent_*_*_*',
                                            'keep *_hltGtStage2Digis_*_*',
                                            'keep *_generator_*_*')
-
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 ```
 
 
 ### Local test
+Edit `crab/PSet_localTest.py`to fit your needs.
 ```bash
-
+cd crab
+ln -s ../ntuplizerHLT.py fwlite_config.py
+cp ../hlt_dump.py .
+cp ../hlt_dump_mc.py .
+python script.py 0 &> script.log
 ```
+
+
+### CRAB
+Edit 'crab/multicrab_config.py'. The main thing to check are:
+* Datasets: Follow the description in the top of the file
+* name
+* `config.Data.unitsPerJob`
+* `config.Data.unitsPerJob`
+* `config.Data.outLFNDirBase`
+* If data is processed: `config.Data.lumiMask`
+* `config.Site.storageSite`
+
+Run it with `python multicrab.py`
+
+
+
