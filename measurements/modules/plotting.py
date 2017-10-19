@@ -1,0 +1,354 @@
+import logging
+
+from ConfigParser import SafeConfigParser
+from copy import deepcopy
+
+import ROOT
+
+#############################################################
+# General ROOT config settings
+ROOT.TH1.SetDefaultSumw2(True)
+ROOT.gROOT.SetBatch(True)
+ROOT.gStyle.SetOptStat(0)
+
+#############################################################
+
+myrnd = ROOT.TRandom3()
+
+def getCanvas(name = "c1", ratio = False):
+    """
+    Function for generation a TCanvas object.
+
+    Parameters:
+    -----------
+    name : string
+        Name of the canvas
+    ratio : bool
+        If True, the functions returns TCanvas with to pads. Pad 1 for 
+        the plot and Pad 2 for the ratio
+    """
+    logging.debug("Creating canvas with name {0}".format(name))
+    styleconfig = SafeConfigParser()
+    #logging.debug("Loading style config")
+    styleconfig.read("config/plotting.cfg")
+
+    cwidth = styleconfig.getint("Canvas","width")
+    cheight = styleconfig.getint("Canvas","height")
+
+    canvas = ROOT.TCanvas(name, name, cwidth, cheight)
+
+    margins = [ styleconfig.getfloat("Canvas","topmargin"),
+                styleconfig.getfloat("Canvas","rightmargin"),
+                styleconfig.getfloat("Canvas","leftmargin"),
+                styleconfig.getfloat("Canvas","bottommargin") ]
+    
+    
+    if not ratio:
+        logging.debug("Setting up single canvas")    
+        canvas.SetTopMargin(margins[0])
+        canvas.SetRightMargin(margins[1])
+        canvas.SetLeftMargin(margins[2])
+        canvas.SetBottomMargin(margins[3])
+        
+    else:
+        logging.debug("Setting up canvas with ratioplots")
+        canvas.Divide(1,2)
+        canvas.cd(1).SetPad(0.,0.3-0.02,1.0,0.975)
+        canvas.cd(2).SetPad(0.,0.0,1.0,0.3*(1-0.02))
+        canvas.cd(1).SetBottomMargin(0.02)
+        canvas.cd(2).SetTopMargin(0.00)
+        canvas.cd(1).SetTopMargin(margins[0])
+        canvas.cd(2).SetBottomMargin(margins[3]*(1/0.3))
+        canvas.cd(1).SetRightMargin(margins[1])
+        canvas.cd(1).SetLeftMargin(margins[2])
+        canvas.cd(2).SetRightMargin(margins[1])
+        canvas.cd(2).SetLeftMargin(margins[2])
+        canvas.cd(2).SetTicks(1,1)
+        canvas.cd(1).SetTicks(1,1)
+        canvas.cd(2).SetFillStyle(0)
+        canvas.cd(1).SetFillStyle(0)
+        canvas.cd(2).SetFillColor(0)
+        canvas.cd(2).SetFrameFillStyle(4000)
+
+    return canvas
+
+def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
+    """
+    Function for setting the style of Histogram.
+
+    How to set the style is defined by the histoType parameter which can be "Points",
+    "Line", "Siolid" and "Stack". The parameters are defined in the plotting.cfg in
+    the config folder in the root directory.
+
+    Parameters
+    ----------
+    histo : ROOT.TH1
+    histoType : string
+        Options: Points, Line, Solid, Stack
+    color : int
+        ROOT color as int
+        Default: Black
+    xAxisTitle : string
+    yAxisTitle : string
+    
+    Returns
+    -------
+    bool
+       sucess flag
+    """
+    styleconfig = SafeConfigParser()
+    #logging.debug("Loading style config")
+    styleconfig.read("config/plotting.cfg")
+
+    logging.debug("Setting style for histo w/ name {0}".format(histo.GetName()))
+    
+    if histoType not in ["Points", "Line", "Solid"  "Stack"]:
+        logging.warning("Unknown HistoStyle!")
+        return False
+    
+    if histoType in ["Points", "Line", "Solid"]:
+        isPoints = styleconfig.getboolean("{0}Style".format(histoType), "Points")
+        isFilled = styleconfig.getboolean("{0}Style".format(histoType), "Filled")
+
+        if isPoints:
+            logging.debug("Setting point style")
+            histo.SetMarkerColor(color)
+            histo.SetMarkerStyle(styleconfig.getint("{0}Style".format(histoType),"MarkerStyle"))
+            histo.SetMarkerSize(styleconfig.getint("{0}Style".format(histoType),"MarkerSize"))    
+        elif isFilled:
+            logging.debug("Setting filled style")
+            histo.SetLineColor(ROOT.kBlack)
+            histo.SetFillColor(color)
+            histo.SetFillStyle(styleconfig.getint("{0}Style".format(histoType),"FillStyle"))
+        else:
+            logging.debug("Setting line style")
+            histo.SetLineColor(color)
+            histo.SetFillStyle(styleconfig.getint("{0}Style".format(histoType),"FillStyle"))
+
+            
+    histo.SetTitle("")
+    histo.GetXaxis().SetTitle(xAxisTitle)
+    histo.GetYaxis().SetTitle(yAxisTitle)
+    histo.GetYaxis().SetTitleOffset(histo.GetYaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","yTitleOffsetscale"))
+    histo.GetXaxis().SetTitleOffset(histo.GetXaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","xTitleOffsetscale"))
+    
+    
+    return True
+
+def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = None, normalized = False):
+    """
+    Function for TTree projection into a TH1 hisogram.
+
+    
+    Parameters
+    ----------
+    tree : ROOT.TTree
+    variable : string
+        Variable that is projected to the TH1
+    selection : string
+        Selection that is used for the projection
+    weight : string
+        Weight that is used for the projection
+    binning : list, int, len(3)
+        Binning for the histogram with nBins, first bins, last bin
+    hname : string
+        If not set, a name will be generated from the variable parameter
+        and random number
+    normalized : bool
+        If True, histogram is scaled to unity
+
+    Returns
+    -------
+    TH1F
+    """
+    if hname is None:
+        hname = "{0}_{1}".format(variable, ROOT.gRandom.Integer(10000))
+
+    histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
+
+    tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
+
+    if normalized:
+        logging.info("Normalizing {0}".format(histo.GetName()))
+        try:
+            i = 1/float(histo.Integral())
+        except ZeroDivisionError:
+            logging.warning("ZeroDevision Error. Not scaling histo")
+        else:
+            histo.Scale(1/float(histo.Integral()))
+
+    return histo
+    
+def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioList = None):
+    """
+    Function that draws all histograms that are given to it.
+
+    Parameters
+    ----------
+    orderedHistolist : list, elements: tuples
+        list with all histograms in order they have to be drawn. Each element
+        is expected to be a tuple of ROOT.TH1 and DrawString
+    orderedRatioList : list, elements: tuples
+        list with all ratio histos. Each element is expected to be a tuple of 
+        ROOT.TH1 and DrawString.
+    stackindex : int
+        if int is given the histogram with the index is expected to be a THStack
+
+    Returns:
+    --------
+    ROOT.TCanvas
+    """
+    styleconfig = SafeConfigParser()
+    #logging.debug("Loading style config")
+    styleconfig.read("config/plotting.cfg")
+
+    #Get global maximal bin height
+    maxval = 0
+    for histo, drawstring in orderedHistoList:
+        if histo.GetMaximum() > maxval:
+            maxval = histo.GetMaximum()
+    
+    
+    if canvas is None:
+        if orderedRatioList is None:
+            logging.debug("Creaing new canvas")
+            thiscanvas = getCanvas()
+        else:
+            logging.debug("Creaing new canvas with ratio")
+            thiscanvas = getCanvas(ratio = True)
+    else:
+        logging.debug("Using canvas given as parameter")
+        thiscanvas = canvas
+
+
+    if orderedRatioList is not None:        
+        thiscanvas.cd(2)
+        idrawn = 0
+        drawpostfix = ""
+        for ratio, drawstring in orderedRatioList:
+            logging.debug("Drawing {0} with option {1}{2}".format(ratio.GetName(),drawstring, drawpostfix)) 
+            ratio.Draw("{0}{1}".format(drawstring, drawpostfix))
+            ratio.GetYaxis().SetLabelSize(0) #TODO change to Data / MC or something
+            if idrawn == 0:
+                #drawpostfix = " same"
+                pass
+            idrawn += 1
+    thiscanvas.Update()
+    #raw_input("keep drawing")
+    
+    thiscanvas.cd(1)
+    idrawn = 0
+    drawpostfix = ""
+
+    if stackindex is None:
+        for histo, drawstring in orderedHistoList:
+            logging.debug("Drawing {0} with option {1}{2}".format(histo.GetName(),drawstring, drawpostfix))
+            if idrawn == 0:
+                histo.GetYaxis().SetRangeUser(0, maxval *  styleconfig.getfloat("HistoStyle","maxValScale"))
+            if idrawn == 0 and orderedRatioList is not None:
+                histo.GetXaxis().SetLabelSize(0)
+                histo.GetYaxis().SetTitleSize(histo.GetYaxis().GetTitleSize() * 1.4)
+                histo.GetYaxis().SetTitleOffset(histo.GetYaxis().GetTitleOffset() * (1/styleconfig.getfloat("HistoStyle","yTitleOffsetscale")))
+                histo.GetYaxis().SetLabelSize(histo.GetYaxis().GetLabelSize() * 1.4)
+            histo.Draw("{0}{1}".format(drawstring, drawpostfix))
+            if idrawn == 0:
+                drawpostfix = " same"
+            idrawn += 1
+    thiscanvas.Update()
+    return thiscanvas
+
+
+def getRatioPlot(hRef, hList):
+    """
+    Function for generating the histograms used in a ratioplot.
+
+    Parameters
+    ----------
+    hRef : ROOT.TH1
+        This histogram will be used as reference histo (unity line in the plot)
+    hList : list, elements: ROOT.TH1
+        This list contains all further histograms for the ratio plot
+    
+    Returns:
+    --------
+    hRatioRef : ROOT.TH1F
+        Reference line
+    hRatioList : list, elements: ROOT.TH1
+        List with all further histograms in the ratio plot
+    div : tuple (maxdiv, mindiv)
+        Tuple containing global maximum and minimum of all
+        histos considered for the ratio
+    """
+
+    gRef = ROOT.TGraphErrors(hRef)
+    
+    line = hRef.Clone()
+    line.SetName("ratioline_"+line.GetName())
+    line.SetTitle("")
+    line.Divide(hRef)
+    line.SetLineColor(1)
+    line.SetLineStyle(2)
+    line.SetLineWidth(1)
+    line.SetFillStyle(0)
+
+    line.GetXaxis().SetLabelSize(line.GetXaxis().GetLabelSize()*(1/0.3))
+    line.GetYaxis().SetLabelSize(line.GetYaxis().GetLabelSize()*(1/0.3))
+    line.GetXaxis().SetTitleSize(line.GetXaxis().GetTitleSize()*(1/0.3))
+    line.GetYaxis().SetTitleSize(line.GetYaxis().GetTitleSize()*(1/0.3))
+    line.GetYaxis().SetNdivisions(505)
+    #line.GetXaxis().SetNdivisions(config.getint("General","xNdiv"))
+
+
+    
+    
+    for i in range(line.GetNbinsX()+1):
+            line.SetBinContent(i,1)
+            line.SetBinError(i,0)
+    logging.debug("Ratio line generated: "+str(line))
+
+    
+    
+    mindiv = 9999.
+    maxdiv = -9999.
+
+    hRatioList = []
+    
+    for h in hList:
+        ref = ROOT.TGraphAsymmErrors(hRef)
+        logging.debug("Making ratio for ratio plot from "+str(h))
+        ratio = ref.Clone()
+        ratio.SetName("ratio_"+h.GetName())
+        x, y = ROOT.Double(0), ROOT.Double(0)
+        for i in range(0,ref.GetN()):
+            ref.GetPoint(i, x, y)
+            currentBin = h.FindBin(x)
+            currentBinContent = h.GetBinContent(currentBin)
+            if currentBinContent > 0:
+                ratioval = y/currentBinContent
+                ratio.SetPoint(i, x, ratioval)
+                if ratioval > maxdiv and ratioval > 0:
+                    maxdiv = round(ratioval, 1)
+                if ratioval < mindiv and ratioval > 0:
+                    mindiv = round(ratioval, 1)
+            else:
+                ratio.SetPoint(i, x, -999)
+
+            if y > 0:
+                if currentBinContent > 0:
+                    ratio.SetPointEYlow(i, ref.GetErrorYlow(i)/currentBinContent)
+                    ratio.SetPointEYhigh(i, ref.GetErrorYhigh(i)/currentBinContent)
+                else:
+                    ratio.SetPointEYlow(i, 1-(y-ref.GetErrorYlow(i))/y)
+                    ratio.SetPointEYhigh(i, (y+ref.GetErrorYhigh(i))/y-1)
+            else:
+                ratio.SetPointEYlow(i, 0)
+                ratio.SetPointEYhigh(i, 0)
+        hRatioList.append(deepcopy(ratio))
+        del ratio
+
+    logging.debug("Maximum deviation is: +{0} -{1}".format(maxdiv, mindiv))
+    #line.GetYaxis().SetRangeUser(mindiv, maxdiv)
+    line.GetYaxis().SetRangeUser(0.2,1.8)
+    hRatioRef = line
+        
+    return hRatioRef, hRatioList, (mindiv, maxdiv)

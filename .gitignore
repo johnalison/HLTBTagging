@@ -102,3 +102,7 @@ ENV/
 
 #emacs
 *.*~
+
+#mac
+*DS_Store*
+*._*
