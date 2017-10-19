@@ -38,6 +38,8 @@ git remote add silvio-cmssw https://github.com/silviodonato/cmssw.git
 git fetch silvio-cmssw
 git cherry-pick 52c976ea1c1a5309dffd6e11e9aaf570499d0ef9 #Get code for using heppy with RAW+AOD
 
+git clone git@github.com:kschweiger/HLTBTagging.git #Clone this repo
+
 git cms-checkdeps -A -a
 scram b -j 6
 ```

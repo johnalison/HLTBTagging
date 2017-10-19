@@ -112,5 +112,18 @@ Run it with `python multicrab.py`
 nTuple contains collections for *tight* and *loose* Electrons and Muons. These WP are definied according to this [electron recommendation](https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2) and this [muon recommendation](https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2). All leptons have saved their pT, eta and phi. To further furfill required analysis cuts, muon contain also *iso* and electrons *superClusterEta*.
 
 ### Jets
-nTuples contain collections for *caloJets*, *pfJets* (online) and ak4PfCHS *offJets* and *genJets* (offline) which are interliked via a DeltaR < 0.3 matching criteria.
+nTuples contain collections for *caloJets*, *pfJets* (online) and ak4PfCHS *offJets* and *genJets* (offline) which are interliked via a DeltaR < 0.3 matching criteria. 
 
+# Rescaling of Datasets
+## Calculating lumi for the processed data
+If all job of the Data finished, the json with all processed lumi sections can be found using `crab report` which writes it to `results/inputDatasetLumis.json`.
+
+With the JSON [file brilcalc](https://twiki.cern.ch/twiki/bin/view/CMS/TWikiLUM#CurRec) can be used to calculated the integrated lumi on *lxplus*:
+```bash
+export PATH=$HOME/.local/bin:/afs/cern.ch/cms/lumi/brilconda-1.1.7/bin:$PATH
+#Check normtag on twiki page
+brilcalc lumi -u /pb --normtag /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_BRIL.json -i pocessedLS.json 
+```
+
+## Getting number of events processed in MC dataset
+The outputfiles contain a histogram with the count of processed events. 

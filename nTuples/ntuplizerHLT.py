@@ -45,7 +45,7 @@ def FillVector(source,variables,minPt=pt_min):
                 
             variables.num[0] += 1
             
-def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None):
+def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, firstJetVar = None, secondJetVar = None):
     """
     In this function the btags_source product is called for every time it is needed.
     For some reason, if stored (e.g. btags = btags_source.productWithCheck()), the objects
@@ -67,10 +67,18 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None):
             del jetB
 
     if jet_btagsRank is not None:
+        if firstJetVar is not None:
+            firstJetVar = -1
+        if secondJetVar is not None:
+            secondJetVar = -1
         from operator import itemgetter
-        sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True)
+        sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True) #This list is ordered by csv value, starting with the highest
         for ipair, pair in enumerate(sortedtags):
             jet_btagsRank[pair[0]] = ipair
+            if ipair == 0 and firstJetVar is not None:
+                firstJetVar = pair[0]
+            if ipair == 1 and secondJetVar is not None:
+                secondJetVar = pair[0]
 
 def passJetID(jet, requestedID):
     PFJetIDLoose = False
@@ -243,6 +251,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     f = ROOT.TFile(fileOutput,"recreate")
     tree = ROOT.TTree("tree","tree")
 
+    nGenHisto = ROOT.TH1F("nGen","nGen",1,1,2)
+    nPassHisto = ROOT.TH1F("nPass","nPass",1,1,2)
+    
     fwLiteInputs = ["cmsswPreProcessing.root"]
     if len(filesInput)==0: exit
     import os.path
@@ -320,9 +331,25 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     
     #Jets:
     l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','matchOff','matchGen'])
-    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg', "rankCSV", "rankDeepCSV"])
+    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg', "passesTightID","passesTightLeptVetoID", "passesLooseID","rankCSV", "rankDeepCSV"])
     pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen', "rankCSV", "rankDeepCSV"])
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
+
+    CSVleadingCaloJet = BookVariable(tree, "CSVleadingCaloJet")
+    CSVleadingPFJet = BookVariable(tree, "CSVleadingPFJet")
+    CSVleadingOffJet = BookVariable(tree, "CSVleadingOffJet")
+    CSVsecondCaloJet = BookVariable(tree, "CSVsecondCaloJet")
+    CSVsecondPFJet = BookVariable(tree, "CSVsecondPFJet")
+    CSVsecondOffJet = BookVariable(tree, "CSVsecondOffJet")
+
+    DeepCSVleadingCaloJet = BookVariable(tree, "DeepCSVleadingCaloJet")
+    DeepCSVleadingPFJet = BookVariable(tree, "DeepCSVleadingPFJet")
+    DeepCSVleadingOffJet = BookVariable(tree, "DeepCSVleadingOffJet")
+    DeepCSVsecondCaloJet = BookVariable(tree, "DeepCSVsecondCaloJet")
+    DeepCSVsecondPFJet = BookVariable(tree, "DeepCSVsecondPFJet")
+    DeepCSVsecondOffJet = BookVariable(tree, "DeepCSVsecondOffJet")
+
+    
     if isMC:
         genJets             = BookVector(tree,"genJets",['pt','eta','phi','mass','mcFlavour','mcPt'])
 
@@ -380,6 +407,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     for iev,event in enumerate(events):
         #raw_input("start event")
         if iev>maxEvents and maxEvents>=0: break
+        nGenHisto.Fill(1)
         #print "Event: {0}".format(iev)
         ####################################################
         ####################################################
@@ -532,19 +560,19 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillVector(l1Jets_source,l1Jets)
         FillVector(offJets_source,offJets,15)
         
-        FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV)
-        FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV)
+        FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV, CSVleadingCaloJet, CSVsecondCaloJet)
+        FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV, DeepCSVleadingCaloJet, DeepCSVsecondCaloJet)
         FillBtag(calodeepbtag_bb_source, caloJets, caloJets.deepcsv_bb)
         FillBtag(calodeepbtag_udsg_source, caloJets, caloJets.deepcsv_udsg)
         FillBtag(caloPUid_source, caloJets, caloJets.puId)
         
-        FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV)        
-        FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV)
+        FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV, CSVleadingPFJet, CSVsecondPFJet)        
+        FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV, DeepCSVleadingPFJet, DeepCSVsecondPFJet)
         FillBtag(pfdeepbtag_bb_source, pfJets, pfJets.deepcsv_bb)
         FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
         
-        FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV)
-        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv, offJets.rankDeepCSV)
+        FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV, CSVleadingOffJet, CSVsecondOffJet)
+        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv, offJets.rankDeepCSV, DeepCSVleadingOffJet, DeepCSVsecondOffJet)
         FillBtag(offdeepbtag_bb_source, offJets, offJets.deepcsv_bb)
         FillBtag(offdeepbtag_udsg_source, offJets, offJets.deepcsv_udsg)
 
@@ -664,8 +692,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 maxPUptHat[0] = max(maxPUptHat[0],ptHat_)
                 
         if iev%10==1: print "Event: ",iev," done."
+        nPassHisto.Fill(1)
         tree.Fill()
-
+        
     f.Write()
     f.Close()
 
