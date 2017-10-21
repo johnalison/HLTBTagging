@@ -17,14 +17,14 @@ from utils import deltaR,SetVariable,DummyClass,productWithCheck,checkTriggerInd
 
 Handle.productWithCheck = productWithCheck
 
-maxJets         = 100
+maxJets         = 50
 bunchCrossing   = 0
 pt_min          = 20
 
 def FillVector(source,variables,minPt=pt_min):
     variables.num[0] = 0
     for obj in source.productWithCheck():
-        if obj.pt()<20.0: continue
+        if obj.pt()<minPt: continue
         if variables.num[0]<len(variables.pt):
             for (name,var) in variables.__dict__.items():
                 if name == "pt" :                     var[variables.num[0]] = obj.pt()
@@ -45,7 +45,7 @@ def FillVector(source,variables,minPt=pt_min):
                 
             variables.num[0] += 1
             
-def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, firstJetVar = None, secondJetVar = None):
+def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None):
     """
     In this function the btags_source product is called for every time it is needed.
     For some reason, if stored (e.g. btags = btags_source.productWithCheck()), the objects
@@ -67,18 +67,23 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, firstJetVar = 
             del jetB
 
     if jet_btagsRank is not None:
-        if firstJetVar is not None:
-            firstJetVar = -1
-        if secondJetVar is not None:
-            secondJetVar = -1
+        if JetIndexVars is not None and isinstance(JetIndexVars, list):
+            for var in JetIndexVars:
+                var[0] = -1
+        if nBtagsgeNull is not None:
+            nBtagsgeNull[0] = 0
         from operator import itemgetter
         sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True) #This list is ordered by csv value, starting with the highest
         for ipair, pair in enumerate(sortedtags):
             jet_btagsRank[pair[0]] = ipair
-            if ipair == 0 and firstJetVar is not None:
-                firstJetVar = pair[0]
-            if ipair == 1 and secondJetVar is not None:
-                secondJetVar = pair[0]
+            if JetIndexVars is not None and isinstance(JetIndexVars, list):
+                if len(JetIndexVars) >= ipair+1:
+                    JetIndexVars[ipair][0] = pair[0]
+            if nBtagsgeNull is not None:
+                if pair[1] >= 0:
+                    nBtagsgeNull[0] += 1
+                
+
 
 def passJetID(jet, requestedID):
     PFJetIDLoose = False
@@ -143,7 +148,7 @@ def FillElectronVector(source, variables, electronids):
     variables.num[0] = 0
     for iobj, obj in enumerate(source.productWithCheck()):
         if electronids.get(iobj):
-            print obj, obj.pt(), electronids.get(iobj)
+            #print obj, obj.pt(), electronids.get(iobj)
             for (name, var) in variables.__dict__.items():
                 if name == "pt" :                var[variables.num[0]] = obj.pt()
                 elif name == "eta" :             var[variables.num[0]] = obj.eta()
@@ -331,24 +336,57 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     
     #Jets:
     l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','matchOff','matchGen'])
-    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg', "passesTightID","passesTightLeptVetoID", "passesLooseID","rankCSV", "rankDeepCSV"])
+    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV"])
     pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
+    offTightJets        = BookVector(tree,"offTightJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
 
-    CSVleadingCaloJet = BookVariable(tree, "CSVleadingCaloJet")
-    CSVleadingPFJet = BookVariable(tree, "CSVleadingPFJet")
-    CSVleadingOffJet = BookVariable(tree, "CSVleadingOffJet")
-    CSVsecondCaloJet = BookVariable(tree, "CSVsecondCaloJet")
-    CSVsecondPFJet = BookVariable(tree, "CSVsecondPFJet")
-    CSVsecondOffJet = BookVariable(tree, "CSVsecondOffJet")
+    CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV")
+    CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV")
+    CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV")
+    CSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingCSV")
+    CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV")
+    CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV")
+    CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV")
+    CSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondCSV")
+    CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV")
+    CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV")
+    CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV")
+    CSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdCSV")
+    CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV")
+    CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV")
+    CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV")
+    CSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthCSV")
 
-    DeepCSVleadingCaloJet = BookVariable(tree, "DeepCSVleadingCaloJet")
-    DeepCSVleadingPFJet = BookVariable(tree, "DeepCSVleadingPFJet")
-    DeepCSVleadingOffJet = BookVariable(tree, "DeepCSVleadingOffJet")
-    DeepCSVsecondCaloJet = BookVariable(tree, "DeepCSVsecondCaloJet")
-    DeepCSVsecondPFJet = BookVariable(tree, "DeepCSVsecondPFJet")
-    DeepCSVsecondOffJet = BookVariable(tree, "DeepCSVsecondOffJet")
+    nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero")
+    nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero")
+    #nCSVOffgeZero = SetVariable(tree, "offJets_nCSVgeZero")
+    nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero")
 
+    
+    DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV")
+    DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV")
+    DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV")
+    DeepCSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingDeepCSV")
+    DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV")
+    DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV")
+    DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV")
+    DeepCSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondDeepCSV")
+    DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV")
+    DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV")
+    DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV")
+    DeepCSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdDeepCSV")
+    DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV")
+    DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV")
+    DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV")
+    DeepCSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthDeepCSV")
+
+    nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero")
+    nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero")
+    #nDeepCSVOffgeZero = SetVariable(tree, "offJets_nDeepCSVgeZero")
+    nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero")
+
+    
     
     if isMC:
         genJets             = BookVector(tree,"genJets",['pt','eta','phi','mass','mcFlavour','mcPt'])
@@ -518,9 +556,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         if VerticesOff[0] > 0:
             offVertex = VerticesOff_source.productWithCheck().at(0)
 
-        print "Filling tight electrons"
+        #print "Filling tight electrons"
         FillElectronVector(offEle_source, offTightElectrons, eleTightID_source.productWithCheck())
-        print "Filling loose electrons"
+        #print "Filling loose electrons"
         FillElectronVector(offEle_source, offLooseElectrons, eleLooseID_source.productWithCheck())
         FillMuonVector(offMu_source, offTightMuons, offVertex, "tight")
         FillMuonVector(offMu_source, offLooseMuons, offVertex, "loose")
@@ -558,24 +596,41 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillVector(caloJets_source,caloJets)
         FillVector(pfJets_source,pfJets)
         FillVector(l1Jets_source,l1Jets)
-        FillVector(offJets_source,offJets,15)
+        FillVector(offJets_source,offJets,20)
+        FillVector(offJets_source,offTightJets,30)
+
         
-        FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV, CSVleadingCaloJet, CSVsecondCaloJet)
-        FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV, DeepCSVleadingCaloJet, DeepCSVsecondCaloJet)
+        FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
+                 [CSVleadingCaloJet, CSVsecondCaloJet, CSVthirdCaloJet, CSVfourthCaloJet], nCSVCalogeZero )
+        FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV,
+                 [DeepCSVleadingCaloJet, DeepCSVsecondCaloJet, DeepCSVthirdCaloJet, DeepCSVfourthCaloJet], nDeepCSVCalogeZero)
         FillBtag(calodeepbtag_bb_source, caloJets, caloJets.deepcsv_bb)
         FillBtag(calodeepbtag_udsg_source, caloJets, caloJets.deepcsv_udsg)
         FillBtag(caloPUid_source, caloJets, caloJets.puId)
         
-        FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV, CSVleadingPFJet, CSVsecondPFJet)        
-        FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV, DeepCSVleadingPFJet, DeepCSVsecondPFJet)
+        FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV,
+                 [CSVleadingPFJet, CSVsecondPFJet, CSVthirdPFJet, CSVfourthPFJet], nCSVPFgeZero)        
+        FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV,
+                 [DeepCSVleadingPFJet, DeepCSVsecondPFJet, DeepCSVthirdPFJet, DeepCSVfourthPFJet], nDeepCSVPFgeZero)
         FillBtag(pfdeepbtag_bb_source, pfJets, pfJets.deepcsv_bb)
         FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
         
-        FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV, CSVleadingOffJet, CSVsecondOffJet)
-        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv, offJets.rankDeepCSV, DeepCSVleadingOffJet, DeepCSVsecondOffJet)
+        FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV,
+                 [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])#, nCSVOffgeZero)
+        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv, offJets.rankDeepCSV,
+                 [DeepCSVleadingOffJet, DeepCSVsecondOffJet, DeepCSVthirdOffJet, DeepCSVfourthOffJet])#, nDeepCSVOffgeZero)
         FillBtag(offdeepbtag_bb_source, offJets, offJets.deepcsv_bb)
         FillBtag(offdeepbtag_udsg_source, offJets, offJets.deepcsv_udsg)
 
+        FillBtag(offbtag_source, offTightJets, offTightJets.csv, offTightJets.rankCSV,
+                 [CSVleadingOffTightJet, CSVsecondOffTightJet, CSVthirdOffTightJet, CSVfourthOffTightJet], nCSVOffTightgeZero)
+        FillBtag(offdeepbtag_source, offTightJets, offTightJets.deepcsv, offTightJets.rankDeepCSV,
+                 [DeepCSVleadingOffTightJet, DeepCSVsecondOffTightJet, DeepCSVthirdOffTightJet, DeepCSVfourthOffTightJet], nDeepCSVOffTightgeZero)
+        FillBtag(offdeepbtag_bb_source, offTightJets, offTightJets.deepcsv_bb)
+        FillBtag(offdeepbtag_udsg_source, offTightJets, offTightJets.deepcsv_udsg)
+
+        
+        
         if isMC:
             FillVector(genJets_source,genJets,15)
 
