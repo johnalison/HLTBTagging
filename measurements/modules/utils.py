@@ -27,8 +27,8 @@ def setup_logging( default_path='config/logging.json', default_level=logging.INF
 
 def savePlot(canvas, outputname, outputformat):
     #TODO: Make something with multipage pdf support
-    logging.info("Writing file {0}.{1}".format(outputname, outputformat))
-    canvas.Print("{0}.{1}".format(outputname, outputformat))
+    logging.info("Writing file {0}.{1}".format(outputname.replace(".",""), outputformat))
+    canvas.Print("{0}.{1}".format(outputname.replace(".",""), outputformat))
 
 
 

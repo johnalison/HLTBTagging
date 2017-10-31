@@ -9,7 +9,7 @@ import modules.utils
 
 
 
-def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None):
+def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -37,17 +37,50 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat
     
     
     hdenominator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1})".format(PlotBaseObj.selection, Sample.selection))
-    hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1} && {2})".format(PlotBaseObj.selection, Sample.selection, numSelection))
+    hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}))".format(PlotBaseObj.selection, Sample.selection, numSelection))
 
+        
     if forceColor is not None:
         logging.debug("Forcing color: {0}".format(forceColor))
         color = forceColor
     else:
         color = PlotBaseObj.color
+
+    
     
     modules.plotting.setStyle(hdenominator, "Line", color, PlotBaseObj.xTitle, yTitle)
     modules.plotting.setStyle(hnumerator, "Line", color, PlotBaseObj.xTitle, yTitle)
+    
+    if drawHistos:
+        CMSL1, CMSL2 = modules.utils.getCMStext()
+        canvas = modules.plotting.drawHistos([(hdenominator,"histoe")])
+        CMSL1.Draw("same")
+        CMSL2.Draw("same")
+        if label is not None:
+            if isinstance(label, list):
+                for l in label:
+                    l.Draw("same")
+            else:
+                label.Draw("same")
 
+        
+        if outname is not None:
+            modules.utils.savePlot(canvas, outname+"_hdenom", outputformat)
+        del canvas
+        canvas = modules.plotting.drawHistos([(hnumerator,"histoe")])
+        CMSL1.Draw("same")
+        CMSL2.Draw("same")
+        if label is not None:
+            if isinstance(label, list):
+                for l in label:
+                    l.Draw("same")
+            else:
+                label.Draw("same")
+                
+        if outname is not None:
+            modules.utils.savePlot(canvas, outname+"_hnum", outputformat)
+        del canvas
+    
     grEff = modules.plotting.makeEffGraph(hnumerator, hdenominator, yTitle)
 
     if drawEff:
@@ -101,7 +134,8 @@ def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputf
     colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen-2]
     #TODO Make something to check num of samples against colors
     for isample, sample in enumerate(Samples):
-        graphs.append(makeEffPlot(PlotBaseObj, sample, numSelection, drawEff = False, forceColor = colors[isample]))
+        SampleLabel = modules.utils.getLabel(sample.legend[0], 0.7)
+        graphs.append(makeEffPlot(PlotBaseObj, sample, numSelection, drawEff = False, forceColor = colors[isample], drawHistos = True, outname = outname+"_"+sample.name, label = [label, SampleLabel]))
         forlegend.append((graphs[isample], sample.legend[0], "p"))
     
     canvas = modules.plotting.getCanvas()
