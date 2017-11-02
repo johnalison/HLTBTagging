@@ -20,8 +20,8 @@ def generalTest(loglev):
     if args.logging > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
     
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v1/ttbar/ttbar_v1_partial.root"
-    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v1/MuonEG/MuonEG_v1_partial.root"
+    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v1/ttbar/ttbar_v1_partial2.root"
+    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v1/MuonEG/MuonEG_v1_partial2.root"
 
     logging.info("Testing if files exist")
     for fpath in [MCInput, DataInput]:

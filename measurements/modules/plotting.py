@@ -15,7 +15,7 @@ ROOT.gStyle.SetOptStat(0)
 
 myrnd = ROOT.TRandom3()
 
-def getCanvas(name = "c1", ratio = False):
+def getCanvas(name = "c1", ratio = False, colz = False):
     """
     Function for generation a TCanvas object.
 
@@ -46,7 +46,11 @@ def getCanvas(name = "c1", ratio = False):
     if not ratio:
         logging.debug("Setting up single canvas")    
         canvas.SetTopMargin(margins[0])
-        canvas.SetRightMargin(margins[1])
+        if colz:
+            logging.debug("setting right border for 2D plot")
+            canvas.SetRightMargin(margins[1]+0.05)
+        else:
+            canvas.SetRightMargin(margins[1])
         canvas.SetLeftMargin(margins[2])
         canvas.SetBottomMargin(margins[3])
         
@@ -84,7 +88,7 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
     ----------
     histo : ROOT.TH1
     histoType : string
-        Options: Points, Line, Solid, Stack
+        Options: Points, Line, Solid, Stack, 2D
     color : int
         ROOT color as int
         Default: Black
@@ -102,7 +106,7 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
 
     logging.debug("Setting style for histo w/ name {0}".format(histo.GetName()))
     
-    if histoType not in ["Points", "Line", "Solid"  "Stack"]:
+    if histoType not in ["Points", "Line", "Solid"  "Stack", "2D"]:
         logging.warning("Unknown HistoStyle!")
         return False
     
@@ -113,6 +117,7 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
         if isPoints:
             logging.debug("Setting point style")
             histo.SetMarkerColor(color)
+            histo.SetLineColor(ROOT.kBlack)
             histo.SetMarkerStyle(styleconfig.getint("{0}Style".format(histoType),"MarkerStyle"))
             histo.SetMarkerSize(styleconfig.getint("{0}Style".format(histoType),"MarkerSize"))    
         elif isFilled:
@@ -125,6 +130,10 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
             histo.SetLineColor(color)
             histo.SetFillStyle(styleconfig.getint("{0}Style".format(histoType),"FillStyle"))
 
+    elif histoType == "2D":
+        pass
+    else:
+        pass
             
     histo.SetTitle("")
     histo.GetXaxis().SetTitle(xAxisTitle)
@@ -166,7 +175,11 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
 
     histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
 
-    tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
+    logging.debug(selection)
+    
+    nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
+
+    logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
     if normalized:
         logging.info("Normalizing {0}".format(histo.GetName()))
@@ -178,7 +191,36 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
             histo.Scale(1/float(histo.Integral()))
 
     return histo
+
+
+def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection, weight = "1", hname = None):
+    if hname is None:
+        hname = "{0}_{1}_{2}".format(xVariable, yVariable, ROOT.gRandom.Integer(10000))
+
+    histo = ROOT.TH2F(hname, hname, xBinning[0], xBinning[1], xBinning[2], yBinning[0], yBinning[1], yBinning[2])
+
+    logging.debug(selection)
     
+    nPassing = tree.Project(hname, "{0}:{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
+
+    logging.debug("Number of events passing this selection: {0}".format(nPassing))
+
+    """
+    if normalized:
+        logging.info("Normalizing {0}".format(histo.GetName()))
+        try:
+            i = 1/float(histo.Integral())
+        except ZeroDivisionError:
+            logging.warning("ZeroDevision Error. Not scaling histo")
+        else:
+            histo.Scale(1/float(histo.Integral()))
+    """
+
+    
+    return histo
+
+
+
 def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioList = None):
     """
     Function that draws all histograms that are given to it.
@@ -228,7 +270,8 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
         for ratio, drawstring in orderedRatioList:
             logging.debug("Drawing {0} with option {1}{2}".format(ratio.GetName(),drawstring, drawpostfix)) 
             ratio.Draw("{0}{1}".format(drawstring, drawpostfix))
-            ratio.GetYaxis().SetLabelSize(0) #TODO change to Data / MC or something
+            #ratio.GetYaxis().SetLabelSize(0) #TODO change to Data / MC or something
+            ratio.GetYaxis().SetTitleSize(0) #TODO change to Data / MC or something
             if idrawn == 0:
                 #drawpostfix = " same"
                 pass
@@ -318,13 +361,15 @@ def getRatioPlot(hRef, hList):
         logging.debug("Making ratio for ratio plot from "+str(h))
         ratio = ref.Clone()
         ratio.SetName("ratio_"+h.GetName())
+        ratio.SetMarkerColor(h.GetLineColor())
+        ratio.SetLineColor(h.GetLineColor())
         x, y = ROOT.Double(0), ROOT.Double(0)
         for i in range(0,ref.GetN()):
             ref.GetPoint(i, x, y)
             currentBin = h.FindBin(x)
             currentBinContent = h.GetBinContent(currentBin)
             if currentBinContent > 0:
-                ratioval = y/currentBinContent
+                ratioval = currentBinContent/y
                 ratio.SetPoint(i, x, ratioval)
                 if ratioval > maxdiv and ratioval > 0:
                     maxdiv = round(ratioval, 1)
@@ -348,7 +393,28 @@ def getRatioPlot(hRef, hList):
 
     logging.debug("Maximum deviation is: +{0} -{1}".format(maxdiv, mindiv))
     #line.GetYaxis().SetRangeUser(mindiv, maxdiv)
-    line.GetYaxis().SetRangeUser(0.2,1.8)
+    if maxdiv < 1.1 and mindiv > 0.9:
+        line.GetYaxis().SetRangeUser(0.85,1.15)
+    elif maxdiv < 1.25 and mindiv > 0.75:
+        line.GetYaxis().SetRangeUser(0.7,1.3)
+    else:
+        line.GetYaxis().SetRangeUser(0.2,1.8)
     hRatioRef = line
         
     return hRatioRef, hRatioList, (mindiv, maxdiv)
+
+def makeEffGraph(hpass, htot, yAxis):
+    xTitle = hpass.GetXaxis().GetTitle()
+    color = hpass.GetLineColor()
+    
+    
+    graph = ROOT.TGraphAsymmErrors(hpass,htot)
+    graph.SetName(str(ROOT.gRandom.Integer(10000)))
+    graph.SetMarkerColor(color);
+    graph.SetLineColor(color);
+    graph.SetMarkerSize(2)
+    graph.GetXaxis().SetTitle(xTitle)
+    graph.GetYaxis().SetTitle(yAxis)
+    graph.SetMarkerStyle(20);
+
+    return graph
