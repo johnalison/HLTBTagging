@@ -44,7 +44,7 @@ def FillVector(source,variables,minPt=pt_min):
                 elif name == "passesLooseID":         var[variables.num[0]] = passJetID(obj, "loose")
                 
             variables.num[0] += 1
-            
+          
 def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None):
     """
     In this function the btags_source product is called for every time it is needed.
@@ -159,7 +159,13 @@ def passJetID(jet, requestedID):
         return PFJetIDTightLepVeto
     elif requestedID == "loose":
         return PFJetIDLoose
-    
+
+def FillMCFlavour(inputcollection, ref, refVariable, fillVariable):
+    for i in range(inputcollection.num[0]):
+        if ref[i] >= 0:
+            fillVariable[i] = refVariable[ref[i]]
+        else:
+            fillVariable[i] = -99
 
 def FillMuonVector(source, variables, vertex, muonid = "tight"):
     if vertex is None:
@@ -242,7 +248,7 @@ def BookVector(tree,name="vector",listMembers=[]):
     obj = DummyClass()
     obj.num   = SetVariable(tree,name+'_num' ,'I')
     for member in listMembers:
-        if "match" in member or "rank" in member:
+        if "match" in member or "rank" in member or "mcFlavour" in member:
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'I',name+'_num',maxJets))
         else:
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'F',name+'_num',maxJets))
@@ -393,11 +399,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     
     #Jets:
     l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','matchOff','matchGen'])
-    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV"])
-    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo"])
-    offCSVJets          = BookVector(tree,"offCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo"])
-    offDeepCSVJets      = BookVector(tree,"offDeepCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo"])
+    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV", "mcFlavour"])
+    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "mcFlavour"])
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour"])
+    offCSVJets          = BookVector(tree,"offCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour"])
+    offDeepCSVJets      = BookVector(tree,"offDeepCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour"])
     #offTightJets        = BookVector(tree,"offTightJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "matchGen"])
 
     CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV", "I")
@@ -788,6 +794,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                         if evt[0]==7826939:
                             print "newFlav:",genJets.mcFlavour[i]
 
+            FillMCFlavour(offJets, offJets.matchGen, genJets.mcFlavour, offJets.mcFlavour)
+            #FillMCFlavour(offCSVJets, offCSVJets.matchGen, genJets.mcFlavour, offCSVJets.mcFlavour)
+            #FillMCFlavour(offDeepCSVJets, offDeepCSVJets.matchGen, genJets.mcFlavour, offDeepCSVJets.mcFlavour)
+            FillMCFlavour(caloJets, caloJets.matchGen, genJets.mcFlavour, caloJets.mcFlavour)
+            FillMCFlavour(pfJets, pfJets.matchGen, genJets.mcFlavour, pfJets.mcFlavour)
         ####################################################
         ####################################################
 

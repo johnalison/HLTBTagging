@@ -3,10 +3,10 @@
 #     0th element: name
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
-Data = [["HLT_Ntuple_BTagging_DiLepton_v2",
+Data = [["HLT_Ntuple_BTagging_DiLepton_v3",
          ("/MuonEG/Run2017C-PromptReco-v2/AOD","/MuonEG/Run2017C-v1/RAW"),
          "0"]]
-MC = [["HLT_Ntuple_BTagging_DiLepton_v2",
+MC = [["HLT_Ntuple_BTagging_DiLepton_v3",
        ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
         "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
        "1"]]
