@@ -34,14 +34,14 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
         doCSV = True
 
 
-    doSampleComp = False
+    doSampleComp = True
         
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
     
     MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/ttbar/ttbar_v2.root"
     DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/MuonEG/MuonEG_v2.root"
-    globalPrefix = "plotsv3/1TightTag_Nom_ltpt30_JetIDTightLep_sepSel_"
+    globalPrefix = "OnOffCompv1/1TightTag_Nom_ltpt30_JetIDTightLep_sepSel_"
 
     MCSelection = "1"
     VarSelection = "1"
@@ -51,9 +51,9 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
     logging.info("Using: doMC: {0} | doData: {1} | doCSV: {2} | doDeepCSV: {3}".format(doMC, doData, doCSV, doDeepCSV))
 
 
-    offlineSelection = "Sum$(offJets_pt > 30) > 2 && abs(offJets_eta) < 2.4 && offJets_pt > 30 && offJets_passesTightLeptVetoID > 0"
-    pfSelection = "Sum$(pfJets_pt > 30) > 2 && abs(pfJets_eta) < 2.4 && pfJets_pt > 30 && pfJets_passesTightLeptVetoID > 0"
-    caloSelection = "Sum$(caloJets_pt > 30) > 2 && abs(caloJets_eta) < 2.4 && caloJets_pt > 30"
+    offlineSelection = "Sum$(offJets_pt > 30 && abs(offJets_eta) < 2.4) > 2 && abs(offJets_eta) < 2.4 && offJets_pt > 30 && offJets_passesTightLeptVetoID > 0"
+    pfSelection = "Sum$(pfJets_pt > 30 && abs(pfJets_eta) < 2.4) > 2 && abs(pfJets_eta) < 2.4 && pfJets_pt > 30 && pfJets_passesTightLeptVetoID > 0"
+    caloSelection = "Sum$(caloJets_pt > 30 && abs(caloJets_eta) < 2.4) > 2 && abs(caloJets_eta) < 2.4 && caloJets_pt > 30"
 
     samples = []
     if doMC:
@@ -67,9 +67,9 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
     plotVarSelection = "Sum$(offJets_csv > 0.9535) >= 1"
     if doCSV:
         logging.info("Plots: CSV for Offline, PF and Calo Jets")
-        OffCSV = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "CSV value", ROOT.kBlue, "Offline jets")
-        CaloCSV = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "CSV value", ROOT.kRed, "Calo jets")
-        PFCSV = modules.classes.PlotBase("pfJets_csv","{0} && {1} && pfJets_csv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "CSV value", ROOT.kGreen+2, "PF jets")
+        OffCSV = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "CSV value", ROOT.kBlue, "Offline jets")
+        CaloCSV = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv > 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "CSV value", ROOT.kRed, "Calo jets")
+        PFCSV = modules.classes.PlotBase("pfJets_csv","{0} && {1} && pfJets_csv > 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "CSV value", ROOT.kGreen+2, "PF jets")
 
         for sample, postfix, nicename in samples:
 
@@ -79,22 +79,22 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
 
     if doData and doMC and doCSV and doSampleComp:
         logging.info("Making comparion of Offline jets CSV in data and MC")
-        OffCSVMC = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kRed, "ttbar sample")
-        OffCSVData = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kBlue, "MuonEG sample")
+        OffCSVMC = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kRed, "t#bar{t} sample")
+        OffCSVData = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([OffCSVMC, OffCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_OfflineJets_csv")
 
 
         logging.info("Making comparion of online pf jets CSV in data and MC")
-        pfCSVMC = modules.classes.PlotBase("pfJets_csv", "{0} && {1} && pfJets_csv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet CSV value", ROOT.kRed, "ttbar sample")
-        pfCSVData = modules.classes.PlotBase("pfJets_csv", "{0} && {1} && pfJets_csv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet CSV value", ROOT.kBlue, "MuonEG sample")
+        pfCSVMC = modules.classes.PlotBase("pfJets_csv", "{0} && {1} && pfJets_csv > 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet CSV value", ROOT.kRed, "t#bar{t} sample")
+        pfCSVData = modules.classes.PlotBase("pfJets_csv", "{0} && {1} && pfJets_csv > 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet CSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([pfCSVMC, pfCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_pfJets_csv")
 
 
         logging.info("Making comparion of online calo jets CSV in data and MC")
-        CaloCSVMC = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet CSV value", ROOT.kRed, "ttbar sample")
-        CaloCSVData = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet CSV value", ROOT.kBlue, "MuonEG sample")
+        CaloCSVMC = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv > 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet CSV value", ROOT.kRed, "t#bar{t} sample")
+        CaloCSVData = modules.classes.PlotBase("caloJets_csv", "{0} && {1} && caloJets_csv > 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet CSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([CaloCSVMC, CaloCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_caloJets_csv")
 
@@ -104,9 +104,9 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
             plotVarSelection1T = "Sum$(offJets_csv > 0.9535) >= 1"
             plotVarSelection0T = "1"
             plotVarSelection2M = "Sum$(offJets_csv > 0.8484) >= 2"
-            OffCSVMC1T = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection1T, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kBlue, "One tight tag")
-            OffCSVMC0T = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection0T, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kRed, "No tags requ.")
-            OffCSVMC2M = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv >= 0".format(plotVarSelection2M, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kGreen+2, "Two medium tags")
+            OffCSVMC1T = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection1T, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kBlue, "One tight tag")
+            OffCSVMC0T = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection0T, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kRed, "No tags requ.")
+            OffCSVMC2M = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection2M, offlineSelection), "1", [20,0,1], "Offline jet CSV value", ROOT.kGreen+2, "Two medium tags")
             label = getLabel("Dataset: t#bar{t}", 0.7)
             modules.compPlot.compareSamples([OffCSVMC1T, OffCSVMC0T, OffCSVMC2M], [samples[0][0], samples[0][0], samples[0][0]], outname = globalPrefix+"TagCutComp_MC_OfflineJets_csv", label = label)
             label = getLabel("Dataset: MuonEG", 0.7)
@@ -117,8 +117,8 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
         logging.info("Plots: DeepCSV for Offline, PF and Calo Jets")
         plotVarSelection = "Sum$(offJets_deepcsv > 0.8958) >= 1"
         OffDeepCSV = modules.classes.PlotBase("offJets_deepcsv", "{0} && {1} && offJets_deepcsv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "DeepCSV value", ROOT.kBlue, "Offline jets")
-        CaloDeepCSV = modules.classes.PlotBase("caloJets_deepcsv", "{0} && {1} && caloJets_deepcsv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "DeepCSV value", ROOT.kRed, "Calo jets")
-        PFDeepCSV = modules.classes.PlotBase("pfJets_deepcsv", "{0} && {1} && pfJets_deepcsv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "DeepCSV value", ROOT.kGreen+2, "PF jets")
+        CaloDeepCSV = modules.classes.PlotBase("caloJets_deepcsv", "{0} && {1} && caloJets_deepcsv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "DeepCSV value", ROOT.kRed, "Calo jets")
+        PFDeepCSV = modules.classes.PlotBase("pfJets_deepcsv", "{0} && {1} && pfJets_deepcsv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "DeepCSV value", ROOT.kGreen+2, "PF jets")
 
         for sample, postfix, nicename in samples:
 
@@ -128,20 +128,20 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp):
 
     if doData and doMC and doDeepCSV and doSampleComp:
         logging.info("Making comparion of Offline jets DeepCSV in data and MC")
-        OffDeepCSVMC = modules.classes.PlotBase("offJets_deepcsv", "{0} && {1} && offJets_deepcsv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet DeepCSV value", ROOT.kRed, "ttbar sample")
+        OffDeepCSVMC = modules.classes.PlotBase("offJets_deepcsv", "{0} && {1} && offJets_deepcsv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet DeepCSV value", ROOT.kRed, "t#bar{t} sample")
         OffDeepCSVData = modules.classes.PlotBase("offJets_deepcsv", "{0} && {1} && offJets_deepcsv >= 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "Offline jet DeepCSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([OffDeepCSVMC, OffDeepCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_OfflineJets_deepcsv")
 
         logging.info("Making comparion of online pf jets DeepCSV in data and MC")
-        pfDeepCSVMC = modules.classes.PlotBase("pfJets_deepcsv", "{0} && {1} && pfJets_deepcsv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet DeepCSV value", ROOT.kRed, "ttbar sample")
+        pfDeepCSVMC = modules.classes.PlotBase("pfJets_deepcsv", "{0} && {1} && pfJets_deepcsv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet DeepCSV value", ROOT.kRed, "t#bar{t} sample")
         pfDeepCSVData = modules.classes.PlotBase("pfJets_deepcsv", "{0} && {1} && pfJets_deepcsv >= 0".format(plotVarSelection, pfSelection), "1", [20,0,1], "pf jet DeepCSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([pfDeepCSVMC, pfDeepCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_pfJets_deepcsv")
 
 
         logging.info("Making comparion of online calo jets DeepCSV in data and MC")
-        CaloDeepCSVMC = modules.classes.PlotBase("caloJets_deepcsv", "{0} && {1} && caloJets_deepcsv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet DeepCSV value", ROOT.kRed, "ttbar sample")
+        CaloDeepCSVMC = modules.classes.PlotBase("caloJets_deepcsv", "{0} && {1} && caloJets_deepcsv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet DeepCSV value", ROOT.kRed, "t#bar{t} sample")
         CaloDeepCSVData = modules.classes.PlotBase("caloJets_deepcsv", "{0} && {1} && caloJets_deepcsv >= 0".format(plotVarSelection, caloSelection), "1", [20,0,1], "calo jet DeepCSV value", ROOT.kBlue, "MuonEG sample")
 
         modules.compPlot.compareSamples([CaloDeepCSVMC, CaloDeepCSVData], [samples[0][0], samples[1][0]], outname = globalPrefix+"SampleComp_caloJets_deepcsv")

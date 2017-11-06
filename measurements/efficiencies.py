@@ -31,7 +31,7 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-    basepaths = "effv2/"
+    basepaths = "effv3/"
         
     MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/ttbar/ttbar_v2.root"
     DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/MuonEG/MuonEG_v2.root"
@@ -120,7 +120,7 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
             for i in range(3):
                 JetSelection = "offJets_deepcsv[{0}] >= 0 && abs(offJets_eta[{0}]) < 2.4 && offJets_pt[{0}] > 30 && offJets_passesTightLeptVetoID[{0}] > 0".format(refbyCSVRank[i])
                 logging.info("Making effciency for Jet {0} ordered by DeepCSV".format(i))
-                DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("offJets_deepcsv[{0}]".format(refbyDeepCSVRank[i]),
+                DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("Sum$(offJets_deepcsv[{0}] + offJets_deepcsv_bb[{0}])".format(refbyDeepCSVRank[i]),
                                                                   "{0} && {1} && ({2})".format(DeepCSVSelection, offlineSelection, JetSelection),
                                                                   "1",
                                                                   [20,0,1],

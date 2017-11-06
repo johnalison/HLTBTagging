@@ -168,7 +168,7 @@ def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputf
     xend = PlotBaseObj.LegendPosition[2]
     yend = PlotBaseObj.LegendPosition[3]
     
-    leg = modules.utils.getLegend(forlegend, xstart, ystart, xend, yend)
+    leg = modules.utils.getLegend(forlegend, xstart, ystart, xend, yend, usingPlotBase = False)
     leg.Draw("")
     
     
