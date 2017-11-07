@@ -44,7 +44,7 @@ def FillVector(source,variables,minPt=pt_min):
                 elif name == "passesLooseID":         var[variables.num[0]] = passJetID(obj, "loose")
                 
             variables.num[0] += 1
-            
+          
 def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None):
     """
     In this function the btags_source product is called for every time it is needed.
@@ -82,8 +82,65 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars =
             if nBtagsgeNull is not None:
                 if pair[1] >= 0:
                     nBtagsgeNull[0] += 1
-                
 
+                    
+def makeDeepCSVSumRanking(jets, variable, sumVar1, sumVar2, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None):
+    if JetIndexVars is not None and isinstance(JetIndexVars, list):
+        for var in JetIndexVars:
+            var[0] = -1
+    if nBtagsgeNull is not None:
+        nBtagsgeNull[0] = 0
+    tagpairs = int(jets.num[0])*[(-1,-20)]    
+    for i in range(jets.num[0]):
+        variable[i] = sumVar1[i] + sumVar2[i]
+        tagpairs[i] = (i, sumVar1[i] + sumVar2[i])
+    from operator import itemgetter
+    sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True) #This list is ordered by csv value, starting with the highest
+    for ipair, pair in enumerate(sortedtags):
+        jet_btagsRank[pair[0]] = ipair
+        if JetIndexVars is not None and isinstance(JetIndexVars, list):
+            if len(JetIndexVars) >= ipair+1:
+                JetIndexVars[ipair][0] = pair[0]
+        if nBtagsgeNull is not None:
+            if pair[1] >= 0:
+                nBtagsgeNull[0] += 1
+
+
+def sortJetCollection(inputcollection, outputcollection, ordervalue, saveinputorder = None):
+    """
+    Function to copy an an collection and reorder them according to values given as *ordervalue*.
+    """
+    if ordervalue not in ["csv", "deepcsv"]:
+        print "new order not supported"
+        return False
+
+    #Get collection index and sortvalue
+    tagpairs = int(inputcollection.num[0])*[(-1,-20)]
+    for i in range(inputcollection.num[0]):
+        if ordervalue == "csv":
+            val = inputcollection.csv[i]
+        if ordervalue == "deepcsv":
+            val = inputcollection.deepcsv[i]
+        tagpairs[i] = ( i, val )
+
+    from operator import itemgetter
+    sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True) #This list is ordered by (deep)csv value, starting with the highest
+
+    outputcollection.num[0] = inputcollection.num[0]
+
+    nonarrayvals = ["num"]
+    
+    for ipair, pair in enumerate(sortedtags):
+        for (inputname,inputvar) in inputcollection.__dict__.items():
+            for (outputname,outputvar) in outputcollection.__dict__.items():
+                if inputname == outputname and inputname not in nonarrayvals:
+                    #print ipair, pair[0], inputname
+                    outputvar[ipair] = inputvar[pair[0]]
+                    break
+        if saveinputorder is not None:
+            saveinputorder[ipair] = pair[0]
+    
+    return True
 
 def passJetID(jet, requestedID):
     PFJetIDLoose = False
@@ -102,7 +159,13 @@ def passJetID(jet, requestedID):
         return PFJetIDTightLepVeto
     elif requestedID == "loose":
         return PFJetIDLoose
-    
+
+def FillMCFlavour(inputcollection, ref, refVariable, fillVariable):
+    for i in range(inputcollection.num[0]):
+        if ref[i] >= 0:
+            fillVariable[i] = refVariable[ref[i]]
+        else:
+            fillVariable[i] = -99
 
 def FillMuonVector(source, variables, vertex, muonid = "tight"):
     if vertex is None:
@@ -185,7 +248,7 @@ def BookVector(tree,name="vector",listMembers=[]):
     obj = DummyClass()
     obj.num   = SetVariable(tree,name+'_num' ,'I')
     for member in listMembers:
-        if "match" in name:
+        if "match" in member or "rank" in member or "mcFlavour" in member:
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'I',name+'_num',maxJets))
         else:
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'F',name+'_num',maxJets))
@@ -336,55 +399,57 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     
     #Jets:
     l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','matchOff','matchGen'])
-    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV"])
-    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
-    offTightJets        = BookVector(tree,"offTightJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV"])
+    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV", "mcFlavour"])
+    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "mcFlavour"])
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour"])
+    offCSVJets          = BookVector(tree,"offCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour"])
+    offDeepCSVJets      = BookVector(tree,"offDeepCSVJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour"])
+    #offTightJets        = BookVector(tree,"offTightJets",['pt','eta','phi','mass','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "matchGen"])
 
-    CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV")
-    CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV")
-    CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV")
-    CSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingCSV")
-    CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV")
-    CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV")
-    CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV")
-    CSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondCSV")
-    CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV")
-    CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV")
-    CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV")
-    CSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdCSV")
-    CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV")
-    CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV")
-    CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV")
-    CSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthCSV")
+    CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV", "I")
+    CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV", "I")
+    CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV", "I")
+    #CSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingCSV")
+    CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV", "I")
+    CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV", "I")
+    CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV", "I")
+    #CSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondCSV")
+    CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV", "I")
+    CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV", "I")
+    CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV", "I")
+    #CSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdCSV")
+    CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV", "I")
+    CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV", "I")
+    CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV", "I")
+    #CSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthCSV")
 
-    nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero")
-    nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero")
+    nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero", "I")
+    nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero", "I")
     #nCSVOffgeZero = SetVariable(tree, "offJets_nCSVgeZero")
-    nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero")
+    nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero", "I")
 
     
-    DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV")
-    DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV")
-    DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV")
-    DeepCSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingDeepCSV")
-    DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV")
-    DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV")
-    DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV")
-    DeepCSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondDeepCSV")
-    DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV")
-    DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV")
-    DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV")
-    DeepCSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdDeepCSV")
-    DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV")
-    DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV")
-    DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV")
-    DeepCSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthDeepCSV")
+    DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV", "I")
+    DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV", "I")
+    DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV", "I")
+    #DeepCSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingDeepCSV")
+    DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV", "I")
+    DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV", "I")
+    DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV", "I")
+    #DeepCSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondDeepCSV")
+    DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV", "I")
+    DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV", "I")
+    DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV", "I")
+    #DeepCSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdDeepCSV")
+    DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV", "I")
+    DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV", "I")
+    DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV", "I")
+    #DeepCSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthDeepCSV")
 
-    nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero")
-    nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero")
+    nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero", "I")
+    nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero", "I")
     #nDeepCSVOffgeZero = SetVariable(tree, "offJets_nDeepCSVgeZero")
-    nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero")
+    nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero", "I")
 
     
     
@@ -596,8 +661,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillVector(caloJets_source,caloJets)
         FillVector(pfJets_source,pfJets)
         FillVector(l1Jets_source,l1Jets)
-        FillVector(offJets_source,offJets,20)
-        FillVector(offJets_source,offTightJets,30)
+        FillVector(offJets_source,offJets,30)
+        #FillVector(offJets_source,offTightJets,30)
 
         
         FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
@@ -617,34 +682,39 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         
         FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV,
                  [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])#, nCSVOffgeZero)
-        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv, offJets.rankDeepCSV,
-                 [DeepCSVleadingOffJet, DeepCSVsecondOffJet, DeepCSVthirdOffJet, DeepCSVfourthOffJet])#, nDeepCSVOffgeZero)
+        FillBtag(offdeepbtag_source, offJets, offJets.deepcsv_b)#, nDeepCSVOffgeZero)
         FillBtag(offdeepbtag_bb_source, offJets, offJets.deepcsv_bb)
         FillBtag(offdeepbtag_udsg_source, offJets, offJets.deepcsv_udsg)
 
+        makeDeepCSVSumRanking(offJets, offJets.deepcsv, offJets.deepcsv_b, offJets.deepcsv_bb, offJets.rankDeepCSV,
+                              [DeepCSVleadingOffJet, DeepCSVsecondOffJet, DeepCSVthirdOffJet, DeepCSVfourthOffJet])
+        """
         FillBtag(offbtag_source, offTightJets, offTightJets.csv, offTightJets.rankCSV,
                  [CSVleadingOffTightJet, CSVsecondOffTightJet, CSVthirdOffTightJet, CSVfourthOffTightJet], nCSVOffTightgeZero)
-        FillBtag(offdeepbtag_source, offTightJets, offTightJets.deepcsv, offTightJets.rankDeepCSV,
-                 [DeepCSVleadingOffTightJet, DeepCSVsecondOffTightJet, DeepCSVthirdOffTightJet, DeepCSVfourthOffTightJet], nDeepCSVOffTightgeZero)
+        FillBtag(offdeepbtag_source, offTightJets, offTightJets.deepcsv)
         FillBtag(offdeepbtag_bb_source, offTightJets, offTightJets.deepcsv_bb)
         FillBtag(offdeepbtag_udsg_source, offTightJets, offTightJets.deepcsv_udsg)
-
+        makeDeepCSVSumRanking(offTightJets, offTightJets.deepcsv, offTightJets.deepcsv_b, offTightJets.deepcsv_bb, offTightJets.rankDeepCSV,
+                 [DeepCSVleadingOffTightJet, DeepCSVsecondOffTightJet, DeepCSVthirdOffTightJet, DeepCSVfourthOffTightJet], nDeepCSVOffTightgeZero)
+        """
         
         
         if isMC:
             FillVector(genJets_source,genJets,15)
 
-        #Matching calo jets to off and gen jets
+        #Matching calo jets to off jets
         for i in range(caloJets.num[0]):
             caloJets.matchOff[i] = Matching(caloJets.phi[i],caloJets.eta[i],offJets)
+            offJets.matchCalo[int(caloJets.matchOff[i])] = i
             caloJets.matchGen[i] = -1
 
-        #Matching pf jets to off and gen jets
+        #Matching pf jets to off jets
         for i in range(pfJets.num[0]):
             pfJets.matchOff[i] = Matching(pfJets.phi[i],pfJets.eta[i],offJets)
+            offJets.matchPF[int(pfJets.matchOff[i])] = i
             pfJets.matchGen[i] = -1
 
-        #Matching l1 jets to off and gen jets
+        #Matching l1 jets to off jets
         for i in range(l1Jets.num[0]):
             l1Jets.matchOff[i] = Matching(l1Jets.phi[i],l1Jets.eta[i],offJets)
             l1Jets.matchGen[i] = -1
@@ -724,10 +794,16 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                         if evt[0]==7826939:
                             print "newFlav:",genJets.mcFlavour[i]
 
+            FillMCFlavour(offJets, offJets.matchGen, genJets.mcFlavour, offJets.mcFlavour)
+            #FillMCFlavour(offCSVJets, offCSVJets.matchGen, genJets.mcFlavour, offCSVJets.mcFlavour)
+            #FillMCFlavour(offDeepCSVJets, offDeepCSVJets.matchGen, genJets.mcFlavour, offDeepCSVJets.mcFlavour)
+            FillMCFlavour(caloJets, caloJets.matchGen, genJets.mcFlavour, caloJets.mcFlavour)
+            FillMCFlavour(pfJets, pfJets.matchGen, genJets.mcFlavour, pfJets.mcFlavour)
         ####################################################
         ####################################################
 
-
+        sortJetCollection(offJets, offCSVJets, "csv", offCSVJets.rankpt)
+        sortJetCollection(offJets, offDeepCSVJets, "deepcsv", offDeepCSVJets.rankpt)
         
         if isMC:
             if bunchCrossing>=pileUp_source.productWithCheck().size() or pileUp_source.productWithCheck().at(bunchCrossing).getBunchCrossing()!=0:
@@ -760,4 +836,4 @@ if __name__ == "__main__":
     #filesInput = ["file:/afs/cern.ch/work/k/koschwei/trigger/data/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
     fileOutput = "tree.root"
     maxEvents = 100
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False, MC=True)
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False , MC=True)
