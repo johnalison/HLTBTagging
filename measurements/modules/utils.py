@@ -32,7 +32,7 @@ def savePlot(canvas, outputname, outputformat):
 
 
 
-def getLegend(ObjetList, xstart, ystart, xend, yend, usingPlotBase = False):
+def getLegend(ObjetList, xstart, ystart, xend, yend, usingPlotBase = True):
     leg = ROOT.TLegend(xstart, ystart, xend, yend)
     if usingPlotBase:
         for Object, histo in ObjetList:

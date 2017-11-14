@@ -9,7 +9,7 @@ For Data:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag \
  --setup /dev/CMSSW_9_2_0/HLT \
- --data --globaltag auto:run2_hlt_GRun \
+ --data --globaltag 92X_dataRun2_HLT_v7 \
  --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltData.py
@@ -20,7 +20,7 @@ For MC:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag \
  --setup /dev/CMSSW_9_2_0/HLT \
- --mc --globaltag auto:run2_mc_GRun \
+ --mc --globaltag 92X_upgrade2017_realistic_v12 \
  --input root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50000/0E7B7DB0-0EA1-E711-B23E-02163E00C2C1.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltMC.py

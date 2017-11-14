@@ -176,7 +176,7 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
     histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
 
     logging.debug(selection)
-    
+    logging.debug(variable)
     nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
 
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
