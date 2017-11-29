@@ -2,9 +2,15 @@ import ROOT
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(True)
 
+import sys
 
-datafile = "/mnt/t3nfs01/data01/shome/koschwei/PUDataRunC2017.root"
-mcfile = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
+cpp = False
+
+datafile = sys.argv[1]
+mcfile = "ttbar_v3.root"
+
+print "Using datafile: {0}".format(datafile)
+print "Using mcfile: {0}".format(mcfile)
 
 tdatafile = ROOT.TFile.Open(datafile)
 tmcfile = ROOT.TFile.Open(mcfile)
@@ -12,10 +18,10 @@ tmcfile = ROOT.TFile.Open(mcfile)
 hData = tdatafile.Get("pileup")
 MCtree = tmcfile.Get("tree")
 
-hMC = ROOT.TH1F("hMC","hMC",70,0,70)
+hMC = ROOT.TH1F("hMC","hMC",90,0,90)
 
 MCtree.Project("hMC","pu")
-outfile = ROOT.TFile("PUreweighting.root","recreate")
+outfile = ROOT.TFile("PUreweighting_{0}".format(datafile),"recreate")
 outfile.cd()
 
 
@@ -47,11 +53,21 @@ hpuw.Write()
 hpuw.Draw("")
 c1.Update()
 
-print "std::map<int, float> weights;"
-for i in range(70):
-    print "weights[{0}] = {1};".format(i-1, hpuw.GetBinContent(i))
-    
-
+if cpp:
+    print "std::map<int, float> weights;"
+    for i in range(70):
+        print "weights[{0}] = {1};".format(i-1, hpuw.GetBinContent(i))
+else:
+    string = "puWeights = {"
+    non0bins = "pubins = ["
+    for i in range(90):
+        if hpuw.GetBinContent(i) != 0:
+            non0bins += "{0},".format(i)
+            string += "{0} : {1}, ".format(i-1, hpuw.GetBinContent(i))
+    string = string[0:-2]+"}"
+    non0bins = non0bins[0:-1]+"]"
+    print non0bins
+    print string
 outfile.Write()
 
 #raw_input("press ret")
