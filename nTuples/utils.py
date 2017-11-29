@@ -47,8 +47,9 @@ def SetVariable(tree,name,option='F',lenght=1,maxLenght=100):
         maxLenght = lenght
         lenght = str(lenght)
     variable = array(arraytype,[0]*maxLenght)
-    if maxLenght>1: name = name + '['+lenght+']'
-    tree.Branch(name,variable,name+'/'+option)
+    if maxLenght>1: name2 = name + '['+lenght+']'
+    else: name2 = name
+    tree.Branch(name,variable,name2+'/'+option)
     return variable
 
 class EmptyProduct(list):

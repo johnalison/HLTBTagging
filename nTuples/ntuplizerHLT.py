@@ -245,11 +245,10 @@ def getVertices(vertex_source):
     nVtx = 0
     if vertices.size()>0:
         for iVtx in range(vertices.size()):
-            if not (vertices.at(iVtx).isFake() is False and vertices.at(iVtx).ndof() > 4 and abs(vertices.at(iVtx).z()) < 24 and abs(vertices.at(iVtx).position().Rho()) < 2):
+            if vertices.at(iVtx).isFake() == False and vertices.at(iVtx).ndof() > 4 and abs(vertices.at(iVtx).z()) < 24 and abs(vertices.at(iVtx).position().Rho()) < 2:
                 if iVtx == 0:
                     vZ0 =  vertices.at(0).z()
                 nVtx += 1
-
     return vZ0, nVtx
 
     
