@@ -4,7 +4,7 @@
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
 Data = [
-    ["HLT_Ntuple_BTagging_DiLepton_v4",
+    ["HLT_Ntuple_BTagging_DiLepton_v5",
      ("/MuonEG/Run2017C-PromptReco-v2/AOD","/MuonEG/Run2017C-v1/RAW"),
      "RunC",
      True],
@@ -28,8 +28,8 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v5",
        False]]
 
 
-datasets = Data[1::]
-prefix = ""
+datasets = Data
+prefix = "_phase1"
 
 
 if __name__ == '__main__':
@@ -51,15 +51,15 @@ if __name__ == '__main__':
         config.JobType.maxMemoryMB = 10000
         config.JobType.pluginName = 'Analysis'
         config.JobType.psetName = 'crab_fake_pset.py'
-        config.JobType.scriptExe = 'crab_script.sh'
+        config.JobType.scriptExe = 'crab_script_phaseI.sh'
         import os
         os.system("tar czf python.tar.gz --dereference --directory $CMSSW_BASE python")
         os.system("voms-proxy-info -path | xargs -i  cp {}  .")
         config.JobType.inputFiles = [
-            'hlt_dump.py',
-            'hlt_dump_mc.py',
-            'fwlite_config.py',
-            'script.py',
+            'hlt_dump_phase1.py',
+            'hlt_dump_mc_phase1.py',
+            'fwlite_config_phaseI.py',
+            'script_phaseI.py',
             'utils.py',
             'python.tar.gz',
         ]
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         config.Data.unitsPerJob = 4 ##FIXME: use 20
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
-        config.Data.outLFNDirBase = '/store/user/koschwei/' + name
+        config.Data.outLFNDirBase = '/store/user/koschwei/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
             #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PromptReco/Cert_294927-304120_13TeV_PromptReco_Collisions17_JSON.txt'

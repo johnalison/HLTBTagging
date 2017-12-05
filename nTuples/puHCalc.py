@@ -1,10 +1,10 @@
 import ROOT
 ROOT.gStyle.SetOptStat(0)
-ROOT.gROOT.SetBatch(True)
+ROOT.gROOT.SetBatch(False)
 
 import sys
 
-cpp = False
+cpp = True
 
 datafile = sys.argv[1]
 mcfile = "ttbar_v3.root"
@@ -21,6 +21,9 @@ MCtree = tmcfile.Get("tree")
 hMC = ROOT.TH1F("hMC","hMC",90,0,90)
 
 MCtree.Project("hMC","pu")
+
+
+
 outfile = ROOT.TFile("PUreweighting_{0}".format(datafile),"recreate")
 outfile.cd()
 
@@ -45,8 +48,8 @@ c1.Update()
 #raw_input("press ret")
 
 hpuw = hData.Clone()
-hpuw.SetName("weight")
-hpuw.SetTitle("weight")
+#hpuw.SetName("weight")
+#hpuw.SetTitle("weight")
 
 hpuw.Divide(hMC)
 hpuw.Write()

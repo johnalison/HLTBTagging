@@ -106,6 +106,16 @@ Edit 'crab/multicrab_config.py'. The main thing to check are:
 
 Run it with `python multicrab.py`
 
+## PU reweighting
+1. Get pilup JSON and PromptReco JSON from `/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/`
+2. Edit the PrompReco JSON to only include the run(s) that will be processed 
+3. Follow the instuction from [PUreweighting Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJSONFileforData)
+4. Example : `pileupCalc.py --maxPileupBin 90 --numPileupBins 90 --minBiasXsec=69200 --inputLumiJSON=pileup_latest.txt --calcMode true -i ???_13TeV_PromptReco_Collisions17_JSON.txt output.root`
+5. Use `puHCalc.py output.root`
+6. To reweight, get the  `.getTrueNumInteractions()` from the `addPileupInfo`(in AOD) collection and find the *bin* in the PUHisto corrsesponding to that value. The bin height is the reweighting factor.
+
+## Generate JSON file for limited PU range
+If the MC sample is generated with a PU range smaller than in data, the script `getJSONforPUrange.py` can be used to remove all LS from the PromptReco JSON with PU outside a certain range, that can be set in script. This JSON can then be used as lumimask in the crab configuration.
 
 ## Contents (WiP):
 ### Leptons
@@ -127,3 +137,6 @@ brilcalc lumi -u /pb --normtag /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/nor
 
 ## Getting number of events processed in MC dataset
 The outputfiles contain a histogram with the count of processed events. 
+
+
+
