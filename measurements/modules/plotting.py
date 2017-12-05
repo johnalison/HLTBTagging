@@ -10,7 +10,7 @@ import ROOT
 ROOT.TH1.SetDefaultSumw2(True)
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
-
+ROOT.gROOT.LoadMacro("modules/functions.h+") 
 #############################################################
 
 myrnd = ROOT.TRandom3()
@@ -48,7 +48,7 @@ def getCanvas(name = "c1", ratio = False, colz = False):
         canvas.SetTopMargin(margins[0])
         if colz:
             logging.debug("setting right border for 2D plot")
-            canvas.SetRightMargin(margins[1]+0.05)
+            canvas.SetRightMargin(margins[1]+0.075)
         else:
             canvas.SetRightMargin(margins[1])
         canvas.SetLeftMargin(margins[2])
@@ -140,7 +140,8 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
     histo.GetYaxis().SetTitle(yAxisTitle)
     histo.GetYaxis().SetTitleOffset(histo.GetYaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","yTitleOffsetscale"))
     histo.GetXaxis().SetTitleOffset(histo.GetXaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","xTitleOffsetscale"))
-    
+    logging.debug("Setting x label to: "+xAxisTitle)
+    logging.debug("Setting y label to: "+yAxisTitle)
     
     return True
 
@@ -174,7 +175,8 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
         hname = "{0}_{1}".format(variable, ROOT.gRandom.Integer(10000))
 
     histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
-
+    histo.Sumw2()
+    
     logging.debug(selection)
     logging.debug(variable)
     nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
@@ -198,11 +200,12 @@ def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection
         hname = "{0}_{1}_{2}".format(xVariable, yVariable, ROOT.gRandom.Integer(10000))
 
     histo = ROOT.TH2F(hname, hname, xBinning[0], xBinning[1], xBinning[2], yBinning[0], yBinning[1], yBinning[2])
-
-    logging.debug(selection)
+    histo.Sumw2()
     
+    logging.debug(selection)
+    logging.debug("Drawing TH2 with: x: {0} and y: {1}".format(xVariable, yVariable))
     nPassing = tree.Project(hname, "{0}:{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
-
+    
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
     """

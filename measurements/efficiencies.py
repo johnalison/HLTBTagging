@@ -31,10 +31,12 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-    basepaths = "effv3/"
-        
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/ttbar/ttbar_v2.root"
-    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v2/MuonEG/MuonEG_v2.root"
+    basepaths = "v5nTuples/RunCD_"
+
+
+    #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
+    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/ttbar/phase1/ttbar_v1.root"
+    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/MuonEG/MuonEG_RunCD_phase1_part.root"
 
     MCSelection = "1"
     VarSelection = "1"
@@ -61,8 +63,8 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
 
     WPColors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+2, ROOT.kPink+7, ROOT.kViolet, ROOT.kCyan]
     
-    CSVSelection = "Sum$(offJets_csv > {0}) >= 1".format(CSVSelWP)
-    DeepCSVSelection = "Sum$(offJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
+    #CSVSelection = "Sum$(offJets_csv > {0}) >= 1".format(CSVSelWP)
+    CSVSelection = "Sum$(offJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
 
     refbyCSVRank = { 0 : "offJets_ileadingCSV",
                      1 : "offJets_isecondCSV",
@@ -80,11 +82,12 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
 
         for WP in CSVWPs:
             WPLabel = getLabel("PF WP: {0}".format(WP), 0.7, "under")
+            CaloWPLabel = getLabel("Calo WP: {0}".format(WP), 0.7, "under")
             logging.info("Using WP: {0}".format(WP))
             for i in range(3):
-                JetSelection = "offJets_csv[{0}] >= 0 && abs(offJets_eta[{0}]) < 2.4 && offJets_pt[{0}] > 30 && offJets_passesTightLeptVetoID[{0}] > 0".format(refbyCSVRank[i])
+                JetSelection = "abs(offCSVJets_eta[{0}]) < 2.4 && offCSVJets_pt[{0}] > 30 && offCSVJets_passesTightLeptVetoID[{0}] > 0".format(i)
                 logging.info("Making effciency for Jet {0} ordered by CSV".format(i))
-                CSVPlotBaseObjs[i] = modules.classes.PlotBase("offJets_csv[{0}]".format(refbyCSVRank[i]),
+                CSVPlotBaseObjs[i] = modules.classes.PlotBase("offCSVJets_csv[{0}]".format(i),
                                                               "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelection),
                                                               "1",
                                                               [20,0,1],
@@ -101,12 +104,24 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
                     sample, name, label = sampleStuff
                     onlysamples.append(sample)
                     if not (doMC and doData):
-                        modules.effPlots.makeEffPlot(CSVPlotBaseObjs[i], sample, "Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0)".format(WP, refbyCSVRank[i]),
+                        modules.effPlots.makeEffPlot(CSVPlotBaseObjs[i], sample,
+                                                     #"Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0)".format(WP, refbyCSVRank[i]),
+                                                     "pfJets_csv[offCSVJets_matchPF[{1}]] >= {0} && offCSVJets_matchPF[{1}] >= 0".format(WP, i),
                                                      basepaths+"Eff_{2}_Jet{0}_pfWP_{1}_CSV".format(i, WP, name), label = [label,WPLabel])
+                        modules.effPlots.makeEffPlot(CSVPlotBaseObjs[i], sample,
+                                                     #"Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0)".format(WP, refbyCSVRank[i]),
+                                                     "caloJets_csv[offCSVJets_matchCalo[{1}]] >= {0} && offCSVJets_matchCalo[{1}] >= 0".format(WP, i),
+                                                     basepaths+"Eff_{2}_Jet{0}_caloWP_{1}_CSV".format(i, WP, name), label = [label,CaloWPLabel])
 
                 if doMC and doData:
-                    modules.effPlots.makeEffSCompPlot(CSVPlotBaseObjs[i], onlysamples, "Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyCSVRank[i]),
+                    modules.effPlots.makeEffSCompPlot(CSVPlotBaseObjs[i], onlysamples,
+                                                      #"Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyCSVRank[i]),
+                                                      "pfJets_csv[offCSVJets_matchPF[{1}]] >= {0} && offCSVJets_matchPF[{1}] >= 0".format(WP, i),
                                                       basepaths+"Eff_DataMC_Jet{0}_pfWP_{1}_CSV".format(i, WP), label = WPLabel)
+                    modules.effPlots.makeEffSCompPlot(CSVPlotBaseObjs[i], onlysamples,
+                                                      #"Sum$(pfJets_csv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyCSVRank[i]),
+                                                      "caloJets_csv[offCSVJets_matchCalo[{1}]] >= {0} && offCSVJets_matchCalo[{1}] >= 0".format(WP, i),
+                                                      basepaths+"Eff_DataMC_Jet{0}_caloWP_{1}_CSV".format(i, WP), label = CaloWPLabel)
             
             
     if doDeepCSV:
@@ -116,12 +131,13 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
 
         for WP in DeepCSVWPs:
             WPLabel = getLabel("PF WP: {0}".format(WP), 0.7, "under")
+            CaloWPLabel = getLabel("Calo WP: {0}".format(WP), 0.7, "under")
             logging.info("Using WP: {0}".format(WP))
             for i in range(3):
-                JetSelection = "offJets_deepcsv[{0}] >= 0 && abs(offJets_eta[{0}]) < 2.4 && offJets_pt[{0}] > 30 && offJets_passesTightLeptVetoID[{0}] > 0".format(refbyCSVRank[i])
+                JetSelection = "offDeepCSVJets_deepcsv[{0}] >= 0 && abs(offDeepCSVJets_eta[{0}]) < 2.4 && offDeepCSVJets_pt[{0}] > 30 && offDeepCSVJets_passesTightLeptVetoID[{0}] > 0".format(i)
                 logging.info("Making effciency for Jet {0} ordered by DeepCSV".format(i))
-                DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("Sum$(offJets_deepcsv[{0}] + offJets_deepcsv_bb[{0}])".format(refbyDeepCSVRank[i]),
-                                                                  "{0} && {1} && ({2})".format(DeepCSVSelection, offlineSelection, JetSelection),
+                DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("offDeepCSVJets_deepcsv[{0}]".format(i),
+                                                                  "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelection),
                                                                   "1",
                                                                   [20,0,1],
                                                                   modules.utils.getAxisTitle("deepcsv", i, "deepcsv"),
@@ -136,12 +152,24 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
                     sample, name, label = sampleStuff
                     onlysamples.append(sample)
                     if not (doMC and doData): 
-                        modules.effPlots.makeEffPlot(DeepCSVPlotBaseObjs[i], sample, "Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                        modules.effPlots.makeEffPlot(DeepCSVPlotBaseObjs[i], sample,
+                                                     #"Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                                                     "pfJets_csv[offDeepCSVJets_matchPF[{1}]] >= {0} && offDeepCSVJets_matchPF[{1}] >= 0".format(WP, i),
                                                      basepaths+"Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV".format(i, WP, name), label = [label,WPLabel])
+                        modules.effPlots.makeEffPlot(DeepCSVPlotBaseObjs[i], sample,
+                                                     #"Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                                                     "caloJets_csv[offDeepCSVJets_matchCalo[{1}]] >= {0} && offDeepCSVJets_matchCalo[{1}] >= 0".format(WP, i),
+                                                     basepaths+"Eff_{2}_Jet{0}_caloWP_{1}_DeepCSV".format(i, WP, name), label = [label,CaloWPLabel])
 
                 if doMC and doData:
-                    modules.effPlots.makeEffSCompPlot(DeepCSVPlotBaseObjs[i], onlysamples, "Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                    modules.effPlots.makeEffSCompPlot(DeepCSVPlotBaseObjs[i], onlysamples,
+                                                      #"Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                                                      "pfJets_csv[offDeepCSVJets_matchPF[{1}]] >= {0} && offDeepCSVJets_matchPF[{1}] >= 0".format(WP, i),
                                                       basepaths+"Eff_DataMC_Jet{0}_pfWP_{1}_DeepCSV".format(i, WP), label = WPLabel)
+                    modules.effPlots.makeEffSCompPlot(DeepCSVPlotBaseObjs[i], onlysamples,
+                                                      #"Sum$(pfJets_deepcsv >= {0} && pfJets_matchOff >= 0 && pfJets_matchOff == {1}) > 0".format(WP, refbyDeepCSVRank[i]),
+                                                      "caloJets_csv[offDeepCSVJets_matchCalo[{1}]] >= {0} && offDeepCSVJets_matchCalo[{1}] >= 0".format(WP, i),
+                                                      basepaths+"Eff_DataMC_Jet{0}_caloWP_{1}_DeepCSV".format(i, WP), label = CaloWPLabel)
 
 
 
@@ -175,17 +203,17 @@ if __name__ == "__main__":
         help = "Call without argument!",
     )
     argumentparser.add_argument(
-        "--CSV",
+        "--csv",
         action = "store_true",
         help = "Call without argument!",
     )
     argumentparser.add_argument(
-        "--deepCSV",
+        "--deepcsv",
         action = "store_true",
         help = "Call without argument!",
     )
     argumentparser.add_argument(
-        "--CSVWP",
+        "--csvWP",
         action = "store",
         help = "CSV WPs that are plotted",
         nargs='+',
@@ -193,7 +221,7 @@ if __name__ == "__main__":
         default = ["0.8484"]
     )
     argumentparser.add_argument(
-        "--DeepCSVWP",
+        "--deepcsvWP",
         action = "store",
         help = "DeepCSV WPs that are plotted",
         nargs='+',
