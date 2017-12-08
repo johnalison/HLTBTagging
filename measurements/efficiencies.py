@@ -228,6 +228,13 @@ if __name__ == "__main__":
         type=str,
         default = ["0.6324"]
     )
+    argumentparser.add_argument(
+        "--TnP",
+        action = "store_true",
+        help = "Call without argument!",
+    )
+
+
     
     args = argumentparser.parse_args()
     #
@@ -235,6 +242,6 @@ if __name__ == "__main__":
     ##############################################################################################################
 
         
-    efficiencies(loglev = args.logging, doMC = args.mc, doData = args.data, doCSV = args.CSV, doDeepCSV = args.deepCSV, CSVWPs = args.CSVWP, DeepCSVWPs = args.DeepCSVWP)
+    efficiencies(loglev = args.logging, doMC = args.mc, doData = args.data, doCSV = args.CSV, doDeepCSV = args.deepCSV, CSVWPs = args.CSVWP, DeepCSVWPs = args.DeepCSVWP, TnPEff = args.TnP)
 
     logging.info("Exiting efficiencies.py")

@@ -79,7 +79,7 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp,sameTag
 
     logging.info("Using: doMC: {0} | doData: {1} | doCSV: {2} | doDeepCSV: {3}".format(doMC, doData, doCSV, doDeepCSV))
 
-    offlineeventSelection = "Sum$(offJets_pt > 30 && abs(offJets_eta) < 2.4) > 2 "
+    offlineeventSelection = "Sum$(offJets_pt > 30 && abs(offJets_eta) < 2.4) >= 2 "
     offlineSelection = "{0} && abs(offJets_eta) < 2.4 && offJets_pt > 30 && offJets_passesTightLeptVetoID > 0".format(offlineeventSelection)
     pfSelection = "Sum$(pfJets_pt > 30 && abs(pfJets_eta) < 2.4) > 2 && abs(pfJets_eta) < 2.4 && pfJets_pt > 30 && pfJets_passesTightLeptVetoID > 0"
     caloSelection = "Sum$(caloJets_pt > 30 && abs(caloJets_eta) < 2.4) > 2 && abs(caloJets_eta) < 2.4 && caloJets_pt > 30"
@@ -93,7 +93,7 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp,sameTag
         samples.append( (modules.classes.Sample("data", DataInput, eventSelection, color= ROOT.kBlue),"MuonEG", "MuonEG") )
 
     
-    plotVarSelection = "Sum$(offJets_deepcsv > 0.8958) >= 1"
+    plotVarSelection = "Sum$(offJets_deepcsv > 0.8958 && offJets_pt > 30 && abs(offJets_eta) < 2.4) >= 1"
     if doCSV and not skiponOffPlots and not onlymatch:
         logging.info("Plots: CSV for Offline, PF and Calo Jets")
         OffCSV = modules.classes.PlotBase("offJets_csv", "{0} && {1} && offJets_csv > 0".format(plotVarSelection, offlineSelection), "1", [20,0,1], "CSV value", ROOT.kBlue, "Offline jets")
@@ -174,6 +174,11 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp,sameTag
         commonJetSelection ="abs(offCSVJets_eta[?]) < 2.4 && offCSVJets_pt[?] > 30 && offCSVJets_passesTightLeptVetoID[?] > 0"
         commonPFJetSelection = commonJetSelection+" && offCSVJets_matchPF[?] >= 0"
         commonCaloJetSelection =  commonJetSelection+" && offCSVJets_matchCalo[?] >= 0"
+
+        commonJetSelectionpt ="abs(offJets_eta[?]) < 2.4 && offJets_pt[?] > 30 && offJets_passesTightLeptVetoID[?] > 0"
+        commonPFJetSelectionpt = commonJetSelectionpt+" && offJets_matchPF[?] >= 0"
+        commonCaloJetSelectionpt =  commonJetSelectionpt+" && offJets_matchCalo[?] >= 0"
+
         #commonpfJetSelection = "pfJets_matchOff[?] >= 0"
         logging.info("Plots: CSV for Offline, PF Jets (matched!)")
         #plotVarSelection = "Sum$(offJets_csv > 0.9535) >= 1"
@@ -181,6 +186,8 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp,sameTag
         OffCSV = modules.classes.PlotBase("offCSVJets_csv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [40,0,1], "CSV value", ROOT.kBlue, "Offline jets")
         CaloCSV = modules.classes.PlotBase("caloJets_csv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [40,0,1], "CSV value", ROOT.kRed, "Calo jets")
         PFCSV = modules.classes.PlotBase("pfJets_csv","{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [40,0,1], "CSV value", ROOT.kGreen+2, "PF jets")
+        PFCSVLeading = modules.classes.PlotBase("pfJets_csv","{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,1], "leading CSV value", ROOT.kPink, "PF jets")
+        """
         for sample, postfix, nicename in samples:
 
             logging.info("Processing "+postfix)
@@ -190,11 +197,13 @@ def shapeComparison(loglev, doMC, doData, doCSV, doDeepCSV, doperJetComp,sameTag
                                                 iterSelections = [commonPFJetSelection,commonPFJetSelection], normalized = False, outname = basepath+globalPrefix+"MatchedJetTypeComp_OffvPF_csv_"+postfix, label = label )
             modules.compPlot.compareSumJetTypes([OffCSV, CaloCSV], sample, ["offCSVJets_csv[?]", "caloJets_csv[offCSVJets_matchCalo[?]]"], 10,
                                                 iterSelections = [commonCaloJetSelection,commonCaloJetSelection], normalized = False, outname = basepath+globalPrefix+"MatchedJetTypeComp_OffvCalo_csv_"+postfix, label = label )
+        """
         if doSampleComp and doMC and doData:
             logging.info("Doing sample comp")
-            modules.compPlot.compareSumJetSamples(PFCSV, samples, "pfJets_csv[offCSVJets_matchPF[?]]", 10, commonPFJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_PF_csv_DataMC")
-            modules.compPlot.compareSumJetSamples(CaloCSV, samples, "caloJets_csv[offCSVJets_matchCalo[?]]", 10, commonCaloJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_Calo_csv_DataMC")
-            modules.compPlot.compareSumJetSamples(OffCSV, samples, "offCSVJets_csv[?]", 10, commonJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_Off_csv_DataMC")
+#            modules.compPlot.compareSumJetSamples(PFCSV, samples, "pfJets_csv[offCSVJets_matchPF[?]]", 10, commonPFJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_PF_csv_DataMC")
+            modules.compPlot.compareSumJetSamples(PFCSVLeading, samples, "pfJets_csv[offJets_matchPF[?]]", 1, commonPFJetSelectionpt, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_leadingpt_PF_csv_DataMC")
+#            modules.compPlot.compareSumJetSamples(CaloCSV, samples, "caloJets_csv[offCSVJets_matchCalo[?]]", 10, commonCaloJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_Calo_csv_DataMC")
+#            modules.compPlot.compareSumJetSamples(OffCSV, samples, "offCSVJets_csv[?]", 10, commonJetSelection, normalized = True, outname = basepath+globalPrefix+"MatchedJetTypeComp_Off_csv_DataMC")
             
     if doDeepCSV and not skiponOffPlots and onlymatch:
         commonJetSelection = "abs(offDeepCSVJets_eta[?]) < 2.4 && offDeepCSVJets_pt[?] > 30 && offDeepCSVJets_passesTightLeptVetoID[?] > 0"

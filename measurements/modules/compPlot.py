@@ -143,7 +143,7 @@ def compareSumJetTypes(PlotBaseObjs, Sample, xVarBases, nIter, iterSelections = 
     return h2Draw
 
 
-def compareSumJetSamples(PlotBaseObj, Samples, xVarBase, nIter, colors,  iterSelection = "1", normalized = False, darindivhistos = False, outname = None, outputformat = "pdf", label = None):
+def compareSumJetSamples(PlotBaseObj, Samples, xVarBase, nIter,  iterSelection = "1", normalized = False, darindivhistos = False, outname = None, outputformat = "pdf", label = None):
     if label is not None and not isinstance(label,ROOT.TLatex):
         logging.warning("The label param should be of type ROOT.TLatex")
         logging.warning("Ignoring additional label")
@@ -153,6 +153,7 @@ def compareSumJetSamples(PlotBaseObj, Samples, xVarBase, nIter, colors,  iterSel
     if normalized:
         yTitle = "normalized Units"
 
+    logging.debug("iterSel:"+iterSelection)
     ObjectsforLegend = []
     h2Draw = []
     iSample = 0
