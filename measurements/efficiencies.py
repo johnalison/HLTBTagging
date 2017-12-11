@@ -31,13 +31,20 @@ def efficiencies(loglev, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs):
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-    basepaths = "v5nTuples/RunCD_"
+    #DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/MuonEG/MuonEG_RunCD_phase1_part.root"
+    #basepaths = "v5nTuples/RunCD_"
+    #DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/MuonEG/RunE/phase1/MuonEG_RunE_phase1.root"
+    #basepaths = "v5nTuples/RunE_"
+    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/MuonEG/RunF/phase1/MuonEG_RunF_phase1_part.root"
+    basepaths = "v5nTuples/RunF_"    
+
+
+
 
 
     #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
     MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/ttbar/phase1/ttbar_v1.root"
-    DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v5/MuonEG/MuonEG_RunCD_phase1_part.root"
-
+    
     MCSelection = "1"
     VarSelection = "1"
     TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v4 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v4 > 0"
@@ -242,6 +249,6 @@ if __name__ == "__main__":
     ##############################################################################################################
 
         
-    efficiencies(loglev = args.logging, doMC = args.mc, doData = args.data, doCSV = args.CSV, doDeepCSV = args.deepCSV, CSVWPs = args.CSVWP, DeepCSVWPs = args.DeepCSVWP, TnPEff = args.TnP)
+    efficiencies(loglev = args.logging, doMC = args.mc, doData = args.data, doCSV = args.csv, doDeepCSV = args.deepcsv, CSVWPs = args.csvWP, DeepCSVWPs = args.deepcsvWP)
 
     logging.info("Exiting efficiencies.py")

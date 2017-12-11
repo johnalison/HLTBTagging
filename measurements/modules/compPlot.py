@@ -332,3 +332,81 @@ def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelec
         )
         
 
+
+
+def compareHistos(hList, legendList, colorList, normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None):
+    if label is not None and isinstance(label, list):
+        for l in label:
+            if not isinstance(l, ROOT.TLatex):
+                logging.error("All labels are required to be of type ROOT.TLatex")
+                label.remove(l)
+    elif label is not None and not isinstance(label,ROOT.TLatex):
+        logging.warning("The label param should be of type ROOT.TLatex")
+        logging.warning("Ignoring additional label")
+        label = None
+    elif (label is not None and isinstance(label, ROOT.TLatex)) or label is None:
+        pass
+    else:
+        logging.error("Something is happening here... :(")
+
+    styleconfig = SafeConfigParser()
+    #logging.debug("Loading style config")
+    styleconfig.read("config/plotting.cfg")
+
+    yTitle = "Events"
+    if normalized:
+        yTitle = "normalized Events"
+
+    if normalized:
+        for histo in hList:
+            try:
+                1/float(histo.Integral())
+            except ZeroDivisionError:
+                logging.error("ZeroDevision Error. Disableing scaling")
+                normalized = False
+            else:
+                logging.info("Normalizing")
+                histo.Scale(1/float(histo.Integral()))
+
+
+    canvas = modules.plotting.getCanvas(ratio = drawRatio)
+
+    ObjectsforLegend = []
+    h2Draw = []
+    for ihisto, histo in enumerate(hList):
+        modules.plotting.setStyle(histo, "Line", colorList[ihisto], histo.GetXaxis().GetTitle(), yTitle)
+        ObjectsforLegend.append( (histo, legendList[ihisto], "L") )
+        h2Draw.append( (histo, "histoe") )
+
+        
+    if drawRatio:
+        logging.debug("Making Ratio")
+        hList[0].GetYaxis().SetTitleOffset(hList[0].GetYaxis().GetTitleOffset()*
+                                           styleconfig.getfloat("HistoStyle","yTitleOffsetscale")*
+                                           styleconfig.getfloat("HistoStyle","yRatioTitleOffsetscale")*0.8)
+
+        ratioLine, ratios, div = modules.plotting.getRatioPlot(hList[0], hList[1:])
+
+    ratioLine.SetLineColor(colorList[0])
+    r2Draw = [(ratioLine , "histoe")]
+    for r in ratios:
+        r2Draw.append( (r, "sameP") )
+
+    modules.plotting.drawHistos(h2Draw, canvas = canvas, orderedRatioList = r2Draw, yTitle = yTitle)
+    
+    canvas.cd(0)
+    CMSL1, CMSL2 = modules.utils.getCMStext()
+    CMSL1.Draw("same")
+    CMSL2.Draw("same")
+    if label is not None:
+        if isinstance(label, list):
+            for l in label:
+                l.Draw("same")
+        else:
+            label.Draw("same")
+    legpos = [0.6, 0.6, 0.9, 0.9]
+    legend = modules.utils.getLegend(ObjectsforLegend, legpos[0],legpos[1],legpos[2],legpos[3], False)
+    legend.Draw("same")
+
+    if outname is not None:
+        modules.utils.savePlot(canvas, outname, outputformat)

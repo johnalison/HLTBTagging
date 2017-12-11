@@ -110,11 +110,14 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
     if histoType not in ["Points", "Line", "Solid", "Stack", "2D"]:
         logging.warning("Unknown HistoStyle! Input: {0}".format(histoType))
         return False
+
+    histo.ResetAttMarker()
+    histo.ResetAttLine()
     
     if histoType in ["Points", "Line", "Solid"]:
         isPoints = styleconfig.getboolean("{0}Style".format(histoType), "Points")
         isFilled = styleconfig.getboolean("{0}Style".format(histoType), "Filled")
-
+        
         if isPoints:
             logging.debug("Setting point style")
             histo.SetMarkerColor(color)
@@ -384,6 +387,7 @@ def getRatioPlot(hRef, hList):
         logging.debug("Making ratio for ratio plot from "+str(h))
         ratio = ref.Clone()
         ratio.SetName("ratio_"+h.GetName())
+        ratio.SetMarkerStyle(21)
         ratio.SetMarkerColor(h.GetLineColor())
         ratio.SetLineColor(h.GetLineColor())
         x, y = ROOT.Double(0), ROOT.Double(0)
@@ -392,7 +396,7 @@ def getRatioPlot(hRef, hList):
             currentBin = h.FindBin(x)
             currentBinContent = h.GetBinContent(currentBin)
             if currentBinContent > 0:
-                ratioval = y/currentBinContent
+                ratioval = 1/(y/currentBinContent)
                 ratio.SetPoint(i, x, ratioval)
                 if ratioval > maxdiv and ratioval > 0:
                     maxdiv = round(ratioval, 1)

@@ -1,10 +1,11 @@
 import logging
 from copy import deepcopy
+import math
 import ROOT
 
 import modules.DataMC
 import modules.plotting
-
+from modules.utils import setup_logging, getLabel
 
 
 
@@ -91,7 +92,7 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
 
     results = {}
     
-    outfile = ROOT.TFile("testout.root","RECREATE")
+    outfile = ROOT.TFile(outname+"_histos.root","RECREATE")
     for WP in numWPs:
         results[WP] = {}
         logging.info("Processing WP: {0}".format(WP))
@@ -102,6 +103,15 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
         outfile.cd()
         ##Normalization to data
         MCscale_denom = hData_denom.Integral()/StackSum_denom.Integral()
+
+        NormLabel = getLabel("MC normalized to Data", 0.6, scale = 0.8)
+        if label is None:
+            label = [NormLabel]
+        if label is isinstance(label,ROOT.TLatex):
+            label = [label + NormLabel]
+        else:
+            label.append(NormLabel)
+
         logging.info("Scaling denom by {0}".format(MCscale_denom))
         StackSum_denom.Scale(MCscale_denom)
         for ihisto, histo in enumerate(StackHistos_denom):
@@ -124,8 +134,10 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
         hBjets_num = deepcopy(StackHistos_num[bindex])
         
         MCeff =  hBjets_num.Integral()/hBjets_denom.Integral()
+        MCError = math.sqrt(MCeff*(1-MCeff)/hBjets_denom.GetEntries())
         results[WP]["MC"] = MCeff
-        logging.info("btagging Effciency in MC = {0} [{1}]".format(MCeff, WP))
+        results[WP]["MCErr"] = MCError
+        logging.info("btagging Effciency in MC = {0} +- {2} [{1}]".format(MCeff, WP, MCError))
 
         hBjets_denom.SetName("{0}_denom_MCb".format(WP))
         hBjets_num.SetName("{0}_num_MCb".format(WP))
@@ -149,11 +161,21 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
             else:
                 logging.debug("Adding sample {0} to NonB sum".format(NonBsamples[ihisto].name))
                 hNonB_denom.Add(histo)
-                
+
+        logging.info("b purity: {0}".format(hBjets_denom.Integral()/hNonB_denom.Integral()))
+
         logging.debug("Getting denom b fraction data")
         hbData_denom = hData_denom.Clone()
         hbData_denom.Add(hNonB_denom, -1)
 
+
+        hData_num.SetName("{0}_num_data".format(WP))
+        hData_denom.SetName("{0}_denom_data".format(WP))
+
+        hData_num.Write()
+        hData_denom.Write()
+
+        
         #Numerator
         NonBHistos_num = StackHistos_num
         NonBHistos_num.pop(bindex)
@@ -166,14 +188,18 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
             else:
                 logging.debug("Adding sample {0} to NonB sum".format(NonBsamples[ihisto].name))
                 hNonB_num.Add(histo)
-                
+            
+
         logging.debug("Getting denom b fraction data")
         hbData_num = hData_num.Clone()
         hbData_num.Add(hNonB_num, -1)
 
         Dataeff = hbData_num.Integral()/hbData_denom.Integral()
+        DataError = math.sqrt(Dataeff*(1-Dataeff)/hData_denom.Integral())
+        
         results[WP]["Data"] = Dataeff
-        logging.info("btagging Effciency in Data = {0} [{1}]".format(Dataeff, WP))
+        results[WP]["DataErr"] = DataError
+        logging.info("btagging Effciency in Data = {0} +- {2} [{1}]".format(Dataeff, WP, DataError))
 
         hbData_num.SetName("{0}_num_data-nonb".format(WP))
         hbData_denom.SetName("{0}_denom_data-nonb".format(WP))
@@ -182,16 +208,40 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
         hbData_num.Write()
         hbData_denom.Write()
         
+        SF = Dataeff/MCeff
+        MCerrElem = MCError/MCeff
+        DataErrElem = DataError/Dataeff
+        SFerr = math.sqrt(MCerrElem*MCerrElem + DataErrElem*DataErrElem)*SF
+        results[WP]["SF"] = SF
+        results[WP]["SFErr"] = SFerr
+        logging.info("btagging Efficiency SF = {0} +- {1} [{2}]".format(SF, SFerr, WP))
         
-    
     if savetable:
-        table = "\ toprule"
-        table += "WP & MC & Data \\ \n"
-        table += "\midrule"
+        table = "\\toprule \n"
+        table += "WP & MC & Data & SF \\\\ \n"
+        table += "\\midrule \n"
         for WP in numWPs:
-            table += "{0} & {1} & {2} \\ \n".format(WP, results[WP]["MC"], results[WP]["Data"] )
-        table += "\bottomrule"
+            table += "{0} & {1:.4f} $\\pm$ {2:.4f}\\%  & {3:.4f} $\\pm$ {4:.4f}\\% & {5:.4f} $\\pm$ {6:.4f}\\% \\\\ \n".format(WP, results[WP]["MC"], results[WP]["MCErr"]*100, results[WP]["Data"], results[WP]["DataErr"]*100, results[WP]["SF"], results[WP]["SFErr"]*100 )
+        table += "\\bottomrule"
+        
+        
+        table2 = "\\toprule \n"
+        table2 += "WP & MC & Data & SF \\\\ \n"
+        table2 += "\\midrule \n"
+        for WP in numWPs:
+            table2 += "{0} & {1:.2f} $\\pm$ {2:.2f}  & {3:.2f} $\\pm$ {4:.2f} & {5:.2f} $\\pm$ {6:.2f} \\\\ \n".format(WP, results[WP]["MC"]*100, results[WP]["MCErr"]*100, results[WP]["Data"]*100, results[WP]["DataErr"]*100, results[WP]["SF"]*100, results[WP]["SFErr"]*100 )
+        table2 += "\\bottomrule"
 
-        print table
+        
+
+        if outname is not None:
+            txtfilename = outname+".txt"
+            logging.info("Writing "+txtfilename)
+            with open(txtfilename,"w") as f:
+                f.write("% calulated vaules\n")
+                f.write(table)
+                f.write("\n")
+                f.write("% in percent\n")
+                f.write(table2)
     outfile.Close()
             
