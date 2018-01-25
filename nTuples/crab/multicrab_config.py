@@ -4,32 +4,32 @@
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
 Data = [
-    ["HLT_Ntuple_BTagging_DiLepton_v4",
+    ["HLT_Ntuple_BTagging_DiLepton_v6",
      ("/MuonEG/Run2017C-PromptReco-v2/AOD","/MuonEG/Run2017C-v1/RAW"),
-     "RunC",
+     "_RunC",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
+    ["HLT_Ntuple_BTagging_DiLepton_v6",
      ("/MuonEG/Run2017D-PromptReco-v1/AOD","/MuonEG/Run2017D-v1/RAW"),
      "_RunD",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
+    ["HLT_Ntuple_BTagging_DiLepton_v6",
      ("/MuonEG/Run2017E-PromptReco-v1/AOD","/MuonEG/Run2017E-v1/RAW"),
      "_RunE",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
+    ["HLT_Ntuple_BTagging_DiLepton_v6",
      ("/MuonEG/Run2017F-PromptReco-v1/AOD","/MuonEG/Run2017F-v1/RAW"),
      "_RunF",
      True]
 ]
-MC = [["HLT_Ntuple_BTagging_DiLepton_v5",
+MC = [["HLT_Ntuple_BTagging_DiLepton_v6",
        ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
         "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
        "",
        False]]
 
 
-datasets = Data[1::]
-prefix = ""
+datasets = Data+MC
+prefix = "_phase1"
 
 
 if __name__ == '__main__':

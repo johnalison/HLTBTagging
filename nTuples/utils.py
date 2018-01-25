@@ -46,7 +46,10 @@ def SetVariable(tree,name,option='F',lenght=1,maxLenght=100):
     if not type(lenght) is str:
         maxLenght = lenght
         lenght = str(lenght)
-    variable = array(arraytype,[0]*maxLenght)
+    if "Flavour" in name:
+        variable = array(arraytype,[-99]*maxLenght)
+    else:
+        variable = array(arraytype,[0]*maxLenght)
     if maxLenght>1: name2 = name + '['+lenght+']'
     else: name2 = name
     tree.Branch(name,variable,name2+'/'+option)

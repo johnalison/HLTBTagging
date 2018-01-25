@@ -52,36 +52,44 @@ process.p = cms.Path(process.egmGsfElectronIDSequence)
 
 
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
-    dataset = cms.untracked.PSet(
-    ),
-    fileName = cms.untracked.string('./cmsswPreProcessing.root'),
-	outputCommands = cms.untracked.vstring('drop *',
-                                           'keep *Egamma*_*_*_*',
-                                           'keep bool*ValueMap*_*Electron*_*_*',
-                                           'keep l1t*_*_*_*',
-                                           'keep *_*Ht*_*_*',
-                                           'keep *Jet*_*_*_*',
-                                           'keep *Electron*_*_*_*',
-                                           'keep *Muon*_*_*_*',
-                                           'keep *Track*_*_*_*',
-                                           'drop *Track*_hlt*_*_*',
-                                           'drop SimTracks_*_*_*',
-										   'keep *SuperCluster*_*_*_*',
-                                           'keep *MET*_*_*_*',
-                                           'keep *Vertex*_*_*_*',
-                                           'keep *_genParticles_*_*',
-                                           'keep *genParticles_*_*_*',
-                                           'keep *Trigger*_*_*_*',
-                                           'keep recoJetedmRefToBaseProdTofloatsAssociationVector_*_*_*',
-                                           'keep *_addPileupInfo_*_*',
-                                           'drop *_*Digis*_*_*',
-                                           'drop triggerTriggerEvent_*_*_*',
-                                           'keep *_hltGtStage2Digis_*_*',
-                                           'keep *_generator_*_*')
+                                         dataset = cms.untracked.PSet(),
+                                         fileName = cms.untracked.string('./cmsswPreProcessing.root'),
+                                         outputCommands = cms.untracked.vstring('drop *',
+                                                                                'keep *Egamma*_*_*_*',
+                                                                                'keep bool*ValueMap*_*Electron*_*_*',
+                                                                                'keep l1t*_*_*_*',
+                                                                                'keep *_*Ht*_*_*',
+                                                                                'keep *Jet*_*_*_*',
+                                                                                'keep *Electrson*_*_*_*',
+                                                                                'keep *Muon*_*_*_*',
+                                                                                'keep *Track*_*_*_*',
+                                                                                'drop *Track*_hlt*_*_*',
+                                                                                'drop SimTracks_*_*_*',
+                                                                                'keep *SuperCluster*_*_*_*',
+                                                                                'keep *MET*_*_*_*',
+                                                                                'keep *Vertex*_*_*_*',
+                                                                                #######
+                                                                                'keep *_genParticles_*_*',#AOD
+                                                                                'keep *_prunedGenParticles_*_*',#MINIAOD
+                                                                                #######
+                                                                                'keep *genParticles_*_*_*',
+                                                                                'keep *Trigger*_*_*_*',
+                                                                                'keep recoJetedmRefToBaseProdTofloatsAssociationVector_*_*_*',
+                                                                                #######
+                                                                                'keep *_addPileupInfo_*_*', #AOD
+                                                                                'keep *_slimmedAddPileupInfo_*_*',#MINIAOD
+                                                                                #######
+                                                                                'drop *_*Digis*_*_*',
+                                                                                'drop triggerTriggerEvent_*_*_*',
+                                                                                'keep *_hltGtStage2Digis_*_*',
+                                                                                'keep *_generator_*_*')
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 ```
 
+#### Changing from AOD to MiniAOD (or vice versa)
+* Change `dataFormat = DataFormat.AOD` to `dataFormat = DataFormat.MiniAOD` in the python config
+* Set `runAOD` in `ntuplizerHLT.py` to `False`
 
 ### Local test
 Edit `crab/PSet_localTest.py`to fit your needs.
