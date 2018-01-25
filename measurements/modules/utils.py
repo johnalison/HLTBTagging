@@ -162,3 +162,15 @@ def getAxisTitle(variable, number, order = "pt"):
     else:
         logging.error("Order not defined. Returning empty sting")
         return ""
+
+
+def tupleList2List(tuplelist, index):
+    if index >= len(tuplelist[0]):
+        logging.warning("Index >= number of elements in tuple. Setting index to highest number!")
+        index = len(tuplelist[0])-1
+    retlist = []
+    for elem in tuplelist:
+        retlist.append(elem[index])
+
+    return retlist
+    

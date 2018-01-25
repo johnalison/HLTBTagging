@@ -10,7 +10,7 @@ import ROOT
 ROOT.TH1.SetDefaultSumw2(True)
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
-
+ROOT.gROOT.LoadMacro("modules/functions.h+") 
 #############################################################
 
 myrnd = ROOT.TRandom3()
@@ -48,7 +48,7 @@ def getCanvas(name = "c1", ratio = False, colz = False):
         canvas.SetTopMargin(margins[0])
         if colz:
             logging.debug("setting right border for 2D plot")
-            canvas.SetRightMargin(margins[1]+0.05)
+            canvas.SetRightMargin(margins[1]+0.075)
         else:
             canvas.SetRightMargin(margins[1])
         canvas.SetLeftMargin(margins[2])
@@ -57,7 +57,7 @@ def getCanvas(name = "c1", ratio = False, colz = False):
     else:
         logging.debug("Setting up canvas with ratioplots")
         canvas.Divide(1,2)
-        canvas.cd(1).SetPad(0.,0.3-0.02,1.0,0.975)
+        canvas.cd(1).SetPad(0.,0.3-0.02,1.0,0.983)
         canvas.cd(2).SetPad(0.,0.0,1.0,0.3*(1-0.02))
         canvas.cd(1).SetBottomMargin(0.02)
         canvas.cd(2).SetTopMargin(0.00)
@@ -77,6 +77,7 @@ def getCanvas(name = "c1", ratio = False, colz = False):
     return canvas
 
 def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
+    ROOT.gStyle.SetErrorX(0)
     """
     Function for setting the style of Histogram.
 
@@ -106,14 +107,17 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
 
     logging.debug("Setting style for histo w/ name {0}".format(histo.GetName()))
     
-    if histoType not in ["Points", "Line", "Solid"  "Stack", "2D"]:
-        logging.warning("Unknown HistoStyle!")
+    if histoType not in ["Points", "Line", "Solid", "Stack", "2D"]:
+        logging.warning("Unknown HistoStyle! Input: {0}".format(histoType))
         return False
+
+    histo.ResetAttMarker()
+    histo.ResetAttLine()
     
     if histoType in ["Points", "Line", "Solid"]:
         isPoints = styleconfig.getboolean("{0}Style".format(histoType), "Points")
         isFilled = styleconfig.getboolean("{0}Style".format(histoType), "Filled")
-
+        
         if isPoints:
             logging.debug("Setting point style")
             histo.SetMarkerColor(color)
@@ -140,7 +144,8 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
     histo.GetYaxis().SetTitle(yAxisTitle)
     histo.GetYaxis().SetTitleOffset(histo.GetYaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","yTitleOffsetscale"))
     histo.GetXaxis().SetTitleOffset(histo.GetXaxis().GetTitleOffset()*styleconfig.getfloat("HistoStyle","xTitleOffsetscale"))
-    
+    logging.debug("Setting x label to: "+xAxisTitle)
+    logging.debug("Setting y label to: "+yAxisTitle)
     
     return True
 
@@ -174,9 +179,11 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
         hname = "{0}_{1}".format(variable, ROOT.gRandom.Integer(10000))
 
     histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
-
-    logging.debug(selection)
-    logging.debug(variable)
+    histo.Sumw2()
+    
+    logging.debug("Sel:"+selection)
+    logging.debug("Var:"+variable)
+    logging.debug("Wei:"+weight)
     nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
 
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
@@ -198,11 +205,12 @@ def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection
         hname = "{0}_{1}_{2}".format(xVariable, yVariable, ROOT.gRandom.Integer(10000))
 
     histo = ROOT.TH2F(hname, hname, xBinning[0], xBinning[1], xBinning[2], yBinning[0], yBinning[1], yBinning[2])
-
-    logging.debug(selection)
+    histo.Sumw2()
     
+    logging.debug(selection)
+    logging.debug("Drawing TH2 with: x: {0} and y: {1}".format(xVariable, yVariable))
     nPassing = tree.Project(hname, "{0}:{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
-
+    
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
     """
@@ -221,7 +229,7 @@ def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection
 
 
 
-def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioList = None):
+def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioList = None, yTitle = None):
     """
     Function that draws all histograms that are given to it.
 
@@ -234,7 +242,9 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
         list with all ratio histos. Each element is expected to be a tuple of 
         ROOT.TH1 and DrawString.
     stackindex : int
-        if int is given the histogram with the index is expected to be a THStack
+        if int is given the histogram with the index is expected to be a THStack#
+    yTitle : sring
+        Only needed for stack plots.
 
     Returns:
     --------
@@ -297,6 +307,22 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
             if idrawn == 0:
                 drawpostfix = " same"
             idrawn += 1
+    else:
+        if stackindex >= len(orderedHistoList):
+            logging.error("Stackindex out of range")
+        else:
+            stack, drawstring = orderedHistoList[stackindex]
+            stack.Draw(drawstring)
+            stack.GetXaxis().SetLabelSize(0)
+            stack.GetYaxis().SetTitleSize(histo.GetYaxis().GetTitleSize() * 1.4)
+            stack.GetYaxis().SetTitleOffset(histo.GetYaxis().GetTitleOffset() * (1/styleconfig.getfloat("HistoStyle","yTitleOffsetscale")))
+            stack.GetYaxis().SetLabelSize(histo.GetYaxis().GetLabelSize() * 1.4)
+            stack.Draw(drawstring)
+            drawpostfix = " same"
+            for ihisto, hplusOptions in enumerate(orderedHistoList):
+                histo, drawstring = hplusOptions
+                if ihisto != stackindex:
+                    histo.Draw("{0}{1}".format(drawstring, drawpostfix))
     thiscanvas.Update()
     return thiscanvas
 
@@ -361,6 +387,7 @@ def getRatioPlot(hRef, hList):
         logging.debug("Making ratio for ratio plot from "+str(h))
         ratio = ref.Clone()
         ratio.SetName("ratio_"+h.GetName())
+        ratio.SetMarkerStyle(21)
         ratio.SetMarkerColor(h.GetLineColor())
         ratio.SetLineColor(h.GetLineColor())
         x, y = ROOT.Double(0), ROOT.Double(0)
@@ -369,7 +396,7 @@ def getRatioPlot(hRef, hList):
             currentBin = h.FindBin(x)
             currentBinContent = h.GetBinContent(currentBin)
             if currentBinContent > 0:
-                ratioval = currentBinContent/y
+                ratioval = 1/(y/currentBinContent)
                 ratio.SetPoint(i, x, ratioval)
                 if ratioval > maxdiv and ratioval > 0:
                     maxdiv = round(ratioval, 1)
@@ -377,7 +404,7 @@ def getRatioPlot(hRef, hList):
                     mindiv = round(ratioval, 1)
             else:
                 ratio.SetPoint(i, x, -999)
-
+            logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}".format(i, currentBin, currentBinContent, y))
             if y > 0:
                 if currentBinContent > 0:
                     ratio.SetPointEYlow(i, ref.GetErrorYlow(i)/currentBinContent)
@@ -397,8 +424,11 @@ def getRatioPlot(hRef, hList):
         line.GetYaxis().SetRangeUser(0.85,1.15)
     elif maxdiv < 1.25 and mindiv > 0.75:
         line.GetYaxis().SetRangeUser(0.7,1.3)
-    else:
+    elif maxdiv < 1.75 and mindiv > 0.25:
         line.GetYaxis().SetRangeUser(0.2,1.8)
+    else:
+        line.GetYaxis().SetNdivisions(503)
+        line.GetYaxis().SetRangeUser(0,2.65)
     hRatioRef = line
         
     return hRatioRef, hRatioList, (mindiv, maxdiv)
