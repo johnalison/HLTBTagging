@@ -180,10 +180,9 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
 
     histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
     histo.Sumw2()
-    
-    logging.debug("Sel:"+selection)
-    logging.debug("Var:"+variable)
-    logging.debug("Wei:"+weight)
+    logging.subdebug("Sel:"+selection)
+    logging.subdebug("Var:"+variable)
+    logging.subdebug("Wei:"+weight)
     nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
 
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
@@ -396,7 +395,7 @@ def getRatioPlot(hRef, hList):
             currentBin = h.FindBin(x)
             currentBinContent = h.GetBinContent(currentBin)
             if currentBinContent > 0:
-                ratioval = 1/(y/currentBinContent)
+                ratioval = (y/currentBinContent)
                 ratio.SetPoint(i, x, ratioval)
                 if ratioval > maxdiv and ratioval > 0:
                     maxdiv = round(ratioval, 1)

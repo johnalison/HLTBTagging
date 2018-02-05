@@ -7,8 +7,8 @@ from ConfigParser import SafeConfigParser
 
 import ROOT
 
-#import modules.DataMC
-#import modules.compPlot
+import modules.DataMC
+import modules.compPlot
 
 styleconfig = SafeConfigParser()
 #logging.debug("Loading style config")
@@ -26,7 +26,7 @@ logger.info("Starting flavour composition analysis")
 if loglev > 0:
     ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-basepath = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/measurements/v5nTuples/FlavourSplitting/"
+basepath = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/measurements/v5nTuples/lepoverlap/FlavourSplitting/"
 
 runCDinput = ["RunCD/PFCSV/DeepCSVMPresel_phase1_RunCD_TnP_leading_pf_csv_histos.root",
               "RunCD/CaloCSV/DeepCSVMPresel_phase1_RunCD_TnP_leading_calo_csv_histos.root",
@@ -46,7 +46,7 @@ runFinput = ["RunF/PFCSV/DeepCSVMPresel_phase1_RunF_TnP_leading_pf_csv_histos.ro
 colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen-2]
 
 histoname = ["0.975_denom_data","0.97_denom_data","0.955_denom_data","0.95_denom_data"]
-"""
+
 for iplot, plot in enumerate(["PFCSV", "CaloCSV", "PFDeepCSV", "CaloDeepCSV"]):
     logging.info("Making plot: {0}".format(plot))
     
@@ -64,7 +64,7 @@ for iplot, plot in enumerate(["PFCSV", "CaloCSV", "PFDeepCSV", "CaloDeepCSV"]):
     
     modules.compPlot.compareHistos([hCD, hE, hF], ["MuonEG Run C+D", "MuonEG Run E", "MuonEG Run F"], colors,
                                    normalized = True, drawRatio = True, outname = basepath+"RunComp_{0}".format(plot))
-"""
+
 WPdict = { "PFCSV" : [0.405, 0.840, 0.975],
            "CaloCSV" : [0.435, 0.840, 0.97],
            "PFDeepCSV" : [0.2, 0.67, 0.955],

@@ -1,5 +1,24 @@
 #include <algorithm>
 #include <map>
+#include "TLorentzVector.h"
+
+
+int leptonoverlap(float jetpt, float jeteta, float jetphi, float lpt, float leta, float lphi){
+  int ret = 0;
+
+  TLorentzVector jetvec;
+  TLorentzVector lvec;
+
+  jetvec.SetPtEtaPhiE(jetpt,jeteta,jetphi,jetpt);
+  lvec.SetPtEtaPhiE(lpt,leta,lphi,0);
+
+  if (jetvec.DeltaR(lvec) < 0.4){
+    ret = 1;
+  }
+  
+  return ret;
+}
+
 
 float get_puWeight(float x){
   std::map<int, float> weights;
@@ -85,3 +104,5 @@ float get_puWeight(float x){
   }
   return 0.0;
 }
+
+

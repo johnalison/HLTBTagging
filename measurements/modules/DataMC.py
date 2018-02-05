@@ -168,7 +168,7 @@ def StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, d
     if normalized:
         MCscale = hData.Integral()/StackSum.Integral()
         StackSum.Scale(MCscale)
-        NormLabel = getLabel("MC normalized to Data", 0.6)
+        NormLabel = modules.utils.getLabel("MC normalized to Data", 0.6)
         if label is None:
             label = [NormLabel]
         if label is isinstance(label,ROOT.TLatex):

@@ -29,7 +29,7 @@ class Sample:
         
     def getSampleWeight(self):
         weight = (self.xsec * self.lumi)/self.nGen
-        logging.debug("Calculated mcweight for {0} to be {1}".format(self.name, weight))
+        logging.subdebug("Calculated mcweight for {0} to be {1}".format(self.name, weight))
         return weight 
 
 
