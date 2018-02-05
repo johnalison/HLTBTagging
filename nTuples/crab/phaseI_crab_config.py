@@ -1,35 +1,48 @@
+
 #Define the datasets the following:
 #list with
 #     0th element: name
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
 Data = [
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
-     ("/MuonEG/Run2017C-PromptReco-v2/AOD","/MuonEG/Run2017C-v1/RAW"),
-     "RunC",
+    ["HLT_Ntuple_BTagging_DiLepton_v7",
+#    ("/MuonEG/Run2017C-PromptReco-v2/AOD","/MuonEG/Run2017C-v1/RAW"),
+     ("/MuonEG/Run2017C-PromptReco-v2/MINIAOD","/MuonEG/Run2017C-v1/RAW"),
+     "_RunC",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
-     ("/MuonEG/Run2017D-PromptReco-v1/AOD","/MuonEG/Run2017D-v1/RAW"),
+    ["HLT_Ntuple_BTagging_DiLepton_v7",
+     #("/MuonEG/Run2017D-PromptReco-v1/AOD","/MuonEG/Run2017D-v1/RAW"),
+     ("/MuonEG/Run2017D-PromptReco-v1/MINIAOD","/MuonEG/Run2017D-v1/RAW"),
      "_RunD",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
-     ("/MuonEG/Run2017E-PromptReco-v1/AOD","/MuonEG/Run2017E-v1/RAW"),
+    ["HLT_Ntuple_BTagging_DiLepton_v7",
+#    ("/MuonEG/Run2017E-PromptReco-v1/AOD","/MuonEG/Run2017E-v1/RAW"),
+     ("/MuonEG/Run2017E-PromptReco-v1/MINIAOD","/MuonEG/Run2017E-v1/RAW"),
      "_RunE",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v5",
-     ("/MuonEG/Run2017F-PromptReco-v1/AOD","/MuonEG/Run2017F-v1/RAW"),
+    ["HLT_Ntuple_BTagging_DiLepton_v7",
+     #("/MuonEG/Run2017F-PromptReco-v1/AOD","/MuonEG/Run2017F-v1/RAW"),
+     ("/MuonEG/Run2017F-PromptReco-v1/MINIAOD","/MuonEG/Run2017F-v1/RAW"),
      "_RunF",
      True]
 ]
-MC = [["HLT_Ntuple_BTagging_DiLepton_v5",
-       ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+MC = [["HLT_Ntuple_BTagging_DiLepton_v7",
+       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+       ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17MiniAOD-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/MINIAODSIM",
         "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
        "",
        False]]
 
+MC2 = [["HLT_Ntuple_BTagging_DiLepton_v7",
+       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+       ("/ttHTobb_M125_TuneCUETP8M2_13TeV-powheg-pythia8/RunIISummer17MiniAOD-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v1/MINIAODSIM",
+        "/ttHTobb_M125_TuneCUETP8M2_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v1/GEN-SIM-RAW"),
+       "",
+       False]]
 
-datasets = Data
-prefix = "_phase1"
+
+datasets = MC+Data
+prefix = "_resub_v1_phase1"
 
 
 if __name__ == '__main__':
@@ -43,8 +56,11 @@ if __name__ == '__main__':
         config.General.workArea = 'crab_' + name + prefix 
         config.General.transferLogs=True
 #       config.General.requestName = name+"_"+dataset.replace('/',"_")
-        config.General.requestName = name + prefix + "_" + dataset[1][0].split('/')[1] + dataset[2]
+        config.General.requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0] + dataset[2]
 
+        print "Requestname: ", name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0] + dataset[2]
+        raw_input("press ret")
+        
         config.section_("JobType")
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
@@ -67,12 +83,13 @@ if __name__ == '__main__':
         config.section_("Data")
         config.Data.inputDBS = 'global'
         config.Data.splitting = 'FileBased'
-        config.Data.unitsPerJob = 4 ##FIXME: use 20
+        config.Data.unitsPerJob = 1 ##FIXME: use 20
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
         config.Data.outLFNDirBase = '/store/user/koschwei/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
+            print "Using JSON"
             #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PromptReco/Cert_294927-304120_13TeV_PromptReco_Collisions17_JSON.txt'
             config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
         config.Data.inputDataset = dataset[1][0]
