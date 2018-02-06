@@ -41,8 +41,8 @@ MC2 = [["HLT_Ntuple_BTagging_DiLepton_v7",
        False]]
 
 
-datasets = MC+Data
-prefix = "_resub_v1_phase1"
+datasets = MC
+prefix = "_resub_v2_phase1"
 
 
 if __name__ == '__main__':
@@ -65,6 +65,7 @@ if __name__ == '__main__':
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
         config.JobType.maxMemoryMB = 10000
+        config.JobType.maxJobRuntimeMin = 1615
         config.JobType.pluginName = 'Analysis'
         config.JobType.psetName = 'crab_fake_pset.py'
         config.JobType.scriptExe = 'crab_script_phaseI.sh'
@@ -82,8 +83,13 @@ if __name__ == '__main__':
         
         config.section_("Data")
         config.Data.inputDBS = 'global'
-        config.Data.splitting = 'FileBased'
-        config.Data.unitsPerJob = 1 ##FIXME: use 20
+        #Data
+        #config.Data.splitting = 'FileBased'
+        #config.Data.unitsPerJob = 1 ##FIXME: use 20
+        #MC
+        config.Data.splitting = 'LumiBased'
+        config.Data.unitsPerJob = 20 ##FIXME: use 20
+        
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
         config.Data.outLFNDirBase = '/store/user/koschwei/' + name + prefix
@@ -102,6 +108,7 @@ if __name__ == '__main__':
         #For Run C
         #config.Site.ignoreGlobalBlacklist = True
         #config.Site.whitelist = ["T1_*","T2_RU_ITEP"]
+
         
         config.section_("Site")
 #       config.Site.storageSite = "T2_CH_CSCS"
