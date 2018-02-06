@@ -1,7 +1,7 @@
 import ROOT
 from array import array
 
-import os
+import os, time
 
 
 def printDict(input_, nElem = 8, EIOs = ["csv","pt","deepcsv"]):
@@ -30,10 +30,12 @@ def printDict(input_, nElem = 8, EIOs = ["csv","pt","deepcsv"]):
 def addCleanJetsSorting(inputfile, debug = False, skipevents = 0):
     branchPrefixIn = "offCleanJets"
     lenVar = "offCleanJets_num"
+    t0 = time.time()
 
     print "Executing: cp {0}.root {0}_mod.root"
     os.system("cp {0}.root {0}_mod.root".format(inputfile))
-
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
     rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
 
     tree = rfile.Get("tree")
@@ -51,7 +53,11 @@ def addCleanJetsSorting(inputfile, debug = False, skipevents = 0):
             if branch.GetName().startswith(branchPrefixIn+"_num"):
                 brancharrays[branch.GetName()] = array("i",[0])
             else:
-                brancharrays[branch.GetName()] = array("f",20*[-99])
+                if not "match" in branch.GetName() and not "mcFlavour" in branch.GetName():
+                    typearray = "f"
+                else:
+                    typearray = "i"
+                brancharrays[branch.GetName()] = array(typearray,20*[-99])
             tree.SetBranchAddress( branch.GetName() , brancharrays[branch.GetName()] )    
 
             newbranchNameCSV = branch.GetName().replace("Clean","CleanCSV")
@@ -70,11 +76,20 @@ def addCleanJetsSorting(inputfile, debug = False, skipevents = 0):
                 newBrnaches.append(tree.Branch(newbranchNameCSV, CSVbrancharrays[newbranchNameCSV], newbranchNameCSV+"/I"))
                 newBrnaches.append(tree.Branch(newbranchNameDeepCSV, DeepCSVbrancharrays[newbranchNameDeepCSV], newbranchNameDeepCSV+"/I"))
             else:
-                CSVbrancharrays[newbranchNameCSV] = array("f",20*[-99])
-                DeepCSVbrancharrays[newbranchNameDeepCSV] = array("f",20*[-99])
+                if not "match" in newbranchNameCSV and not "mcFlavour" in newbranchNameCSV:
+                    typearray = "f"
+                    typebranch = "F"
+                else:
+                    #print newbranchNameCSV
+                    typearray = "i"
+                    typebranch = "I"
 
-                newBrnaches.append(tree.Branch(newbranchNameCSV, CSVbrancharrays[newbranchNameCSV], newbranchNameCSV+"/F"))
-                newBrnaches.append(tree.Branch(newbranchNameDeepCSV, DeepCSVbrancharrays[newbranchNameDeepCSV], newbranchNameDeepCSV+"/F"))
+                CSVbrancharrays[newbranchNameCSV] = array(typearray,20*[-99])
+                DeepCSVbrancharrays[newbranchNameDeepCSV] = array(typearray,20*[-99])
+
+                newBrnaches.append(tree.Branch(newbranchNameCSV, CSVbrancharrays[newbranchNameCSV], newbranchNameCSV+"/"+typebranch))
+                newBrnaches.append(tree.Branch(newbranchNameDeepCSV, DeepCSVbrancharrays[newbranchNameDeepCSV], newbranchNameDeepCSV+"/"+typebranch))
+
 
     if debug:
         print DeepCSVbrancharrays
@@ -83,8 +98,9 @@ def addCleanJetsSorting(inputfile, debug = False, skipevents = 0):
 
     for iev in range(skipevents, nEvents):
         tree.GetEvent(iev)
-        if iev%1000 == 0:
-            print "Event ", iev
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
 
         #CSV
         nJets = brancharrays[branchPrefixIn+"_num"][0]
@@ -134,6 +150,7 @@ def addCleanJetsSorting(inputfile, debug = False, skipevents = 0):
     tree.Write("",ROOT.TFile.kOverwrite)
     if debug:
         print brancharrays
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
 
 
 
