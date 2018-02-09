@@ -22,14 +22,13 @@ git cherry-pick 52c976ea1c1a5309dffd6e11e9aaf570499d0ef9 #Get code for using hep
 
 git clone -b DeepNtuples git@github.com:kschweiger/HLTBTagging.git 
 
-git clone https://github.com/CMSDeepFlavour/DeepNTuples
-#Add JetToolBox
+git clone https://github.com/emilbols/DeepNTuples
 cd DeepNTuples
 git submodule init
 git submodule update
 cd $CMSSW_BASE/src 
 #DeepCSV is already in the release, but with different names, which will become the defaults in the close future
-sed -i 's|deepFlavourJetTags|pfDeepCSVJetTags|g' DeepNTuples/DeepNtuplizer/production/DeepNtuplizer.py
+#sed -i 's|deepFlavourJetTags|pfDeepCSVJetTags|g' DeepNTuples/DeepNtuplizer/production/DeepNtuplizer.py
 #Fix some compilation error with inclusion of std::vector
 sed -i 's|#include <cmath>|#include <cmath>\n#include <vector>|g' DeepNTuples/DeepNtuplizer/interface/sorting_modules.h
 

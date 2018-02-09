@@ -6,9 +6,7 @@ The following steps are necessary to produce the ntuples.
 ### HLT config
 Creating of config dump for running the RAW+AOD files with HLT. The HLT tables and `--setup` depend on the usecase.
 For Data:
-```bash
-edmConfigDump hltData.py > hlt_dump.py
-```
+
 For MC:
 ```bash
 hltGetConfiguration /dev/CMSSW_10_0_0/GRun  \ 
@@ -24,12 +22,12 @@ For Data:
 ```bash
 hltGetConfiguration /dev/CMSSW_10_0_0/GRun  \
 --globaltag 100X_dataRun2_relval_ForTSG_v1 \
---path HLTriggerFirstPath,HLTriggerFinalPath,HLTAnalyzerEndpath \
 --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root \
 --process MYHLT --full --offline \ 
 --data --unprescale --max-events 10 --output none \
 --customise HLTrigger/Configuration/customizeHLTforCMSSW.customiseFor2017DtUnpacking > hltData.py
 
+edmConfigDump hltData.py > hlt_dump.py
 ```
 
 
@@ -51,11 +49,17 @@ process.deepFlav  = cms.Path(process.pfDeepFlavourTask)
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                          dataset = cms.untracked.PSet(),
                                          fileName = cms.untracked.string('./cmsswPreProcessing.root'),
-		                                 outputCommands = cms.untracked.vstring('drop *',
-                                                                                "keep *ShallowTagInfo_*_*_*",
-                                                                                "keep reco*Collection_*_*_*")
-
+                                         outputCommands = cms.untracked.vstring('drop *',
+                                                                                'keep reco*_*_*_*',
+                                                                                "drop *Tau*_*_*_*",
+                                                                                "drop *Muon*_*_*_*",
+                                                                                "drop *Electron*_*_*_*",
+                                                                                "drop *MET*_*_*_*",
+                                                                                "drop *Photons*_*_*_*",
+                                                                                "drop *Cluster*_*_*_*",
+                                                                                "drop *Ecal*_*_*_*")
 )
+
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 ```
 
