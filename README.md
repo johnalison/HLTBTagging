@@ -7,7 +7,7 @@ Setting up CMSSW like described in [GuideGlobalHLT](https://twiki.cern.ch/twiki/
 ```bash
 export SCRAM_ARCH=slc6_amd64_gcc630
 cmsrel CMSSW_10_0_0 
-cd CMSSW_10_0_0/
+cd CMSSW_10_0_0/src
 cmsenv
 git cms-init
 git cms-merge-topic 21908
