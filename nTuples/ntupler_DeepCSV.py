@@ -24,28 +24,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "maxEvents: ",maxEvents
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
-    
-    doTriggerCut = True
-    if doTriggerCut:
-        print "+-----------------------------------------------------------------------------------------+"
-        print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
-        print "| Note: If --setup is used only the path in the actual menu are considered for this.      |" 
-        print "|       Not the ones in the setup.                                                        |"
-        print "+-----------------------------------------------------------------------------------------+"
-        print""
-    runAOD = False
-    if runAOD:
-        print "                             +----------------------------+"
-        print "                             | IMPORTANT: Will run on AOD |"
-        print "                             +----------------------------+"
-        print""
-    else:
-        print "                           +--------------------------------+"
-        print "                           | IMPORTANT: Will run on miniAOD |"
-        print "                           +--------------------------------+"
-        print""
-
-
         
     dataflags = ["MuonEG"] #NOTE: Add more flags if different data datasets are considered
         
@@ -93,11 +71,12 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             raise Exception("CMSSW preprocessor failed!")
 
     print "Time to preprocess: {0:10f} s".format(time.time()-t0)
-    t1 = time.time()
     import os
     import imp
     dir_ = os.getcwd()
     print dir_
+    print "Filesize of {0:8f} MB".format(os.path.getsize(dir_+"/cmsswPreProcessing.root") * 1e-6)
+    t1 = time.time()
     deepCofig = "ConfFile_cfg.py"
     #cfgDeep = MCComponent("OutputDeepCSV",["file:"+dir_+"/cmsswPreProcessing.root"])
     #preprocessorDeep = CmsswPreprocessor(deepCofig)
@@ -114,7 +93,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     f.write(cmsswConfig.process.dumpPython())
     f.close()
 
-    runstring="%s %s >& %s/cmsRun_Deepntuple.log" % ("cmsRun",configfile,dir_)
+    #runstring="%s %s >& %s/cmsRun_Deepntuple.log" % ("cmsRun",configfile,dir_)
+    runstring="{0} {1} >& {2}/cmsRun_Deepntuple.log".format("cmsRun",configfile, dir_)
     print "Running pre-processor: %s " %runstring
     ret=os.system(runstring)
     if ret != 0:
@@ -122,16 +102,19 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         exit(ret)
 
     print "Time to deepNtuple {0:10f} s".format(time.time()-t1)
+    print "Filesize of {0:8f} MB".format(os.path.getsize(dir_+"/"+fileOutput) * 1e-6)
     print "Total time: {0:10f} s".format(time.time()-t0)
         
 if __name__ == "__main__":
 
     secondaryFiles = [
         "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root",
+        #"root://cms-xrd-global.cern.ch//store/data/Run2017E/MuonEG/RAW/v1/000/303/573/00000/C4D2E109-E69E-E711-B5D4-02163E019E5B.root",
         #"file:/afs/cern.ch/work/k/koschwei/public/RelValTTbar_13_GEN-SIM-DIGI-RAW-HLTDEBUG_LumiStarting1_EE64BF2D-7600-E811-90B8-0CC47A4D767E.root",
     ]
     filesInput = [
         "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root",
+        #"root://cms-xrd-global.cern.ch//store/data/Run2017E/MuonEG/AOD/PromptReco-v1/000/303/573/00000/580460D1-79A0-E711-BCF8-02163E0143E8.root",
         #"file:/afs/cern.ch/work/k/koschwei/public/RelValTTbar_13_GEN-SIM-RECO_LumiStarting1_6A737BCB-9B00-E811-918C-0CC47A4D7638.root",
     ]
     
@@ -149,7 +132,7 @@ if __name__ == "__main__":
     #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17MiniAOD__92X_upgrade2017_MINIAOD_LS-starting2183.root"]
     #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
     fileOutput = "tree_DeepnTuple_phase1.root"
-    maxEvents = 100
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False)
+    maxEvents = 10
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=True)
 
     

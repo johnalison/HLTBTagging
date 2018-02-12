@@ -72,12 +72,13 @@ if __name__ == '__main__':
         os.system("tar czf python.tar.gz --dereference --directory $CMSSW_BASE python")
         os.system("voms-proxy-info -path | xargs -i  cp {}  .")
         config.JobType.inputFiles = [
-            'hlt_dump_phase1.py',
-            'hlt_dump_mc_phase1.py',
-            'fwlite_config_phaseI.py',
-            'script_phaseI.py',
+            'hlt_dump.py',
+            'hlt_dump_mc.py',
+            'fwlite_config.py',
+            'script.py',
             'utils.py',
             'python.tar.gz',
+            'ConfFile_cfg.py',
         ]
         
         config.section_("Data")

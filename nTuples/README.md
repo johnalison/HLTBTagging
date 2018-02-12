@@ -20,10 +20,22 @@ edmConfigDump hltMC.py > hlt_dump_mc.py
 
 For Data:
 ```bash
-hltGetConfiguration /dev/CMSSW_10_0_0/GRun  \
+hltGetConfiguration /users/koschwei/CMSSW_10_0_0/HLT_DeepCSVNoFilter --setup /dev/CMSSW_10_0_0/GRun  \
 --globaltag 100X_dataRun2_relval_ForTSG_v1 \
 --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root \
---process MYHLT --full --offline \ 
+--process MYHLT --full --offline \
+--data --unprescale --max-events 10 --output none \
+--customise HLTrigger/Configuration/customizeHLTforCMSSW.customiseFor2017DtUnpacking > hltData.py
+
+edmConfigDump hltData.py > hlt_dump.py
+```
+
+w/ Phase 1 DeepCSV training (same as offline):
+```bash
+hltGetConfiguration /users/koschwei/HLT_DeepCSVNoFilter_Phase1 --setup /dev/CMSSW_10_0_0/GRun  \
+--globaltag 100X_dataRun2_relval_ForTSG_v1 \
+--input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root \
+--process MYHLT --full --offline \
 --data --unprescale --max-events 10 --output none \
 --customise HLTrigger/Configuration/customizeHLTforCMSSW.customiseFor2017DtUnpacking > hltData.py
 
