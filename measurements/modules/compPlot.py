@@ -334,7 +334,7 @@ def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelec
 
 
 
-def compareHistos(hList, legendList, colorList, normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None):
+def compareHistos(hList, legendList, colorList, normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None, invertRatio = False):
     if label is not None and isinstance(label, list):
         for l in label:
             if not isinstance(l, ROOT.TLatex):
@@ -385,7 +385,7 @@ def compareHistos(hList, legendList, colorList, normalized = False, drawRatio = 
                                            styleconfig.getfloat("HistoStyle","yTitleOffsetscale")*
                                            styleconfig.getfloat("HistoStyle","yRatioTitleOffsetscale")*0.8)
 
-        ratioLine, ratios, div = modules.plotting.getRatioPlot(hList[0], hList[1:])
+        ratioLine, ratios, div = modules.plotting.getRatioPlot(hList[0], hList[1:], invert = invertRatio)
 
     ratioLine.SetLineColor(colorList[0])
     r2Draw = [(ratioLine , "histoe")]

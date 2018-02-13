@@ -326,7 +326,7 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
     return thiscanvas
 
 
-def getRatioPlot(hRef, hList):
+def getRatioPlot(hRef, hList, invert = False):
     """
     Function for generating the histograms used in a ratioplot.
 
@@ -336,7 +336,8 @@ def getRatioPlot(hRef, hList):
         This histogram will be used as reference histo (unity line in the plot)
     hList : list, elements: ROOT.TH1
         This list contains all further histograms for the ratio plot
-    
+    invert : bool
+        With this flag the ratio value will be inverted t 1/ratiovalue
     Returns:
     --------
     hRatioRef : ROOT.TH1F
@@ -396,6 +397,8 @@ def getRatioPlot(hRef, hList):
             currentBinContent = h.GetBinContent(currentBin)
             if currentBinContent > 0:
                 ratioval = (y/currentBinContent)
+                if invert:
+                    ratioval = 1/ratioval
                 ratio.SetPoint(i, x, ratioval)
                 if ratioval > maxdiv and ratioval > 0:
                     maxdiv = round(ratioval, 1)
@@ -403,7 +406,7 @@ def getRatioPlot(hRef, hList):
                     mindiv = round(ratioval, 1)
             else:
                 ratio.SetPoint(i, x, -999)
-            logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}".format(i, currentBin, currentBinContent, y))
+            logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}, ratioval: {4}".format(i, currentBin, currentBinContent, y, ratioval))
             if y > 0:
                 if currentBinContent > 0:
                     ratio.SetPointEYlow(i, ref.GetErrorYlow(i)/currentBinContent)

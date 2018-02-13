@@ -15,7 +15,7 @@ styleconfig = SafeConfigParser()
 styleconfig.read("config/plotting.cfg")
 
 
-loglev = 20
+loglev = 0
 
 setup_logging(loglevel = loglev, logname = "shapeoutput", errname = "shapeerror")
 
@@ -26,7 +26,7 @@ logger.info("Starting flavour composition analysis")
 if loglev > 0:
     ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-basepath = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/measurements/v5nTuples/lepoverlap/FlavourSplitting/"
+basepath = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/measurements/v7nTuples/FlavourSplitting/"
 
 runCDinput = ["RunCD/PFCSV/DeepCSVMPresel_phase1_RunCD_TnP_leading_pf_csv_histos.root",
               "RunCD/CaloCSV/DeepCSVMPresel_phase1_RunCD_TnP_leading_calo_csv_histos.root",
@@ -62,8 +62,9 @@ for iplot, plot in enumerate(["PFCSV", "CaloCSV", "PFDeepCSV", "CaloDeepCSV"]):
                                   styleconfig.getfloat("HistoStyle","yTitleOffsetscale")*
                                   styleconfig.getfloat("HistoStyle","yRatioTitleOffsetscale"))
     
-    modules.compPlot.compareHistos([hCD, hE, hF], ["MuonEG Run C+D", "MuonEG Run E", "MuonEG Run F"], colors,
-                                   normalized = True, drawRatio = True, outname = basepath+"RunComp_{0}".format(plot))
+    modules.compPlot.compareHistos([hCD, hE, hF], ["Data Run C+D", "Data Run E", "Data Run F"], colors,
+                                   normalized = True, drawRatio = True, outname = basepath+"RunComp_{0}".format(plot),
+                                   invertRatio = True)
 
 WPdict = { "PFCSV" : [0.405, 0.840, 0.975],
            "CaloCSV" : [0.435, 0.840, 0.97],
