@@ -41,7 +41,7 @@ MC2 = [["HLT_Ntuple_BTagging_DiLepton_v7",
 
 
 datasets = Data
-prefix = "_phase1_resub"
+prefix = "_phase1_DeepVtxCuts_t2"
 
 if __name__ == '__main__':
     from CRABAPI.RawCommand import crabCommand
@@ -78,15 +78,15 @@ if __name__ == '__main__':
         
         config.section_("Data")
         config.Data.inputDBS = 'global'
-        config.Data.splitting = 'FileBased'
-        config.Data.unitsPerJob = 3 ##FIXME: use 20
+        config.Data.splitting = 'LumiBased'
+        config.Data.unitsPerJob = 4 ##FIXME: use 20
 
-        config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
+        config.Data.totalUnits = 200 #10*config.Data.unitsPerJob #FIXME: use -1
         config.Data.outLFNDirBase = '/store/user/koschwei/' + name
         #config.Data.publication = False
-        #if dataset[3]:
-            #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/PromptReco/Cert_294927-304120_13TeV_PromptReco_Collisions17_JSON.txt'
-        #    config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
+        if dataset[3]:
+            print "Using JSON"
+            config.Data.lumiMask = '/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/DeepNTuple/CMSSW_10_0_0/src/HLTBTagging/nTuples/crab/json_DCSONLY.txt'
         config.Data.inputDataset = dataset[1][0]
         config.Data.secondaryInputDataset = dataset[1][1]
 #       config.Data.publishDataName = config.General.requestName
@@ -99,9 +99,9 @@ if __name__ == '__main__':
         #config.Site.whitelist = ["T1_*","T2_RU_ITEP"]
         
         config.section_("Site")
-#       config.Site.storageSite = "T2_CH_CSCS"
-        config.Site.storageSite = "T3_CH_PSI"
+        config.Site.storageSite = "T2_CH_CSCS"
+       #config.Site.storageSite = "T3_CH_PSI"
         print "submitting ",dataset
-        crabCommand('submit',config = config)
+        crabCommand('submit', config = config,)
         print "DONE ",dataset
     

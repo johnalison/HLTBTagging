@@ -10,8 +10,9 @@ process = cms.Process("FAKE")
 
 
 process.source = cms.Source("PoolSource",
-                            fileNames = cms.untracked.vstring("file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root"),
-                            secondaryFileNames = cms.untracked.vstring('file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root')
+                            fileNames = cms.untracked.vstring("file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root"),
+                            secondaryFileNames = cms.untracked.vstring('file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root'),
+                            lumisToProcess = cms.untracked.VLuminosityBlockRange()
 )
 
 

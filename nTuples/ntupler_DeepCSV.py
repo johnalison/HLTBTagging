@@ -15,7 +15,9 @@ from DataFormats.FWLite import Handle, Events
 from utils import deltaR,SetVariable,DummyClass,productWithCheck,checkTriggerIndex
 
 
-def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0, MC = False):
+def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0, MC = False, LS = None):
+    import imp
+    import os
     t0 = time.time()
     bunchCrossing   = 12
     print "filesInput: ",filesInput
@@ -49,6 +51,15 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             cmsRun_config = "hlt_dump.py"
         else:
             cmsRun_config = "hlt_dump_mc.py"
+        if LS is not None:
+            dir_ = os.getcwd()
+            cmsswConfig = imp.load_source("cmsRunProcess",os.path.expandvars(cmsRun_config))
+            cmsswConfig.process.source.lumisToProcess = LS
+            configfile=dir_+"/mod_"+cmsRun_config
+            f = open(configfile, 'w')
+            f.write(cmsswConfig.process.dumpPython())
+            f.close()
+            cmsRun_config = "mod_"+cmsRun_config
         print "Using: {0}".format(cmsRun_config)
         preprocessor = CmsswPreprocessor(cmsRun_config)
         cfg = MCComponent("OutputHLT",filesInput, secondaryfiles=secondaryFiles)
@@ -71,8 +82,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             raise Exception("CMSSW preprocessor failed!")
 
     print "Time to preprocess: {0:10f} s".format(time.time()-t0)
-    import os
-    import imp
     dir_ = os.getcwd()
     print dir_
     print "Filesize of {0:8f} MB".format(os.path.getsize(dir_+"/cmsswPreProcessing.root") * 1e-6)
@@ -108,12 +117,14 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 if __name__ == "__main__":
 
     secondaryFiles = [
-        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root",
+        #"file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root",
+        "file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root",
         #"root://cms-xrd-global.cern.ch//store/data/Run2017E/MuonEG/RAW/v1/000/303/573/00000/C4D2E109-E69E-E711-B5D4-02163E019E5B.root",
         #"file:/afs/cern.ch/work/k/koschwei/public/RelValTTbar_13_GEN-SIM-DIGI-RAW-HLTDEBUG_LumiStarting1_EE64BF2D-7600-E811-90B8-0CC47A4D767E.root",
     ]
     filesInput = [
-        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root",
+        #"file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root",
+        "file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root",
         #"root://cms-xrd-global.cern.ch//store/data/Run2017E/MuonEG/AOD/PromptReco-v1/000/303/573/00000/580460D1-79A0-E711-BCF8-02163E0143E8.root",
         #"file:/afs/cern.ch/work/k/koschwei/public/RelValTTbar_13_GEN-SIM-RECO_LumiStarting1_6A737BCB-9B00-E811-918C-0CC47A4D7638.root",
     ]
@@ -133,6 +144,6 @@ if __name__ == "__main__":
     #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
     fileOutput = "tree_DeepnTuple_phase1.root"
     maxEvents = 10
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=True)
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=True, LS = None)
 
     
