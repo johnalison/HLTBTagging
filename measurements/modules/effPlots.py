@@ -9,7 +9,7 @@ import modules.utils
 
 
 
-def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False):
+def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1"):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -36,8 +36,8 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat
 
     
     
-    hdenominator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1})".format(PlotBaseObj.selection, Sample.selection))
-    hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}))".format(PlotBaseObj.selection, Sample.selection, numSelection))
+    hdenominator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1} && {2})".format(PlotBaseObj.selection, Sample.selection, addSel))
+    hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}) && {3})".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel))
 
         
     if forceColor is not None:
@@ -109,7 +109,7 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection,  outname = None, outputformat
     return grEff
 
 
-def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False):
+def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1"):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -141,8 +141,8 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
     for i in range(nIter):
         logging.subdebug("Itervar from PlotBase: "+PlotBaseObj.variable)
         iterVar = str(PlotBaseObj.variable).replace("?",str(i))
-        iterSel = str("({0} && {1})".format(PlotBaseObj.selection, Sample.selection)).replace("?",str(i))
-        iterSelnum = str("(({0}) && ({1}) && ({2}))".format(PlotBaseObj.selection, Sample.selection, numSelection)).replace("?",str(i))
+        iterSel = str("({0} && {1} && ({2}))".format(PlotBaseObj.selection, Sample.selection, addSel)).replace("?",str(i))
+        iterSelnum = str("(({0}) && ({1}) && ({2}) && ({3}))".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel)).replace("?",str(i))
         if not hset:
             hdenominator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel)
             hnumerator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum)
@@ -221,7 +221,7 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
 
 
     
-def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputformat = "pdf", label = None, drawHistos = False):
+def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputformat = "pdf", label = None, drawHistos = False, addSel = "1"):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -247,7 +247,7 @@ def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputf
     #TODO Make something to check num of samples against colors
     for isample, sample in enumerate(Samples):
         SampleLabel = modules.utils.getLabel(sample.legend[0], 0.7)
-        graphs.append(makeEffPlot(PlotBaseObj, sample, numSelection, drawEff = False, forceColor = colors[isample], drawHistos = drawHistos, outname = outname+"_"+sample.name, label = [label, SampleLabel]))
+        graphs.append(makeEffPlot(PlotBaseObj, sample, numSelection, drawEff = False, forceColor = colors[isample], drawHistos = drawHistos, outname = outname+"_"+sample.name, label = [label, SampleLabel], addSel = addSel))
         forlegend.append((graphs[isample], sample.legend[0], "p"))
     
     canvas = modules.plotting.getCanvas()
@@ -287,7 +287,7 @@ def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputf
     if outname is not None:
         modules.utils.savePlot(canvas, outname, outputformat)
 
-def makeEffSummSCompPlot(PlotBaseObj, Samples, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawHistos = False):
+def makeEffSummSCompPlot(PlotBaseObj, Samples, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawHistos = False, addSel = "1"):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -313,7 +313,7 @@ def makeEffSummSCompPlot(PlotBaseObj, Samples, numSelection, nIter, outname = No
     #TODO Make something to check num of samples against colors
     for isample, sample in enumerate(Samples):
         SampleLabel = modules.utils.getLabel(sample.legend[0], 0.7)
-        graphs.append(makeEffSumPlot(PlotBaseObj, sample, numSelection, nIter, drawEff = False, forceColor = colors[isample], drawHistos = drawHistos, outname = outname+"_"+sample.name, label = [label, SampleLabel]))
+        graphs.append(makeEffSumPlot(PlotBaseObj, sample, numSelection, nIter, drawEff = False, forceColor = colors[isample], drawHistos = drawHistos, outname = outname+"_"+sample.name, label = [label, SampleLabel], addSel = addSel))
         forlegend.append((graphs[isample], sample.legend[0], "p"))
 
     canvas = modules.plotting.getCanvas()

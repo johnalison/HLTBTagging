@@ -190,6 +190,8 @@ def getBEfficiencyHack(PlotBaseObj, Samples2Stack, probeSelection, tagSelection,
 def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, addNumeratorSel, numWPs, bindex, convertIterSelection = True, probeIndex = 0, tagIndex = 1, data = None , normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None, savetable = True):
 
     results = {}
+
+    modules.utils.savePlot(None, outname, None, True)
     
     outfile = ROOT.TFile(outname+"_histos.root","RECREATE")
     for WP in numWPs:

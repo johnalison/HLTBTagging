@@ -92,10 +92,24 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     setattr(logging, methodName, logToRoot)
 
     
-def savePlot(canvas, outputname, outputformat):
+def savePlot(canvas, outputname, outputformat, dryrun = False):
+    if dryrun:
+        logging.info("Doing dryrun. Probably to make sure all folders are generated properly")
     #TODO: Make something with multipage pdf support
-    logging.info("Writing file {0}.{1}".format(outputname.replace(".",""), outputformat))
-    canvas.Print("{0}.{1}".format(outputname.replace(".",""), outputformat))
+    for ifolder, folder in enumerate(outputname.split("/")[:-1]): #remove last element since it is the filename
+        if ifolder == 0:
+            foldername = folder
+            lastfolder = folder
+        else:
+            foldername = "{0}/{1}".format(lastfolder, folder)
+            lastfolder = "{0}/{1}".format(lastfolder,folder)
+        if not os.path.exists(foldername):
+            logging.warning("Creating folder: {0}".format(foldername))
+            os.makedirs(foldername)
+
+    if not dryrun:
+        logging.info("Writing file {0}.{1}".format(outputname.replace(".",""), outputformat))
+        canvas.Print("{0}.{1}".format(outputname.replace(".",""), outputformat))
 
 
 
@@ -185,7 +199,7 @@ def getLabel(text, xstart, pos = "top", scale = 1):
     return label
 
 
-def getAxisTitle(variable, number, order = "pt"):
+def getAxisTitle(variable, number, order = "pt", inclusive = False):
     numberDictPt = {0 : "leading",
                     1 : "second",
                     2 : "third",
@@ -194,12 +208,12 @@ def getAxisTitle(variable, number, order = "pt"):
                     5 : "sixth",
                     6 : "seventh"}
     numberDictCSV = {0 : "",
-                     1 : "second",
-                     2 : "third",
-                     3 : "fourth",
-                     4 : "fifth",
-                     5 : "sixth",
-                     6 : "seventh"}
+                     1 : "second ",
+                     2 : "third ",
+                     3 : "fourth ",
+                     4 : "fifth ",
+                     5 : "sixth ",
+                     6 : "seventh "}
 
     nicevars = {"pt" : "p_{T}",
                 "csv" : "CSV Value",
@@ -215,17 +229,26 @@ def getAxisTitle(variable, number, order = "pt"):
         logging.waring("Variables not in dict with nice number Just using the number")
         nicenumber = number
     else:
-        if numberDictPt:
+        if order == "pt":
             nicenumber = numberDictPt[number]
         else:
             nicenumber = numberDictCSV[number]
-            
+
     if order == "pt":
-        return "{0} of {1} jet".format(nicename, nicenumber)
+        if inclusive:
+            return "{0} of all jets".format(nicename)
+        else:
+            return "{0} of {1} jet".format(nicename, nicenumber)
     elif order == "csv":
-        return "{0} of jet with {1} highest CSV".format(nicename, nicenumber)
+        if inclusive:
+            return "{0} of all jets ordered by CSV".format(nicename)
+        else:
+            return "{0} of jet with {1}highest CSV".format(nicename, nicenumber)
     elif order == "deepcsv":
-        return "{0} of jet with {1} highest DeepCSV".format(nicename, nicenumber)
+        if inclusive:
+            return "{0} of all jets ordered by DeepCSV".format(nicename)
+        else:
+            return "{0} of jet with {1}highest DeepCSV".format(nicename, nicenumber)
     else:
         logging.error("Order not defined. Returning empty sting")
         return ""

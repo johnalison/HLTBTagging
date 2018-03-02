@@ -51,7 +51,7 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/MuonEG_RunCD_phase1.root"
         puweight = "get_puWeight(pu)"
         globalPrefix = "DeepCSVMPresel_phase1_RunCD"
-        basepath = "v7nTuples/FlavourSplitting/RunCD/" 
+        basepath = "v7nTuples_v2/FlavourSplitting/RunCD/" 
     
     #Run F
     if run == "F":
@@ -59,7 +59,7 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/RunF/phase1/MuonEG_RunF_phase1_avail.root"
         puweight = "wPURunF"
         globalPrefix = "DeepCSVMPresel_phase1_RunF"
-        basepath = "v7nTuples/FlavourSplitting/RunF/" 
+        basepath = "v7nTuples_v2/FlavourSplitting/RunF/" 
     
     #Run E
     if run == "E":
@@ -67,7 +67,7 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/RunE/phase1/MuonEG_RunE_phase1_part.root"
         puweight = "wPURunE"
         globalPrefix = "DeepCSVMPresel_phase1_RunE"
-        basepath = "v7nTuples/FlavourSplitting/RunE/" 
+        basepath = "v7nTuples_v2/FlavourSplitting/RunE/" 
     
     MCSelection = "1"
     DataSelection = "1"
@@ -196,8 +196,8 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
             logging.info("Processing DeepCSV plots")
             WPlabel = getLabel("Tag DeepCSV WP: {0}".format(TagWPDeepCSV),  styleconfig.getfloat("CMSLabel","xStart"), pos = "topSup", scale = 0.8)
             OffDeepCSVnthJet = modules.classes.PlotBase("offCleanJets_deepcsv[?]", "1", "1", [20,0,1], "Probe offline jet DeepCSV value")
-            PFDeepCSVnthJet = modules.classes.PlotBase("pfJets_deepcsv[offCleanJets_matchPF[?]]", "1", "1", [20,0,1], "PF jet matched to probe DeepCSV value")
-            CaloDeepCSVnthJet = modules.classes.PlotBase("caloJets_deepcsv[offCleanJets_matchCalo[?]]", "1", "1", [20,0,1], "Calo jet matched to probe DeepCSV value")
+            PFDeepCSVnthJet = modules.classes.PlotBase("pfJets_deepcsv[offCleanJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanJets_matchPF[?]]", "1", "1", [20,0,1], "PF jet matched to probe DeepCSV value")
+            CaloDeepCSVnthJet = modules.classes.PlotBase("caloJets_deepcsv[offCleanJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanJets_matchCalo[?]]", "1", "1", [20,0,1], "Calo jet matched to probe DeepCSV value")
 
 
             tagSel = "{0} && {1}".format(offlineSelectionIter, "offCleanJets_deepcsv[?] >= {0}".format(TagWPDeepCSV))
@@ -206,21 +206,21 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
                 logging.info("Calculating PF Efficiency")
                 if not lepoverfix:
                     modules.TagNProbe.getBEfficiency(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
-                                                     "pfJets_deepcsv[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, data = dataSample, normalized = True,
+                                                     "pfJets_deepcsv[offCleanJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, data = dataSample, normalized = True,
                                                      outname = basepath+"PFDeepCSV/"+globalPrefix+"_TnP_leading_pf_deepcsv", label = [WPlabel])
                 else:
                     modules.TagNProbe.getBEfficiencyHack(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
-                                                         "pfJets_deepcsv[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, lepveto, probeIndices = [0,1,2],
+                                                         "pfJets_deepcsv[offCleanJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, lepveto, probeIndices = [0,1,2],
                                                          tagIndices = [[1,2,3],[2,3],[3]], data = dataSample, normalized = True,
                                                          outname = basepath+"PFDeepCSV/"+globalPrefix+"_TnP_leading_pf_deepcsv", label = [WPlabel])
                 logging.info("Calculating Calo Efficiency")
                 if not lepoverfix:
                     modules.TagNProbe.getBEfficiency(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
-                                                     "caloJets_deepcsv[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, data = dataSample, normalized = True,
+                                                     "caloJets_deepcsv[offCleanJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, data = dataSample, normalized = True,
                                                      outname = basepath+"CaloDeepCSV/"+globalPrefix+"_TnP_leading_calo_deepcsv", label = [WPlabel])
                 else:
                     modules.TagNProbe.getBEfficiencyHack(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
-                                                         "caloJets_deepcsv[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, lepveto, probeIndices = [0,1,2],
+                                                         "caloJets_deepcsv[offCleanJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, lepveto, probeIndices = [0,1,2],
                                                          tagIndices = [[1,2,3],[2,3],[3]] , data = dataSample, normalized = True,
                                                          outname = basepath+"CaloDeepCSV/"+globalPrefix+"_TnP_leading_calo_deepcsv", label = [WPlabel])
             else:
@@ -243,7 +243,7 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
 if __name__ == "__main__":
     import argparse
     ##############################################################################################################
-    ##############################################################################################################
+     ##############################################################################################################
     # Argument parser definitions:
     argumentparser = argparse.ArgumentParser(
         description='Description'
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     )
     argumentparser.add_argument(
         "--run",
-        action = "store",
+         action = "store",
         help = "Set Run for measurement. Option CD, E, F",
         type = str,
         default = "CD"
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         "--csv",
         action = "store_true",
         help = "Enable CSV. Call without argument!",
-    )
+     )
     argumentparser.add_argument(
         "--deepcsv",
         action = "store_true",

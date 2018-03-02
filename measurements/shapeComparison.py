@@ -63,19 +63,22 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
 
     if run == "CD":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/MuonEG_RunCD_phase1_mod.root"
-        basepath = "v7nTuples/shapeComp/RunCD/"
+        basepath = "v7nTuples_v2/shapeComp/"
         puweight = "get_puWeight(pu)"
         globalPrefix = "DeepCSVMPresel_phase1_RunCD_"
+        subfolder = "RunCD"
     if run == "E":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/RunE/phase1/MuonEG_RunE_phase1_part_mod.root"
-        basepath = "v7nTuples/shapeComp/RunE/"
+        basepath = "v7nTuples_v2/shapeComp/"
         puweight = "wPURunE"
         globalPrefix = "DeepCSVMPresel_phase1_RunE_"
+        subfolder = "RunE"
     if run == "F":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v7/MuonEG/RunF/phase1/MuonEG_RunF_phase1_avail_mod.root"
-        basepath = "v7nTuples/shapeComp/RunF/"
+        basepath = "v7nTuples_v2/shapeComp/"
         puweight = "wPURunF"
         globalPrefix = "DeepCSVMPresel_phase1_RunF_"
+        subfolder = "RunF"
     
     
     MCSelection = "1"
@@ -254,6 +257,9 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                 commonJetSelection = "abs(offCleanCSVJets_eta[?]) < 2.4 && offCleanCSVJets_pt[?] > 30 && offCleanCSVJets_passesTightLeptVetoID[?] > 0 && offCleanCSVJets_matchPF[?] >= 0"
                 commonCaloJetSelection = "abs(offCleanCSVJets_eta[?]) < 2.4 && offCleanCSVJets_pt[?] > 30 && offCleanCSVJets_passesTightLeptVetoID[?] > 0 && offCleanCSVJets_matchCalo[?] >= 0"
                 for sample, postfix, nicename in samples:
+                    if postfix == "MC":
+                        _subfolder = subfolder
+                        subfolder = postfix
                     logging.info("Processing sample: "+sample.name)
                     DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                     #Define plots
@@ -263,21 +269,25 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                     CSV2DQ3 = modules.classes.PlotBase2D("offCleanCSVJets_csv", "pfJets_csv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline CSV", "matched PF CSV")
                     #Make Plots
                     #Full range
-                    modules.compPlot.make2DSummedPlot(CSV2DFullLog, sample, "offCleanCSVJets_csv[?]",  "pfJets_csv[offCleanCSVJets_matchPF[?]]",10, outname = "{2}{0}_CSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(CSV2DFullLog, sample, "offCleanCSVJets_csv[?]",  "pfJets_csv[offCleanCSVJets_matchPF[?]]",10, outname = "{2}{3}/{0}_CSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonJetSelection, drawindividualhistos =  False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "CSV Value")
-                    modules.compPlot.make2DSummedPlot(CSV2DFullLogCalo, sample, "offCleanCSVJets_csv[?]",  "caloJets_csv[offCleanCSVJets_matchCalo[?]]",10, outname = "{2}{0}_CSV_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(CSV2DFullLogCalo, sample, "offCleanCSVJets_csv[?]",  "caloJets_csv[offCleanCSVJets_matchCalo[?]]",10, outname = "{2}{3}/{0}_CSV_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "CSV Value")
                     # Partial range
-                    modules.compPlot.make2DSummedPlot(CSV2DQ1, sample, "offCleanCSVJets_csv[?]", "pfJets_csv[offCleanCSVJets_matchPF[?]]", 5, outname = "{2}{0}_CSV_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(CSV2DQ1, sample, "offCleanCSVJets_csv[?]", "pfJets_csv[offCleanCSVJets_matchPF[?]]", 5, outname = "{2}{3}/{0}_CSV_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = "{0} && {1}".format(commonJetSelection, csvZeroCut), LogZ = True, label = DSlabel)
-                    modules.compPlot.make2DSummedPlot(CSV2DQ3, sample, "offCleanCSVJets_csv[?]", "pfJets_csv[offCleanCSVJets_matchPF[?]]", 10, outname = "{2}{0}_CSV_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(CSV2DQ3, sample, "offCleanCSVJets_csv[?]", "pfJets_csv[offCleanCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_CSV_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = "{0} && {1}".format(commonJetSelection, csvZeroCut), LogZ = True, label = DSlabel)
+                    subfolder = _subfolder
             if doDeepCSV:
                 logging.info("DeepCSV comparisons per Jet")
                 #plotVarSelection = "Sum$(offCleanJets_deepcsv > 0.8958) >= 1"
                 commonJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchPF[?] >= 0"
                 commonCaloJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchCalo[?] >= 0"
                 for sample, postfix, nicename in samples:
+                    if postfix == "MC":
+                        _subfolder = subfolder
+                        subfolder = postfix
                     logging.info("Processing sample: "+sample.name)
                     DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                     #Define plots
@@ -288,22 +298,25 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                     DeepCSV2DQ3 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline DeepCSV", "matched PF DeepCSV")
                     #Make Plots
                     # Full range
-                    modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value")
-                    modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{0}_DeepCSV_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value")
                     # Partial range
-                    modules.compPlot.make2DSummedPlot(DeepCSV2DQ1, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 5, outname = "{2}{0}_DeepCSV_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(DeepCSV2DQ1, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanDeepCSVJets_matchPF[?]]", 5, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
-                    modules.compPlot.make2DSummedPlot(DeepCSV2DQ3, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath),
+                    modules.compPlot.make2DSummedPlot(DeepCSV2DQ3, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
-
+                    subfolder = _subfolder
                 if splitDeepCSV:
                      logging.info("DeepCSV (probb only)  comparisons per Jet")
                      #plotVarSelection = "Sum$(offCleanJets_deepcsv > 0.8958) >= 1"
                      commonJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchPF[?] >= 0"
                      commonCaloJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchCalo[?] >= 0"
                      for sample, postfix, nicename in samples:
+                         if postfix == "MC":
+                             _subfolder = subfolder
+                             subfolder = postfix
                          logging.info("Processing sample: "+sample.name)
                          DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                          #Define plots
@@ -313,21 +326,24 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                          DeepCSV2DQ3 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv_b","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline DeepCSV (probb)", "matched PF DeepCSV")
                          #Make Plots
                          # Full range
-                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_b_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath),
+                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]+ pfJets_deepcsv_bb[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_b_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                            iterSelection = commonJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value (probb)")
-                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{0}_DeepCSV_b_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath),
+                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_b_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                            iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value (probb)")
                          # Partial range
                          #modules.compPlot.make2DSummedPlot(DeepCSV2DQ1, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 5, outname = "{2}{0}_DeepCSV_b_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath),
                          #                                  iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
                          #modules.compPlot.make2DSummedPlot(DeepCSV2DQ3, sample, "offCleanDeepCSVJets_deepcsv_b[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_b_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath),
                          #                                  iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
-
+                         subfolder = _subfolder
                      logging.info("DeepCSV (probbb only)  comparisons per Jet")
                      #plotVarSelection = "Sum$(offCleanJets_deepcsv > 0.8958) >= 1"
                      commonJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchPF[?] >= 0"
                      commonCaloJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchCalo[?] >= 0"
                      for sample, postfix, nicename in samples:
+                         if postfix == "MC":
+                             _subfolder = subfolder
+                             subfolder = postfix
                          logging.info("Processing sample: "+sample.name)
                          DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                          #Define plots
@@ -337,17 +353,16 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                          DeepCSV2DQ3 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv_bb","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline DeepCSV (probbb)", "matched PF DeepCSV")
                          #Make Plots
                          # Full range
-                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_bb_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath),
+                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_bb_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                            iterSelection = commonJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value (probbb)")
-                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{0}_DeepCSV_bb_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath),
+                         modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_bb_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                            iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value (probbb)")
                          # Partial range
                          #modules.compPlot.make2DSummedPlot(DeepCSV2DQ1, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 5, outname = "{2}{0}_DeepCSV_bb_2D_OFFvPF_Q1_{1}".format(globalPrefix, postfix, basepath),
                          #                                  iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
                          #modules.compPlot.make2DSummedPlot(DeepCSV2DQ3, sample, "offCleanDeepCSVJets_deepcsv_bb[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_DeepCSV_bb_2D_OFFvPF_Q3_{1}".format(globalPrefix, postfix, basepath),
                          #                                  iterSelection = "{0}".format(commonJetSelection), LogZ = True, label = DSlabel)
-
-
+                         subfolder = _subfolder
 
         ##########################################################################################################################################################################
         ########################################################################## Cross tagger comparisons ######################################################################
@@ -364,6 +379,9 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
             commonCaloDeepJetSelection = "abs(offCleanDeepCSVJets_eta[?]) < 2.4 && offCleanDeepCSVJets_pt[?] > 30 && offCleanDeepCSVJets_passesTightLeptVetoID[?] > 0 && offCleanDeepCSVJets_matchCalo[?] >= 0"
 
             for sample, postfix, nicename in samples:
+                if postfix == "MC":
+                    _subfolder = subfolder
+                    subfolder = postfix
                 logging.info("Processing sample: "+sample.name)
                 DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                 #Define Plots
@@ -377,25 +395,25 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                 CaloCSVvDeepCSV2DLog = modules.classes.PlotBase2D("caloJets_csv", "caloJets_deepCSV", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [40,0,1], [40,0,1], "Calo CSV", "Calo DeepCSV")
 
                 #Make plots
-                modules.compPlot.make2DSummedPlot(OffDeepCSVvPFCSV2DLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_csv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{0}_CrossTag_OffDeepCSVvPFCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(OffDeepCSVvPFCSV2DLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_csv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_CrossTag_OffDeepCSVvPFCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = commonPFDeepJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
-                modules.compPlot.make2DSummedPlot(OffDeepCSVvCaloCSV2DLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "caloJets_csv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{0}_CrossTag_OffDeepCSVvCaloCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(OffDeepCSVvCaloCSV2DLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "caloJets_csv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_CrossTag_OffDeepCSVvCaloCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = commonCaloDeepJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
-                modules.compPlot.make2DSummedPlot(OffCSVvPFDeepCSV2DLog, sample, "offCleanCSVJets_csv[?]", "pfJets_deepcsv[offCleanCSVJets_matchPF[?]]", 10, outname = "{2}{0}_CrossTag_OffCSVvPFDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(OffCSVvPFDeepCSV2DLog, sample, "offCleanCSVJets_csv[?]", "pfJets_deepcsv[offCleanCSVJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_CrossTag_OffCSVvPFDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = commonPFJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
-                modules.compPlot.make2DSummedPlot(OffCSVvCaloDeepCSV2DLog, sample, "offCleanCSVJets_csv[?]", "caloJets_deepcsv[offCleanCSVJets_matchCalo[?]]", 10, outname = "{2}{0}_CrossTag_OffCSVvCaloDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(OffCSVvCaloDeepCSV2DLog, sample, "offCleanCSVJets_csv[?]", "caloJets_deepcsv[offCleanCSVJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_CrossTag_OffCSVvCaloDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
                 
 
                 modules.compPlot.make2DSummedPlot(OfflineCSVvDeepCSV2DLog, sample, "offCleanJets_csv[?]", "offCleanJets_deepcsv[?]", 10, outname = "{2}{0}_TagComp_OffJets_CSVvDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath),
                                                   iterSelection = "abs(offCleanJets_eta[?]) < 2.4 && offCleanJets_pt[?] > 30 && offCleanJets_passesTightLeptVetoID[?] > 0", drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
-                modules.compPlot.make2DSummedPlot(PFCSVvDeepCSV2DLog, sample, "pfJets_csv[offCleanJets_matchPF[?]]", "pfJets_deepcsv[offCleanJets_matchPF[?]]", 10, outname = "{2}{0}_TagComp_PFJets_CSVvDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(PFCSVvDeepCSV2DLog, sample, "pfJets_csv[offCleanJets_matchPF[?]]", "pfJets_deepcsv[offCleanJets_matchPF[?]] + pfJets_deepcsv_bb[offCleanJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_TagComp_PFJets_CSVvDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = "abs(offCleanJets_eta[?]) < 2.4 && offCleanJets_pt[?] > 30 && offCleanJets_passesTightLeptVetoID[?] > 0 && offCleanJets_matchPF[?] >= 0", drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
-                modules.compPlot.make2DSummedPlot(CaloCSVvDeepCSV2DLog, sample, "caloJets_csv[offCleanJets_matchCalo[?]]", "caloJets_deepcsv[offCleanJets_matchCalo[?]]", 10, outname = "{2}{0}_TagComp_CaloJets_CSVvDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath),
+                modules.compPlot.make2DSummedPlot(CaloCSVvDeepCSV2DLog, sample, "caloJets_csv[offCleanJets_matchCalo[?]]", "caloJets_deepcsv[offCleanJets_matchCalo[?]] + caloJets_deepcsv_bb[offCleanJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_TagComp_CaloJets_CSVvDeepCSV_2D_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                   iterSelection = "abs(offCleanJets_eta[?]) < 2.4 && offCleanJets_pt[?] > 30 && offCleanJets_passesTightLeptVetoID[?] > 0 && offJets_matchCalo[?] >= 0", drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = False)
 
 
-
+                subfolder = _subfolder
                     
         
     logging.info("Closing shape comparison")

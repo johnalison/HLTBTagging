@@ -404,9 +404,11 @@ def getRatioPlot(hRef, hList, invert = False):
                     maxdiv = round(ratioval, 1)
                 if ratioval < mindiv and ratioval > 0:
                     mindiv = round(ratioval, 1)
+                logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}, ratioval: {4}".format(i, currentBin, currentBinContent, y, ratioval))
             else:
                 ratio.SetPoint(i, x, -999)
-            logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}, ratioval: {4}".format(i, currentBin, currentBinContent, y, ratioval))
+                logging.debug("Ratio: i {0}, Bin {1}, bin value: {2}, y: {3}, ratioval: {4}".format(i, currentBin, currentBinContent, y, -999))
+                
             if y > 0:
                 if currentBinContent > 0:
                     ratio.SetPointEYlow(i, ref.GetErrorYlow(i)/currentBinContent)
