@@ -248,14 +248,14 @@ def fill2DPlot(PlotBase2DObj, Sample, xVar = None, yVar = None, Selection = "1",
     
     return hRet
      
-def fillandSum2D(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection):    
+def fillandSum2D(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection, nStart = 0):    
 
     hRet = None
     sephistos = []
-    
+    3
     Selection = "({0}) && ({1})".format(PlotBase2DObj.selection, Sample.selection)
-    for i in range(nIter):
-        if i == 0:
+    for i in range(nStart, nIter):
+        if i == nStart:
             hRet = fill2DPlot( PlotBase2DObj, Sample, xVarBase.replace("?",str(i)), yVarBase.replace("?",str(i)), "({0}) && ({1})".format(Selection, iterSelection.replace("?",str(i))), "1")
             sephistos.append(deepcopy(hRet.Clone()))
             logging.debug("--->"+xVarBase.replace("?",str(i)))
@@ -267,7 +267,7 @@ def fillandSum2D(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection
 
     return hRet, sephistos
 
-def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection = "1", outname = None, outputformat = "pdf", label = None, drawindividualhistos = False, LogZ = False, drawProjection = False, projectionTitle = None, printCorrelation = True):
+def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection = "1", outname = None, outputformat = "pdf", label = None, drawindividualhistos = False, LogZ = False, drawProjection = False, projectionTitle = None, printCorrelation = True, iterStart = 0):
     styleconfig = SafeConfigParser()
     #logging.debug("Loading style config")
     styleconfig.read("config/plotting.cfg")
@@ -276,7 +276,7 @@ def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelec
         logging.warning("Ignoring additional label")
         label = None
         
-    histo, sepHistos = fillandSum2D(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection)
+    histo, sepHistos = fillandSum2D(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelection, nStart = iterStart)
     
     
     canvas = modules.plotting.getCanvas(colz = True)

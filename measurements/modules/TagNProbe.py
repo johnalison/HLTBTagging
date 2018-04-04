@@ -203,7 +203,13 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
         StackSum_num, StackHistos_num, hData_num = LeadingProbe(PlotBaseObj, Samples2Stack, "{0} && {1}".format(probeSelection, numWP), tagSelection, False, convertIterSelection, probeIndex, tagIndex, data, skipPlots = True)
         outfile.cd()
         ##Normalization to data
-        MCscale_denom = hData_denom.Integral()/StackSum_denom.Integral()
+        try:
+            hData_denom.Integral()/StackSum_denom.Integral()
+        except ZeroDivisionError:
+            MCscale_denom = 0
+            logging.warning("ZeroDivision error. Setting MCscale_denom to 0")
+        else:   
+            MCscale_denom = hData_denom.Integral()/StackSum_denom.Integral()
 
         NormLabel = getLabel("MC normalized to Data", 0.6, scale = 0.8)
         if label is None:

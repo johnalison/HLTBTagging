@@ -81,3 +81,7 @@ def checkTriggerIndex(name,index, names):
             return False
     else:
         return True
+
+def resetArray(array, setval):
+    for i in range(len(array)):
+        array[i] = setval

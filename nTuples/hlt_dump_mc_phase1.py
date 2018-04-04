@@ -4,10 +4,11 @@ process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50000/0E7B7DB0-0EA1-E711-B23E-02163E00C2C1.root'),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
     inputCommands = cms.untracked.vstring('keep *')
 )
 process.HLTConfigVersion = cms.PSet(
-    tableName = cms.string('/users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1/V3')
+    tableName = cms.string('/users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2')
 )
 
 process.HLTIter0GroupedCkfTrajectoryBuilderIT = cms.PSet(
@@ -4965,7 +4966,7 @@ process.hltDeepCombinedSecondaryVertexBJetTagsCalo = cms.EDProducer("DeepFlavour
     meanPadding = cms.bool(True),
     src = cms.InputTag("hltDeepCombinedSecondaryVertexBJetTagsInfosCalo"),
     toAdd = cms.PSet(
-
+        probbb = cms.string('probb')
     )
 )
 
@@ -5134,7 +5135,7 @@ process.hltDeepCombinedSecondaryVertexBJetTagsPF = cms.EDProducer("DeepFlavourJe
     meanPadding = cms.bool(True),
     src = cms.InputTag("hltDeepCombinedSecondaryVertexBJetTagsInfos"),
     toAdd = cms.PSet(
-
+        probbb = cms.string('probb')
     )
 )
 
@@ -5228,14 +5229,14 @@ process.hltDeepSecondaryVertexTagInfosPF = cms.EDProducer("CandSecondaryVertexPr
     usePVError = cms.bool(True),
     vertexCuts = cms.PSet(
         distSig2dMax = cms.double(99999.9),
-        distSig2dMin = cms.double(3.0),
+        distSig2dMin = cms.double(2.0),
         distSig3dMax = cms.double(99999.9),
         distSig3dMin = cms.double(-99999.9),
         distVal2dMax = cms.double(2.5),
         distVal2dMin = cms.double(0.01),
         distVal3dMax = cms.double(99999.9),
         distVal3dMin = cms.double(-99999.9),
-        fracPV = cms.double(0.65),
+        fracPV = cms.double(0.79),
         massMax = cms.double(6.5),
         maxDeltaRToJetAxis = cms.double(0.4),
         minimumTrackWeight = cms.double(0.5),
@@ -21278,7 +21279,7 @@ process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScaler
 
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
 # turn on VID producer, indicate data format  to be
-# DataFormat.AOD or DataFormat.MiniAOD, as appropriate
+# DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
 dataFormat = DataFormat.MiniAOD
 
 switchOnVIDElectronIdProducer(process, dataFormat)
@@ -21326,3 +21327,9 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'keep *_generator_*_*')
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
+
+
+
+
+
+

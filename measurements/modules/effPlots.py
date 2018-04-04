@@ -88,7 +88,7 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat 
         canvas.cd()
         
         grEff.Draw("AP")
-        grEff.GetHistogram().SetMaximum(styleconfig.getfloat("Efficiency", "yMax"))
+        grEff.Histogram().SetMaximum(styleconfig.getfloat("Efficiency", "yMax"))
         grEff.GetHistogram().SetMinimum(0.0)
         grEff.GetXaxis().SetRangeUser(binning[1], binning[2])
         grEff.Draw("AP")
@@ -144,11 +144,15 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
         iterSel = str("({0} && {1} && ({2}))".format(PlotBaseObj.selection, Sample.selection, addSel)).replace("?",str(i))
         iterSelnum = str("(({0}) && ({1}) && ({2}) && ({3}))".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel)).replace("?",str(i))
         if not hset:
+            logging.debug("Setting denominator (initial)")
             hdenominator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel)
+            logging.debug("Setting numerator (initial)")
             hnumerator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum)
             hset = True
         else:
+            logging.debug("Setting denominator")
             hdenominator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel))
+            logging.debug("Setting numerator")
             hnumerator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum))
 
 
@@ -352,3 +356,88 @@ def makeEffSummSCompPlot(PlotBaseObj, Samples, numSelection, nIter, outname = No
     
     if outname is not None:
         modules.utils.savePlot(canvas, outname, outputformat)
+
+ 
+
+    
+        
+def makeSumWPComp(PlotBaseObj, Sample, numSelectionVarIter, nIter, WPs, outname = None, outputformat = "pdf", label = None, drawHistos = False, addSel = "1", saveGraph = False):
+    styleconfig = SafeConfigParser()
+    styleconfig.read("config/plotting.cfg")
+
+    binning = PlotBaseObj.binning
+    if label is not None and isinstance(label, list):
+        for l in label:
+            if not isinstance(l, ROOT.TLatex):
+                logging.error("All labels are required to be of type ROOT.TLatex")
+                label.remove(l)
+    elif label is not None and not isinstance(label,ROOT.TLatex):
+        logging.warning("The label param should be of type ROOT.TLatex")
+        logging.warning("Ignoring additional label")
+        label = None
+    elif (label is not None and isinstance(label, ROOT.TLatex)) or label is None:
+        pass
+    else:
+        logging.error("Something is happening here... :(")
+
+    graphs = []
+    forlegend = []
+
+    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen-2, ROOT.kOrange, ROOT.kPink, ROOT.kTeal]
+
+    if len(colors) < len(WPs):
+        logging.warning("less colors defined than WP. Will repeat colors for additional WPs")
+        while not len(colors) >= len(WPs):
+            colors += colors
+    
+    for iWP, WP in enumerate(WPs):
+        logging.subinfo("Making plot for WP: {0}".format(WP))
+        
+        numSelection = "{0} >= {1}".format(numSelectionVarIter, WP)
+        logging.debug("Passing numSelection {0} to makeEffSumPlot()".format(numSelection))
+        graphs.append(makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, addSel = addSel, forceColor = colors[iWP], drawHistos = True, drawEff = False, outname = outname+"_"+str(WP)))
+        forlegend.append((graphs[iWP], "WP: {0}".format(WP), "p"))
+
+    
+    canvas = modules.plotting.getCanvas()
+    canvas.cd()
+    
+    logging.debug("Drawing graph 0")
+    graphs[0].Draw("AP")
+    graphs[0].GetHistogram().SetMaximum(styleconfig.getfloat("Efficiency", "yMax"))
+    graphs[0].GetHistogram().SetMinimum(0.0)
+    graphs[0].GetXaxis().SetRangeUser(binning[1], binning[2])
+    graphs[0].Draw("AP")
+
+    for i in range(1, len(graphs)):
+        logging.debug("Drawing graph {0}".format(i))
+        graphs[i].Draw("PSame")
+     
+    if label is not None:
+        if isinstance(label, list):
+            for l in label:
+                l.Draw("same")
+        else:
+            label.Draw("same")
+    CMSL1, CMSL2 = modules.utils.getCMStext()
+    CMSL1.Draw("same")
+    CMSL2.Draw("same")
+
+    logging.debug("Making Legend")
+    xstart = PlotBaseObj.LegendPosition[0]
+    ystart = PlotBaseObj.LegendPosition[1]
+    xend = PlotBaseObj.LegendPosition[2]
+    yend = PlotBaseObj.LegendPosition[3]
+    
+    leg = modules.utils.getLegend(forlegend, xstart, ystart, xend, yend, usingPlotBase = False)
+    leg.Draw("")
+        
+    
+    if outname is not None:
+        modules.utils.savePlot(canvas, outname, outputformat)
+            
+    if saveGraph:
+        rout = ROOT.TFile(outname+".root","RECREATE")
+        rout.cd()
+        graphs[0].Write()
+        rout.Close()
