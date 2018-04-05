@@ -78,12 +78,12 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars =
         for ibjet in range(len(btags_source.productWithCheck())):
             jetB = btags_source.productWithCheck().key(ibjet).get()
             dR = deltaR(jetB.eta(),jetB.phi(),jets.eta[i],jets.phi[i])
+            del jetB
             if dR<dRmax:
                 jet_btags[i] = max(-1.0,btags_source.productWithCheck().value(ibjet))
                 tagpairs[i] = (i, jet_btags[i])
                 dRmax = dR
                 matchcollJet = ibjet
-            del jetB
         if debug:
             if dRmax < dRmax:
                 print "Matched: btag coll jet {0} to online jet {1} with dR {2}".format(ibjet, i, dRmax)
@@ -275,7 +275,7 @@ def LeptonOverlap(jets, muons, electrons, fillVariable, DeltaR = 0.4):
         #print "Jet", j, "-",overlap
         fillVariable[j] = int(overlap)
             
-def FillMuonVector(source, variables, vertex, muonid = "tight"):
+def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
     if vertex is None:
         return False
     variables.num[0] = 0
@@ -283,16 +283,18 @@ def FillMuonVector(source, variables, vertex, muonid = "tight"):
         passesID = False
         #Sometimes (in MC) there is no track saved/accessable for the muon. This prevents to code from crashing
         if obj.globalTrack().isNull():
-            print "Track is NULL"
+            if debug:
+                print "Track is NULL"
+            passesID = False
         else:
             if muonid == "tight":
                 if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
-                     obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
-                     obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
-                     abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
-                     abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
-                     obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
-                     obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
+                       obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
+                       obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
+                       abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
+                       abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
+                       obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
+                       obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
                     passesID = True
             if muonid == "loose":
                 if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
@@ -304,6 +306,7 @@ def FillMuonVector(source, variables, vertex, muonid = "tight"):
                 elif name == "eta" :        var[variables.num[0]] = obj.eta()
                 elif name == "phi" :        var[variables.num[0]] = obj.phi()
                 elif name == "mass" :       var[variables.num[0]] = obj.mass()
+                elif name == "energy" :     var[variables.num[0]] = obj.energy()
                 elif name == "iso" :        var[variables.num[0]] = getMuonIso(obj)
             variables.num[0] += 1
         return True
@@ -427,7 +430,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
     
-    doTriggerCut = False
+    doTriggerCut = True
     if doTriggerCut:
         print "+-----------------------------------------------------------------------------------------+"
         print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
@@ -435,7 +438,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         print "|       Not the ones in the setup.                                                        |"
         print "+-----------------------------------------------------------------------------------------+"
         print""
-    runAOD = True
+    runAOD = False
     if runAOD:
         print "                             +----------------------------+"
         print "                             | IMPORTANT: Will run on AOD |"
@@ -956,10 +959,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillVector(caloJets_source,caloJets)
         FillVector(pfJets_source,pfJets)
         FillVector(l1Jets_source,l1Jets)
-        FillVector(offJets_source,offJets,15, runAOD, offline = True, mc = isMC)
+        FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC)
         #FillVector(offJets_source,offTightJets,30)
 
-        #print "Filling calo btagging"
+        print "Filling calo btagging"
         FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
                  [CSVleadingCaloJet, CSVsecondCaloJet, CSVthirdCaloJet, CSVfourthCaloJet], nCSVCalogeZero )
         FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV,
@@ -968,7 +971,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillBtag(calodeepbtag_udsg_source, caloJets, caloJets.deepcsv_udsg)
         FillBtag(caloPUid_source, caloJets, caloJets.puId)
 
-        #print "Filling pf btagging"
+        print "Filling pf btagging"
         FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV,
                  [CSVleadingPFJet, CSVsecondPFJet, CSVthirdPFJet, CSVfourthPFJet], nCSVPFgeZero)        
         FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV,
@@ -977,6 +980,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
 
 
+        print "Filling offline btagging"
         if runAOD:
             FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV,
                      [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])#, nCSVOffgeZero)
@@ -1043,6 +1047,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             for i in range(offJets.num[0]):
                 offJets.matchGen[i], dR = Matching(offJets.phi[i],offJets.eta[i],genJets)
 
+            """ Not working with 94X samples..... :( But not needed with miniAOD :)
             for genParticle in genParticles_source.productWithCheck():
                 if genParticle.pt()<5: continue
                 if not (abs(genParticle.pdgId()) in [21,1,2,3,4,5,11,13,15]): continue
@@ -1095,12 +1100,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                                 genJets.mcPt[i]      = genParticle.pt()
                         if evt[0]==7826939:
                             print "newFlav:",genJets.mcFlavour[i]
-
+            
             FillMCFlavour(offJets, offJets.matchGen, genJets.mcFlavour, offJets.mcFlavour)
             #FillMCFlavour(offCSVJets, offCSVJets.matchGen, genJets.mcFlavour, offCSVJets.mcFlavour)
             #FillMCFlavour(offDeepCSVJets, offDeepCSVJets.matchGen, genJets.mcFlavour, offDeepCSVJets.mcFlavour)
             FillMCFlavour(caloJets, caloJets.matchGen, genJets.mcFlavour, caloJets.mcFlavour)
             FillMCFlavour(pfJets, pfJets.matchGen, genJets.mcFlavour, pfJets.mcFlavour)
+            """
         ####################################################
         ####################################################
 
@@ -1122,11 +1128,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                     Exception("Check pileupSummaryInfos!")
                 print "I'm using bunchCrossing=",bunchCrossing
             pu[0] = pileUp_source.productWithCheck().at(bunchCrossing).getTrueNumInteractions()
+            """
             wPURunC[0] = getPUweight("RunC", pu[0])
             wPURunD[0] = getPUweight("RunD", pu[0])
             wPURunE[0] = getPUweight("RunE", pu[0])
             wPURunF[0] = getPUweight("RunF", pu[0])
             wPURunCF[0] = getPUweight("RunC-F", pu[0])
+            """
             ptHat[0]    = generator_source.product().qScale()
 
             maxPUptHat[0] = -1
@@ -1144,21 +1152,16 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "Filesize of {0:8f} MB".format(os.path.getsize(dir_+"/"+fileOutput) * 1e-6)
 
 if __name__ == "__main__":
-    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17MiniAOD__92X_upgrade2017_MINIAOD_LS-starting2183.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_GEN-SIM-RAW_LS-1803to1803-2332to2332-2870to2871.root"]
-    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_GEN-SIM-RAW_LS-2183to2182.root"]
-    secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root"]
-    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_GEN-SIM-RAW_LS-1803to1803-2332to2332-2870to2871.root"]
-    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEG_Run299368_v1_Run2017C_RAW_LS-79to90.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17DRStdmix_92X_upgrade2017_AODSIM_LS-1803to1803-2134to2134-2332to2332-2870to2871-4384to4385-6032to6033-6481to6481.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_300107_3E580A66-3477-E711-8027-02163E0142F6.root"]
-    filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_AOD_300107_240EB136-3077-E711-A764-02163E01A500.root"]
-    #secondaryFiles = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_300107_3E580A66-3477-E711-8027-02163E0142F6.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/ttbar_RunIISummer17MiniAOD__92X_upgrade2017_MINIAOD_LS-starting2183.root"]
-    #filesInput = ["file:/afs/cern.ch/work/k/koschwei/public/MuonEG_Run299368_PromptReco-v1_Run2017C_AOD_LS-79to90-115to129.root"]
+    secondaryFiles = [
+        #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17DRPremix_94X_TSG_GEN-SIM-RAW_EC33C288-051E-E811-95B7-1866DA7F98A8.root"
+        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_96AFE9F4-6974-E711-80D3-02163E01A3CB.root"
+    ]
+    filesInput = [
+        #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17MiniAOD_94X_TSG_MINIAOD_A25F33EE-5A1F-E811-ABCC-90B11C48DA2F.root"
+        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
+    ]
     fileOutput = "tree_phase1.root"
-    maxEvents = 3000
+    maxEvents = 20
     launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False)
 
     

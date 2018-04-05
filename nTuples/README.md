@@ -7,32 +7,48 @@ The following steps are necessary to produce the ntuples.
 Creating of config dump for running the RAW+AOD files with HLT. The HLT tables and `--setup` depend on the usecase.
 For Data:
 ```bash
-hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag \
- --setup /dev/CMSSW_9_2_0/HLT \
+hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
+ --setup /dev/CMSSW_9_2_0/GRun/V140 \
  --data --globaltag 92X_dataRun2_HLT_v7 \
  --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltData.py
 
-edmConfigDump hltData.py > hlt_dump.py
+edmConfigDump hltData.py > hlt_dump_phase1.py
+cmsRun  hlt_dump_phase1.py &> cmsRunData.log
 ```
 For MC:
 ```bash
-hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag \
- --setup /dev/CMSSW_9_2_0/HLT \
- --mc --globaltag 92X_upgrade2017_realistic_v12 \
- --input root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50000/0E7B7DB0-0EA1-E711-B23E-02163E00C2C1.root  \
+hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
+ --setup /dev/CMSSW_9_2_0/GRun/V140 \
+ --mc --globaltag 94X_mc2017_realistic_v11 \
+ --input root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/0416D117-B31E-E811-848B-3417EBE64CDB.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltMC.py
 
-edmConfigDump hltMC.py > hlt_dump_mc.py
+edmConfigDump hltMC.py > hlt_dump_mc_phase1.py
+cmsRun hlt_dump_mc_phase1.py &> cmsRunMC.log
 ```
 
-Remove:
+Check `cmsRunMC.log` and/or `cmsRunMC.log` if rerunning the HLT finishes without errors.
+
+For runnning the nTupler the following changes to the configs are required:
+
+__Add__ to the `process.source` in the __beginning of the file__ `lumisToProcess = cms.untracked.VLuminosityBlockRange( )`, so it looks like this:
+```python
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root'),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
+    inputCommands = cms.untracked.vstring('keep *')
+)
+```
+
+__Remove__ (last line)
 ```python
 process.DQMOutput = cms.EndPath(process.dqmOutput)
 ```
-Add the following to the end of the the config dumP:
+
+__Add__ the following to the __end of the the config__ dump:
 ```python
 
 from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
@@ -86,6 +102,10 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 ```
+
+__Important:__ check if MINIAOD or AOD will be used and set `dataFormat` for VID ID tools accordingly!
+
+
 
 #### Changing from AOD to MiniAOD (or vice versa)
 * Change `dataFormat = DataFormat.AOD` to `dataFormat = DataFormat.MiniAOD` in the python config
