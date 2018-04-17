@@ -43,7 +43,7 @@ process.source = cms.Source("PoolSource",
 )
 ```
 
-__Remove__ (last line)
+__Remove__
 ```python
 process.DQMOutput = cms.EndPath(process.dqmOutput)
 ```

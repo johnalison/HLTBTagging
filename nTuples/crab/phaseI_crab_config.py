@@ -37,8 +37,8 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v9",
 
 
 
-datasets = Data
-prefix = ""
+datasets = [Data[2]]
+prefix = "test4"
 
 
 if __name__ == '__main__':
@@ -82,14 +82,14 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 20 ##FIXME: use 20
+            config.Data.unitsPerJob = 10 ##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'
             config.Data.unitsPerJob = 10 ##FIXME: use 20
         
 
-        config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
+        config.Data.totalUnits = 200 #10*config.Data.unitsPerJob #FIXME: use -1
         config.Data.outLFNDirBase = '/store/user/koschwei/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
@@ -109,8 +109,8 @@ if __name__ == '__main__':
 
         
         config.section_("Site")
-#       config.Site.storageSite = "T2_CH_CSCS"
-        config.Site.storageSite = "T3_CH_PSI"
+        config.Site.storageSite = "T2_CH_CSCS"
+#config.Site.storageSite = "T3_CH_PSI"
         print "submitting ",dataset
         crabCommand('submit',config = config)
         print "DONE ",dataset

@@ -20677,6 +20677,13 @@ process.p = cms.Path(process.egmGsfElectronIDSequence)
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                          dataset = cms.untracked.PSet(),
                                          fileName = cms.untracked.string('./cmsswPreProcessing.root'),
+                                         outputCommands = cms.untracked.vstring('keep *')
+)
+process.FULLOutput = cms.EndPath(process.hltOutputFULL)
+
+
+
+"""
                                          outputCommands = cms.untracked.vstring('drop *',
                                                                                 'keep *Egamma*_*_*_*',
                                                                                 'keep bool*ValueMap*_*Electron*_*_*',
@@ -20706,5 +20713,4 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'drop triggerTriggerEvent_*_*_*',
                                                                                 'keep *_hltGtStage2Digis_*_*',
                                                                                 'keep *_generator_*_*')
-)
-process.FULLOutput = cms.EndPath(process.hltOutputFULL)
+"""

@@ -14,12 +14,14 @@ from math import sqrt, pi, log10, log, exp
 # load FWlite python libraries
 from DataFormats.FWLite import Handle, Events
 from utils import deltaR,SetVariable,DummyClass,productWithCheck,checkTriggerIndex, resetArray
+from multiprocessing import Process, Queue
+from copy import deepcopy
 
 #ROOT.gROOT.LoadMacro("/scratch/sdonato/NtupleForPaolo/CMSSW_8_0_3_patch1/src/DataFormats/L1Trigger/interface/EtSumHelper.h")
 
 Handle.productWithCheck = productWithCheck
 
-maxJets         = 50
+maxJets         = 40
 bunchCrossing   = 0
 pt_min          = 15
 
@@ -55,8 +57,60 @@ def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc
                 elif name == "hadronFlavour" and not runAOD and mc:       var[variables.num[0]] = obj.hadronFlavour()
                 
             variables.num[0] += 1
-          
-def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None, debug = False):
+
+def getBJetValuesforFilling(btags_source):
+    bJets = {}
+    if btags_source.isValid():
+         bjets  = btags_source.product()
+         print type(bjets)
+         print bjets.__dict__
+         #import pdb; pdb.set_trace()
+         print len(bjets) == bjets.size()
+         for ibjet in range(len(bjets)):
+             bjet = bjets.key(ibjet).get()
+             bJets[ibjet] = (bjet.eta(), bjet.phi(), bjets.value(ibjet))
+    return bJets
+
+def getBJetValuesforFilling_JetColl(btags_source):
+    bJets = {}
+    if btags_source.isValid():
+         bjets  = btags_source.product()
+         print type(bjets)
+         print bjets.__dict__
+         for ibjet in range(len(bjets)):
+             bjet = bjets.key(ibjet).get()
+             bJets[ibjet] = (bjet.eta(), bjet.phi(), bjets.value(ibjet))
+    return bJets
+
+
+
+
+def getBJetValuesforFillingMulitproc(q, btags_source):
+    bJets = {}
+    if btags_source.isValid():
+         bjets  = btags_source.product()
+         for ibjet in range(len(bjets)):
+             bjet = bjets.key(ibjet).get()
+             bJets[ibjet] = (bjet.eta(), bjet.phi(), btags_source.product().value(ibjet))
+             del bjet
+    q.put(bJets)
+
+
+def getBJetValuesforFillingAll(q, sources):
+    allTags = []
+    for btags_source in sources:
+        bJets = {}
+        if btags_source.isValid():
+             bjets  = btags_source.product()
+             for ibjet in range(len(bjets)):
+                 bjet = bjets.key(ibjet).get()
+                 bJets[ibjet] = (bjet.eta(), bjet.phi(), btags_source.product().value(ibjet))
+                 del bjet
+        allTags.append(deepcopy(bJets))
+    q.put(allTags)
+    
+
+def FillBtagAlt(bTagTuples, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None, debug = False):
     """
     In this function the btags_source product is called for every time it is needed.
     For some reason, if stored (e.g. btags = btags_source.productWithCheck()), the objects
@@ -75,12 +129,11 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars =
         dRmax = 0.1
         matchcollJet = -1
         ibjet = -1
-        for ibjet in range(len(btags_source.productWithCheck())):
-            jetB = btags_source.productWithCheck().key(ibjet).get()
-            dR = deltaR(jetB.eta(),jetB.phi(),jets.eta[i],jets.phi[i])
-            del jetB
+        for ibjet in range(len(bTagTuples)):
+            eta, phi, tag = bTagTuples[ibjet]
+            dR = deltaR(eta, phi,jets.eta[i],jets.phi[i])
             if dR<dRmax:
-                jet_btags[i] = max(-1.0,btags_source.productWithCheck().value(ibjet))
+                jet_btags[i] = max(-1.0, tag)
                 tagpairs[i] = (i, jet_btags[i])
                 dRmax = dR
                 matchcollJet = ibjet
@@ -104,6 +157,72 @@ def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars =
             if nBtagsgeNull is not None:
                 if pair[1] >= 0:
                     nBtagsgeNull[0] += 1
+
+
+
+        
+def FillBtag(btags_source, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None, debug = False):
+    """
+    In this function the btags_source product is called for every time it is needed.
+    For some reason, if stored (e.g. btags = btags_source.productWithCheck()), the objects
+    start leaking in memory. Especially when getting the the referenced jet, this leads 
+    to segmentations violations.
+    """
+    if btags_source.isValid():
+        if debug:
+            print "Running FillBtag()"
+            print "Source is valid:",btags_source.isValid()
+        jetB = None
+        tagpairs = int(jets.num[0])*[(-1,-20)]
+        for i in range(jets.num[0]):
+            if debug:
+                print "processing jet {0}".format(i)
+            jet_btags[i] = -20.
+            dRmax = 0.1
+            matchcollJet = -1
+            ibjet = -1
+            nbjets  = len(btags_source.product())
+            for ibjet in range(nbjets):
+                #jetB = btags_source.product().key(ibjet).get()
+                dR = deltaR(btags_source.product().key(ibjet).get().eta(),btags_source.product().key(ibjet).get().phi(),jets.eta[i],jets.phi[i])
+                #del jetB
+                if dR<dRmax:
+                    jet_btags[i] = max(-1.0, btags_source.product().value(ibjet))
+                    tagpairs[i] = (i, jet_btags[i])
+                    dRmax = dR
+                    matchcollJet = ibjet
+            """
+            bjets = btags_source.product()
+            for ibjet in range(len(bjets)):
+                jetB = bjets.key(ibjet).get()
+                dR = deltaR(jetB.eta(),jetB.phi(),jets.eta[i],jets.phi[i])
+                del jetB
+                if dR<dRmax:
+                    jet_btags[i] = max(-1.0, bjets.value(ibjet))
+                    tagpairs[i] = (i, jet_btags[i])
+                    dRmax = dR
+                    matchcollJet = ibjet
+            """
+            if debug:
+                if dRmax < dRmax:
+                    print "Matched: btag coll jet {0} to online jet {1} with dR {2}".format(ibjet, i, dRmax)
+
+        if jet_btagsRank is not None:
+            if JetIndexVars is not None and isinstance(JetIndexVars, list):
+                for var in JetIndexVars:
+                    var[0] = -1
+            if nBtagsgeNull is not None:
+                nBtagsgeNull[0] = 0
+            from operator import itemgetter
+            sortedtags = sorted(tagpairs,key=itemgetter(1), reverse=True) #This list is ordered by csv value, starting with the highest
+            for ipair, pair in enumerate(sortedtags):
+                jet_btagsRank[pair[0]] = ipair
+                if JetIndexVars is not None and isinstance(JetIndexVars, list):
+                    if len(JetIndexVars) >= ipair+1:
+                        JetIndexVars[ipair][0] = pair[0]
+                if nBtagsgeNull is not None:
+                    if pair[1] >= 0:
+                        nBtagsgeNull[0] += 1
                     
 def makeDeepCSVSumRanking(jets, variable, sumVar1, sumVar2, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None):
     if JetIndexVars is not None and isinstance(JetIndexVars, list):
@@ -360,8 +479,9 @@ def getVertices(vertex_source):
     vertices = vertex_source.productWithCheck()
     vZ0 = -1000
     nVtx = 0
-    if vertices.size()>0:
-        for iVtx in range(vertices.size()):
+    size = vertices.size()
+    if size>0:
+        for iVtx in range(size):
             if vertices.at(iVtx).isFake() == False and vertices.at(iVtx).ndof() > 4 and abs(vertices.at(iVtx).z()) < 24 and abs(vertices.at(iVtx).position().Rho()) < 2:
                 if iVtx == 0:
                     vZ0 =  vertices.at(0).z()
@@ -419,7 +539,7 @@ def getPUweight(run, truePU):
         
 ##########################################################################
 
-def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0, MC = False, LS = None):
+def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProcessing=True, firstEvent=0, MC = False, LS = None, local = False):
     import os
     bunchCrossing   = 12
     t0 = time.time()
@@ -430,7 +550,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
     
-    doTriggerCut = True
+    doTriggerCut = False
     if doTriggerCut:
         print "+-----------------------------------------------------------------------------------------+"
         print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
@@ -497,13 +617,14 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             preprocessor.run(cfg,".",firstEvent,maxEvents)
         except:
             print "cmsswPreProcessing failed!"
-            print "cat cmsRun_config.py"
-            config = file(cmsRun_config)
-            print config.read()
-            print "cat cmsRun.log"
-            log = file("cmsRun.log")
-            print log.read()
-            preprocessor.run(cfg,".",firstEvent,maxEvents)
+            if not local:
+                print "cat cmsRun_config.py"
+                config = file(cmsRun_config)
+                print config.read()
+                print "cat cmsRun.log"
+                log = file("cmsRun.log")
+                print log.read()
+            #preprocessor.run(cfg,".",firstEvent,maxEvents)
             raise Exception("CMSSW preprocessor failed!")
 
     print "Time to preprocess: {0:10f} s".format(time.time()-t0)    
@@ -525,37 +646,40 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     ### list of input variables ###
     ### Online
     #L1
-    l1HT_source, l1HT_label                             = Handle("BXVector<l1t::EtSum>"), ("hltGtStage2Digis","EtSum")
-    l1Jets_source, l1Jets_label                         = Handle("BXVector<l1t::Jet>"), ("hltGtStage2Digis","Jet")
+    #l1HT_source, l1HT_label                             = Handle("BXVector<l1t::EtSum>"), ("hltGtStage2Digis","EtSum")
+    #l1Jets_source, l1Jets_label                         = Handle("BXVector<l1t::Jet>"), ("hltGtStage2Digis","Jet")
 
     #Jets
     caloJets_source, caloJets_label                     = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed") #DeepNtupler: hltAK4CaloJetsCorrected as jetToken3
-    calobtag_source, calobtag_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
-    calodeepbtag_source, calodeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probb")
-    calodeepbtag_bb_source, calodeepbtag_bb_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probbb")
-    calodeepbtag_udsg_source, calodeepbtag_udsg_label   = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probudsg")
-    caloPUid_source, caloPUid_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCaloJetFromPV")
+    calobtag_source, calobtag_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
+    calodeepbtag_source, calodeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probb")
+
+    #calodeepbtag_bb_source, calodeepbtag_bb_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probbb")
+    #calodeepbtag_udsg_source, calodeepbtag_udsg_label   = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probudsg")
+    caloPUid_source, caloPUid_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCaloJetFromPV")
 
     pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltAK4PFJetsLooseIDCorrected") #DeepNtupler: hltPFJetForBtag as jetToken2
     #pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltPFJetForBtag") #DeepNtupler: hltPFJetForBtag as jetToken2
-    pfbtag_source, pfbtag_label                         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsPF")
-    pfdeepbtag_source, pfdeepbtag_label                 = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probb")
-    pfdeepbtag_bb_source, pfdeepbtag_bb_label           = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probbb")
-    pfdeepbtag_udsg_source, pfdeepbtag_udsg_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probudsg")
+#recoJetedmRefToBaseProdTofloatsAssociationVector
+    pfbtag_source, pfbtag_label                         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCombinedSecondaryVertexBJetTagsPF")
+    pfdeepbtag_source, pfdeepbtag_label                 = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probb")
+
+    #pfdeepbtag_bb_source, pfdeepbtag_bb_label           = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probbb")
+    #pfdeepbtag_udsg_source, pfdeepbtag_udsg_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probudsg")
 
     #MET and HT
-    pfMet_source, pfMet_label                           = Handle("vector<reco::PFMET>"), ("hltPFMETProducer") #Not working. .product() throws expection
-    pfMht_source, pfMht_label                           = Handle("vector<reco::MET>"), ("hltPFMHTTightID") #Not working. .product() throws expection
-    caloMet_source, caloMet_label                       = Handle("vector<reco::CaloMET>"), ("hltMet") #Not working. .product() throws expection
-    caloMht_source, caloMht_label                       = Handle("vector<reco::MET>"), ("hltMht") #Not working. .product() throws expection
-    caloMhtNoPU_source, caloMhtNoPU_label               = Handle("vector<reco::MET>"), ("hltMHTNoPU") #Not working. .product() throws expection
+    #pfMet_source, pfMet_label                           = Handle("vector<reco::PFMET>"), ("hltPFMETProducer") #Not working. .product() throws expection
+    #pfMht_source, pfMht_label                           = Handle("vector<reco::MET>"), ("hltPFMHTTightID") #Not working. .product() throws expection
+    #caloMet_source, caloMet_label                       = Handle("vector<reco::CaloMET>"), ("hltMet") #Not working. .product() throws expection
+    #caloMht_source, caloMht_label                       = Handle("vector<reco::MET>"), ("hltMht") #Not working. .product() throws expection
+    #caloMhtNoPU_source, caloMhtNoPU_label               = Handle("vector<reco::MET>"), ("hltMHTNoPU") #Not working. .product() throws expection
 
     #Vertex
-    FastPrimaryVertex_source, FastPrimaryVertex_label   = Handle("vector<reco::Vertex>"), ("hltFastPrimaryVertex")
-    FPVPixelVertices_source, FPVPixelVertices_label     = Handle("vector<reco::Vertex>"), ("hltFastPVPixelVertices")
-    PixelVertices_source, PixelVertices_label           = Handle("vector<reco::Vertex>"), ("hltPixelVertices")
-    VerticesPF_source, VerticesPF_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesPF")
-    VerticesL3_source, VerticesL3_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesL3")
+    #FastPrimaryVertex_source, FastPrimaryVertex_label   = Handle("vector<reco::Vertex>"), ("hltFastPrimaryVertex")
+    #FPVPixelVertices_source, FPVPixelVertices_label     = Handle("vector<reco::Vertex>"), ("hltFastPVPixelVertices")
+    #PixelVertices_source, PixelVertices_label           = Handle("vector<reco::Vertex>"), ("hltPixelVertices")
+    #VerticesPF_source, VerticesPF_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesPF")
+    #VerticesL3_source, VerticesL3_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesL3")
 
     #The rest
     triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
@@ -586,16 +710,16 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         VerticesOff_source, VerticesOff_label               = Handle("vector<reco::Vertex>"), ("offlinePrimaryVertices")
 
         #Gen
-        genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
-        genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
-        genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("genParticles")
+        #genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
+        #genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
+        #genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("genParticles")
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
     else:
         offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
-        eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
-        eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
+        #eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
+        #eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
 
         #Jets
         offJets_source, offJets_label                       = Handle("vector<pat::Jet>"), ("slimmedJets")
@@ -608,9 +732,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         VerticesOff_source, VerticesOff_label               = Handle("vector<reco::Vertex>"), ("offlineSlimmedPrimaryVertices")
 
         #Gen
-        genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("slimmedGenJets")
+        #genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("slimmedGenJets")
         #genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
-        genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("prunedGenParticles")
+        #genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("prunedGenParticles")
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
 
 
@@ -619,63 +743,63 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     ### create output variables ###
     #Leptons
     offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
-    offLooseElectrons   = BookVector(tree, "offLooseElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
+    #offLooseElectrons   = BookVector(tree, "offLooseElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
     offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
-    offLooseMuons       = BookVector(tree, "offLooseMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
+    #offLooseMuons       = BookVector(tree, "offLooseMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
     
     #Jets:
-    l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','energy','matchOff','matchGen'])
+    #l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','energy','matchOff','matchGen'])
     caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV", "mcFlavour"])
     pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "mcFlavour"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "lepOverlap04Loose", "lepOverlap05Tight", "lepOverlap05Loose"])
-    offCleanJets        = BookVector(tree,"offCleanJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "lepOverlap04Loose", "lepOverlap05Tight", "lepOverlap05Loose", "offOrder"])
-    offCleanCSVJets          = BookVector(tree,"offCleanCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "lepOverlap04Loose", "lepOverlap05Tight", "lepOverlap05Loose"])
-    offCleanDeepCSVJets      = BookVector(tree,"offCleanDeepCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "lepOverlap04Loose", "lepOverlap05Tight", "lepOverlap05Loose"])
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
+    offCleanJets        = BookVector(tree,"offCleanJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "offOrder"])
+    offCleanCSVJets          = BookVector(tree,"offCleanCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
+    offCleanDeepCSVJets      = BookVector(tree,"offCleanDeepCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
 
-    CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV", "I")
-    CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV", "I")
-    CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV", "I")
+    #CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV", "I")
+    #CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV", "I")
+    #CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV", "I")
     #CSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingCSV")
-    CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV", "I")
-    CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV", "I")
-    CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV", "I")
+    #CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV", "I")
+    #CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV", "I")
+    #CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV", "I")
     #CSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondCSV")
-    CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV", "I")
-    CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV", "I")
-    CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV", "I")
+    #CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV", "I")
+    #CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV", "I")
+    #CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV", "I")
     #CSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdCSV")
-    CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV", "I")
-    CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV", "I")
-    CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV", "I")
+    #CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV", "I")
+    #CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV", "I")
+    #CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV", "I")
     #CSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthCSV")
 
-    nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero", "I")
-    nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero", "I")
+    #nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero", "I")
+    #nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero", "I")
     #nCSVOffgeZero = SetVariable(tree, "offJets_nCSVgeZero")
-    nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero", "I")
+    #nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero", "I")
 
     
-    DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV", "I")
-    DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV", "I")
-    DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV", "I")
+    #DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV", "I")
+    #DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV", "I")
+    #DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV", "I")
     #DeepCSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingDeepCSV")
-    DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV", "I")
-    DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV", "I")
-    DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV", "I")
+    #DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV", "I")
+    #DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV", "I")
+    #DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV", "I")
     #DeepCSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondDeepCSV")
-    DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV", "I")
-    DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV", "I")
-    DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV", "I")
+    #DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV", "I")
+    #DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV", "I")
+    #DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV", "I")
     #DeepCSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdDeepCSV")
-    DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV", "I")
-    DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV", "I")
-    DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV", "I")
+    #DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV", "I")
+    #DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV", "I")
+    #DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV", "I")
     #DeepCSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthDeepCSV")
 
-    nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero", "I")
-    nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero", "I")
-    #nDeepCSVOffgeZero = SetVariable(tree, "offJets_nDeepCSVgeZero")
-    nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero", "I")
+    #nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero", "I")
+    #nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero", "I")
+    ##nDeepCSVOffgeZero = SetVariable(tree, "offJets_nDeepCSVgeZero")
+    #nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero", "I")
 
     
     
@@ -683,7 +807,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         genJets             = BookVector(tree,"genJets",['pt','eta','phi','mass','mcFlavour','mcPt'])
 
     #MET and HT
-    l1HT                = SetVariable(tree,'l1HT')
+    #l1HT                = SetVariable(tree,'l1HT')
     caloMet             = BookVector(tree,"caloMet",['pt','phi'])
     caloMht             = BookVector(tree,"caloMht",['pt','phi'])
     caloMhtNoPU         = BookVector(tree,"caloMhtNoPU",['pt','phi'])
@@ -712,29 +836,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     lumi                = SetVariable(tree,'lumi')
     run                 = SetVariable(tree,'run')
 
-    caloJetsSourceValid = SetVariable(tree, "caloJetsSourceValid")
-    calobtagSourceValid = SetVariable(tree, "calobtagSourceValid")
-    calodeepbtagSourceValid = SetVariable(tree, "calodeepbtagSourceValid")
-    calodeepbtagbbSourceValid = SetVariable(tree, "calodeepbtagbbSourceValid")
-    calodeepbtagudsgSourceValid = SetVariable(tree, "calodeepbtagudsgSourceValid")
-    caloPUidSourceValid = SetVariable(tree, "caloPUidSourceValid")
-    
-    pfJetsSourceValid = SetVariable(tree, "pfJetsSourceValid")
-    pfbtagSourceValid = SetVariable(tree, "pfbtagSourceValid")
-    pfdeepbtagSourceValid = SetVariable(tree, "pfdeepbtagSourceValid")
-    pfdeepbtagbbSourceValid = SetVariable(tree, "pfdeepbtagbbSourceValid")
-    pfdeepbtagudsgSourceValid = SetVariable(tree, "pfdeepbtagudsgSourceValid")
-    
-    offJetsSourceValid = SetVariable(tree, "offJetsSourceValid")
-    if runAOD:
-        offbtagSourceValid = SetVariable(tree, "offbtagSourceValid")
-        offdeepbtagSourceValid = SetVariable(tree, "offdeepbtagSourceValid")
-        offdeepbtagbbSourceValid = SetVariable(tree, "offdeepbtagSourceValid")
-        offdeepbtagudsgSourceValid = SetVariable(tree, "offdeepbtagudsgSourceValid")
-        
-    DeepNtuplerSourceValid = SetVariable(tree, "DeepNtuplerSourceValid")
-        
-    
     if isMC:
         pu              = SetVariable(tree,'pu')
         ptHat           = SetVariable(tree,'ptHat')
@@ -768,71 +869,81 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     for iev,event in enumerate(events):
         #raw_input("start event")
         if iev>maxEvents and maxEvents>=0: break
+        #print "Starting with event",iev
         nGenHisto.Fill(1)
         #print "Event: {0}".format(iev)
         ####################################################
         ####################################################
         #Getting L1 handles
-        event.getByLabel(l1Jets_label, l1Jets_source)
-        event.getByLabel(l1HT_label, l1HT_source)
+        #event.getByLabel(l1Jets_label, l1Jets_source)
+        #event.getByLabel(l1HT_label, l1HT_source)
 
         #Getting Lepton handles
         event.getByLabel(offEle_label, offEle_source)
         event.getByLabel(offMu_label, offMu_source)
         event.getByLabel(MuGlobalTracks_label, MuGlobalTracks_source)
-        event.getByLabel(eleLooseID_label , eleLooseID_source)
-        event.getByLabel(eleTightID_label , eleTightID_source)
+        #event.getByLabel(eleLooseID_label , eleLooseID_source)
+        #event.getByLabel(eleTightID_label , eleTightID_source)
 
         #Getting Jet handles
         event.getByLabel(caloJets_label, caloJets_source)
+        #print "Getting calobtag by label"
         event.getByLabel(calobtag_label, calobtag_source)
+        #print "Getting calodeepbtag by label"
         event.getByLabel(calodeepbtag_label, calodeepbtag_source)
-        event.getByLabel(calodeepbtag_bb_label, calodeepbtag_bb_source)
-        event.getByLabel(calodeepbtag_udsg_label, calodeepbtag_udsg_source)
+        #event.getByLabel(calodeepbtag_bb_label, calodeepbtag_bb_source)
+        #print "Getting calodeepbtagudsg by label"
+        #event.getByLabel(calodeepbtag_udsg_label, calodeepbtag_udsg_source)
         event.getByLabel(caloPUid_label, caloPUid_source)
 
+        
         event.getByLabel(pfJets_label, pfJets_source)
+        #print "Getting pfbtag by label"
         event.getByLabel(pfbtag_label, pfbtag_source)
+        #print "Getting pfdeepbtag by label"
         event.getByLabel(pfdeepbtag_label, pfdeepbtag_source)
-        event.getByLabel(pfdeepbtag_bb_label, pfdeepbtag_bb_source)
-        event.getByLabel(pfdeepbtag_udsg_label, pfdeepbtag_udsg_source)
+        #print "Getting pfdeepbtagbb by label"
+        #event.getByLabel(pfdeepbtag_bb_label, pfdeepbtag_bb_source)
+        #print "Getting pfdeepbtagudsg by label"
+        #event.getByLabel(pfdeepbtag_udsg_label, pfdeepbtag_udsg_source)
 
+        #print "getting offjets by label"
         event.getByLabel(offJets_label, offJets_source)
         #event.getByLabel(offJetsnoCHS_label, offJetsnoCHS_source)
         if runAOD:
             event.getByLabel(offbtag_label, offbtag_source)
             event.getByLabel(offdeepbtag_label, offdeepbtag_source)
-            event.getByLabel(offdeepbtag_bb_label, offdeepbtag_bb_source)
-            event.getByLabel(offdeepbtag_udsg_label, offdeepbtag_udsg_source)
+            #event.getByLabel(offdeepbtag_bb_label, offdeepbtag_bb_source)
+            #event.getByLabel(offdeepbtag_udsg_label, offdeepbtag_udsg_source)
 
         #Getting MET and HT handles
-        event.getByLabel(caloMet_label, caloMet_source)
-        event.getByLabel(caloMht_label, caloMht_source)
-        event.getByLabel(caloMhtNoPU_label, caloMhtNoPU_source)
-        event.getByLabel(pfMet_label, pfMet_source)
-        event.getByLabel(pfMht_label, pfMht_source)
-        event.getByLabel(offMet_label, offMet_source)
+        #event.getByLabel(caloMet_label, caloMet_source)
+        #event.getByLabel(caloMht_label, caloMht_source)
+        #event.getByLabel(caloMhtNoPU_label, caloMhtNoPU_source)
+        #event.getByLabel(pfMet_label, pfMet_source)
+        #event.getByLabel(pfMht_label, pfMht_source)
+        #event.getByLabel(offMet_label, offMet_source)
 
         #Getting Vertex handles
-        event.getByLabel(FastPrimaryVertex_label, FastPrimaryVertex_source)
-        event.getByLabel(FPVPixelVertices_label, FPVPixelVertices_source)
-        event.getByLabel(PixelVertices_label, PixelVertices_source)
-        event.getByLabel(VerticesPF_label, VerticesPF_source)
-        event.getByLabel(VerticesL3_label, VerticesL3_source)
+        #event.getByLabel(FastPrimaryVertex_label, FastPrimaryVertex_source)
+        #event.getByLabel(FPVPixelVertices_label, FPVPixelVertices_source)
+        #event.getByLabel(PixelVertices_label, PixelVertices_source)
+        #event.getByLabel(VerticesPF_label, VerticesPF_source)
+        #event.getByLabel(VerticesL3_label, VerticesL3_source)
         event.getByLabel(VerticesOff_label, VerticesOff_source)
 
         #Getting Gen handles
         if isMC:
-            event.getByLabel(genJets_label, genJets_source)
-            if runAOD:
-                event.getByLabel(genMet_label, genMet_source)
-            event.getByLabel(genParticles_label, genParticles_source)
+        #    event.getByLabel(genJets_label, genJets_source)
+        #    if runAOD:
+        #        event.getByLabel(genMet_label, genMet_source)
+        #    event.getByLabel(genParticles_label, genParticles_source)
             event.getByLabel(generator_label, generator_source)
-            event.getByLabel(pileUp_label, pileUp_source)
+        #    event.getByLabel(pileUp_label, pileUp_source)
 
 
         event.getByLabel(triggerBitLabel, triggerBits)
-
+        #print "finished getbylabel"
 
         #####################################################
         #####################################################
@@ -854,13 +965,15 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         if doTriggerCut:
             if len(triggerspassing) < 1: 
                 continue
-
+        #print "finished triggers"
         ####################################################
         ####################################################
 
-
+        #print "run"
         run[0]          = event.eventAuxiliary().run()
+        #print "lumi"
         lumi[0]         = event.eventAuxiliary().luminosityBlock()
+        #print "evt"
         evt[0]          = event.eventAuxiliary().event()
 
         if crun != run[0] or cls != lumi[0]:
@@ -875,37 +988,15 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #VerticesPF[0] = getVertex(VerticesPF_source)
         #VerticesL3[0] = getVertex(VerticesL3_source)
         #VerticesOff[0]= getVertex(VerticesOff_source)
-        VerticesOff[0], nOffVertices[0] = getVertices(VerticesOff_source)
-
+        #print "starting vertex"
+        vtx, nVtx = getVertices(VerticesOff_source)
+        #print "saving"
+        VerticesOff[0], nOffVertices[0] = vtx, nVtx 
+        #print "finished vertex"
         
         ####################################################
         ####################################################
 
-
-        caloJetsSourceValid[0] = caloJets_source.isValid()
-        calobtagSourceValid[0] = calobtag_source.isValid()
-        calodeepbtagSourceValid[0] = calodeepbtag_source.isValid()
-        calodeepbtagbbSourceValid[0] = calodeepbtag_bb_source.isValid()
-        calodeepbtagudsgSourceValid[0] = calodeepbtag_udsg_source.isValid()
-        caloPUidSourceValid[0] = caloPUid_source.isValid()
-
-        pfJetsSourceValid[0] = pfJets_source.isValid()
-        pfbtagSourceValid[0] = pfbtag_source.isValid()
-        pfdeepbtagSourceValid[0] = pfdeepbtag_source.isValid()
-        pfdeepbtagbbSourceValid[0] = pfdeepbtag_bb_source.isValid()
-        pfdeepbtagudsgSourceValid[0] = pfdeepbtag_udsg_source.isValid()
-
-        offJetsSourceValid[0] = offJets_source.isValid()
-        if runAOD:
-            offbtagSourceValid[0] = offbtag_source.isValid()
-            offdeepbtagSourceValid[0] = offdeepbtag_source.isValid()
-            offdeepbtagbbSourceValid[0] = offdeepbtag_bb_source.isValid()
-            offdeepbtagudsgSourceValid[0] = offdeepbtag_udsg_source.isValid()
-
-            DeepNtuplerSourceValid[0] = pfJetsSourceValid[0] and offbtagSourceValid[0] and  pfbtagSourceValid[0] and offbtagSourceValid[0] and pfJetsSourceValid[0] and calobtagSourceValid[0] and caloJetsSourceValid and offdeepbtagudsgSourceValid[0] and pfdeepbtagudsgSourceValid[0] and calodeepbtagudsgSourceValid[0] and calobtagSourceValid[0] and calodeepbtagSourceValid[0]
-        ####################################################
-        ####################################################
-        
         if isMC:
             trueVertex[0] = genParticles_source.productWithCheck().at(2).vertex().z()
 
@@ -920,16 +1011,19 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 print "Offline Vertex did not pass the selection"
 
         #print "Filling tight electrons"
-        FillElectronVector(offEle_source, offTightElectrons, eleTightID_source.productWithCheck())
+        #print "Filling electrons"
+        ####FillElectronVector(offEle_source, offTightElectrons, eleTightID_source.productWithCheck())
         #print "Filling loose electrons"
-        FillElectronVector(offEle_source, offLooseElectrons, eleLooseID_source.productWithCheck())
+        #FillElectronVector(offEle_source, offLooseElectrons, eleLooseID_source.productWithCheck())
+        #print "Filling muons"
         FillMuonVector(offMu_source, offTightMuons, offVertex, "tight")
-        FillMuonVector(offMu_source, offLooseMuons, offVertex, "loose")
+        #FillMuonVector(offMu_source, offLooseMuons, offVertex, "loose")
 
         ####################################################
         ####################################################
 
-        
+        """
+        #print "Filling MET and Stuff"
         FillVector(caloMet_source,caloMet, 0)
         FillVector(caloMht_source,caloMht, 0)
         FillVector(caloMhtNoPU_source,caloMhtNoPU, 0)
@@ -952,35 +1046,89 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         if isMC:
             if runAOD:
                 FillVector(genMet_source,genMet, 0)
-
+        """
         ####################################################
         ####################################################
         # Jets
+        #print "Getting CaloJets"
         FillVector(caloJets_source,caloJets)
+        #print "Getting pf jets"
         FillVector(pfJets_source,pfJets)
-        FillVector(l1Jets_source,l1Jets)
+        ##print "Getting L1 jets"
+        #FillVector(l1Jets_source,l1Jets)
+        #print "Getting off jets"
         FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC)
         #FillVector(offJets_source,offTightJets,30)
 
-        print "Filling calo btagging"
-        FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
-                 [CSVleadingCaloJet, CSVsecondCaloJet, CSVthirdCaloJet, CSVfourthCaloJet], nCSVCalogeZero )
-        FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV,
-                 [DeepCSVleadingCaloJet, DeepCSVsecondCaloJet, DeepCSVthirdCaloJet, DeepCSVfourthCaloJet], nDeepCSVCalogeZero)
-        FillBtag(calodeepbtag_bb_source, caloJets, caloJets.deepcsv_bb)
-        FillBtag(calodeepbtag_udsg_source, caloJets, caloJets.deepcsv_udsg)
-        FillBtag(caloPUid_source, caloJets, caloJets.puId)
 
-        print "Filling pf btagging"
-        FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV,
-                 [CSVleadingPFJet, CSVsecondPFJet, CSVthirdPFJet, CSVfourthPFJet], nCSVPFgeZero)        
-        FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV,
-                 [DeepCSVleadingPFJet, DeepCSVsecondPFJet, DeepCSVthirdPFJet, DeepCSVfourthPFJet], nDeepCSVPFgeZero, debug = False)
-        FillBtag(pfdeepbtag_bb_source, pfJets, pfJets.deepcsv_bb)
-        FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
+        """
+        q = Queue()
+        #print "init process"
+        p = Process(target=getBJetValuesforFillingAll, args=(q, [calobtag_source, calodeepbtag_source, pfbtag_source, pfdeepbtag_source]))
+        #print "starting process"
+        p.start()
+        #print "Getting output"
+        ret = q.get()
+        #print ret
+        csvbtagTouples_calo = ret[0]
+        deepcsvbtagTouples_calo = ret[1]
+        csvbtagTouples_pf = ret[2]
+        deepcsvbtagTouples_pf = ret[3]
+        p.join()
+        """
 
+        #print "Filling calo btagging"
+        csvbtagTouples_calo = getBJetValuesforFilling(calobtag_source)
+        #qCaloCSV = Queue()
+        #pCaloCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qCaloCSV,calobtag_source))
+        #pCaloCSV.start()
+        #csvbtagTouples_calo = qCaloCSV.get()
+        #pCaloCSV.terminate()
 
-        print "Filling offline btagging"
+        ##print "calo csv"
+        deepcsvbtagTouples_calo = getBJetValuesforFilling(calodeepbtag_source)
+        #qCaloDeepCSV = Queue()
+        #pCaloDeepCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qCaloDeepCSV, calodeepbtag_source))
+        #pCaloDeepCSV.start()
+        #deepcsvbtagTouples_calo = qCaloDeepCSV.get()
+        #pCaloDeepCSV.terminate()
+        ##print "calo deepcsv"
+        #FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
+        #         [CSVleadingCaloJet, CSVsecondCaloJet, CSVthirdCaloJet, CSVfourthCaloJet], nCSVCalogeZero, debug = False )
+        FillBtagAlt(csvbtagTouples_calo, caloJets, caloJets.csv, caloJets.rankCSV, debug = False )
+        #FillBtag(calodeepbtag_source, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV,
+        #         [DeepCSVleadingCaloJet, DeepCSVsecondCaloJet, DeepCSVthirdCaloJet, DeepCSVfourthCaloJet], nDeepCSVCalogeZero)
+        FillBtagAlt(deepcsvbtagTouples_calo, caloJets, caloJets.deepcsv, caloJets.rankDeepCSV)
+        ##FillBtag(calodeepbtag_bb_source, caloJets, caloJets.deepcsv_bb)
+        ##FillBtag(calodeepbtag_udsg_source, caloJets, caloJets.deepcsv_udsg)
+        #FillBtag(caloPUid_source, caloJets, caloJets.puId)
+
+        #print "Filling pf btagging"
+        csvbtagTouples_pf = getBJetValuesforFilling(pfbtag_source)
+        #qPFCSV = Queue()
+        #pPFCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qPFCSV,pfbtag_source))
+        #pPFCSV.start()
+        #csvbtagTouples_pf = qPFCSV.get()
+        #pPFCSV.terminate()
+        
+        deepcsvbtagTouples_pf = getBJetValuesforFilling(pfdeepbtag_source)
+        #qPFDeepCSV = Queue()
+        #pPFDeepCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qPFDeepCSV,pfdeepbtag_source))
+        #pPFDeepCSV.start()
+        #deepcsvbtagTouples_pf = qPFDeepCSV.get()
+        #pPFDeepCSV.terminate()
+
+        #FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV,
+        #         [CSVleadingPFJet, CSVsecondPFJet, CSVthirdPFJet, CSVfourthPFJet], nCSVPFgeZero)
+        FillBtagAlt(csvbtagTouples_pf, pfJets, pfJets.csv, pfJets.rankCSV)
+        #FillBtag(pfdeepbtag_source, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV,
+        #         [DeepCSVleadingPFJet, DeepCSVsecondPFJet, DeepCSVthirdPFJet, DeepCSVfourthPFJet], nDeepCSVPFgeZero, debug = False)
+        FillBtagAlt(deepcsvbtagTouples_pf, pfJets, pfJets.deepcsv, pfJets.rankDeepCSV)
+        #FillBtag(pfdeepbtag_bb_source, pfJets, pfJets.deepcsv_bb)
+        #FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
+        
+
+        #print "Filling offline btagging"
         if runAOD:
             FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV,
                      [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])#, nCSVOffgeZero)
@@ -988,23 +1136,22 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             FillBtag(offdeepbtag_bb_source, offJets, offJets.deepcsv_bb)
             FillBtag(offdeepbtag_udsg_source, offJets, offJets.deepcsv_udsg)
         else:
-            makeCSVRanking(offJets, offJets.csv, offJets.rankCSV,
-                           [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])
+            makeCSVRanking(offJets, offJets.csv, offJets.rankCSV)
 
             
-        makeDeepCSVSumRanking(offJets, offJets.deepcsv, offJets.deepcsv_b, offJets.deepcsv_bb, offJets.rankDeepCSV,
-                              [DeepCSVleadingOffJet, DeepCSVsecondOffJet, DeepCSVthirdOffJet, DeepCSVfourthOffJet])
+        makeDeepCSVSumRanking(offJets, offJets.deepcsv, offJets.deepcsv_b, offJets.deepcsv_bb, offJets.rankDeepCSV)
         LeptonOverlap(offJets, offTightMuons, offTightElectrons, offJets.lepOverlap04Tight)
-        LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap04Loose)
-        LeptonOverlap(offJets, offTightMuons, offTightElectrons, offJets.lepOverlap05Tight, DeltaR = 0.5)
-        LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap05Loose, DeltaR = 0.5)
+        #LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap04Loose)
+        #LeptonOverlap(offJets, offTightMuons, offTightElectrons, offJets.lepOverlap05Tight, DeltaR = 0.5)
+        #LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap05Loose, DeltaR = 0.5)
 
+        #print "Finished jets"
         
         
-        if isMC:
-            FillVector(genJets_source,genJets,15)
-
-        #Matching calo jets to off jets
+        #if isMC:
+        #    FillVector(genJets_source,genJets,15)
+            
+        #print "Matching calo jets to off jets"
         resetArray(offJets.matchCalo, -1)
         resetArray(offJets.matchPF, -1)
         for i in range(caloJets.num[0]):
@@ -1012,17 +1159,17 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             offJets.matchCalo[int(caloJets.matchOff[i])] = i
             caloJets.matchGen[i] = -1
 
-        #Matching pf jets to off jets
+        #print "Matching pf jets to off jets"
         for i in range(pfJets.num[0]):
             pfJets.matchOff[i], dR = Matching(pfJets.phi[i],pfJets.eta[i],offJets)
             offJets.matchPF[int(pfJets.matchOff[i])] = i
             pfJets.matchGen[i] = -1
             #print "Online PF jet (pt = ",pfJets.pt[i],") ",i," matched to offline jet (pt = ",offJets.pt[pfJets.matchOff[i]],") ",pfJets.matchOff[i]," with dR = ",dR
             
-        #Matching l1 jets to off jets
-        for i in range(l1Jets.num[0]):
-            l1Jets.matchOff[i], dR = Matching(l1Jets.phi[i],l1Jets.eta[i],offJets)
-            l1Jets.matchGen[i] = -1
+        #print "Matching l1 jets to off jets"
+        #for i in range(l1Jets.num[0]):
+        #    l1Jets.matchOff[i], dR = Matching(l1Jets.phi[i],l1Jets.eta[i],offJets)
+        #    l1Jets.matchGen[i] = -1
 
         if isMC:
             ####################################################
@@ -1040,12 +1187,12 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 
                 
             #Matching l1 jets to off and gen jets
-            for i in range(l1Jets.num[0]):
-                l1Jets.matchGen[i], dR = Matching(l1Jets.phi[i],l1Jets.eta[i],genJets)
+            #for i in range(l1Jets.num[0]):
+            #    l1Jets.matchGen[i], dR = Matching(l1Jets.phi[i],l1Jets.eta[i],genJets)
         
             #Matching gen jets to off jets
-            for i in range(offJets.num[0]):
-                offJets.matchGen[i], dR = Matching(offJets.phi[i],offJets.eta[i],genJets)
+            #for i in range(offJets.num[0]):
+            #    offJets.matchGen[i], dR = Matching(offJets.phi[i],offJets.eta[i],genJets)
 
             """ Not working with 94X samples..... :( But not needed with miniAOD :)
             for genParticle in genParticles_source.productWithCheck():
@@ -1109,7 +1256,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             """
         ####################################################
         ####################################################
-
+        #print "Making cleanCollections"
 
         cleanCollection(offJets, offCleanJets, "lepOverlap04Tight", 0.0, offCleanJets.offOrder, verbose = False)
         #cleanCollection(offJets, offClean05Jets, "lepOverlap05Tight", 0.0, offClean05Jets.offOrder)
@@ -1142,6 +1289,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 maxPUptHat[0] = max(maxPUptHat[0],ptHat_)
                 
         if iev%1000==1: print "Event: ",iev," done."
+        #print "Event: ",iev," done."
         nPassHisto.Fill(1)
         tree.Fill()
         
@@ -1155,13 +1303,15 @@ if __name__ == "__main__":
     secondaryFiles = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17DRPremix_94X_TSG_GEN-SIM-RAW_EC33C288-051E-E811-95B7-1866DA7F98A8.root"
         "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_96AFE9F4-6974-E711-80D3-02163E01A3CB.root"
+        #"/store/data/Run2017C/MuonEG/RAW/v1/000/300/155/00000/5219D654-9176-E711-99E5-02163E019DED.root"
     ]
     filesInput = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17MiniAOD_94X_TSG_MINIAOD_A25F33EE-5A1F-E811-ABCC-90B11C48DA2F.root"
         "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
+        #"/store/data/Run2017C/MuonEG/MINIAOD/PromptReco-v2/000/300/155/00000/14B10372-AF77-E711-A0A0-02163E0133CC.root"
     ]
     fileOutput = "tree_phase1.root"
-    maxEvents = 20
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, preProcessing=False)
+    maxEvents = 1000
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=False)
 
     

@@ -35,7 +35,7 @@ def matching(eta,phi,offJet_eta,offJet_phi,offJet_num):
     return index
     
 
-def SetVariable(tree,name,option='F',lenght=1,maxLenght=100):
+def SetVariable(tree,name,option='F',lenght=1,maxLenght=50):
     if option is 'F': arraytype='f'
     elif option is 'O': arraytype='i'
     elif option is 'I': arraytype='i'
