@@ -7,7 +7,7 @@ ROOT.FWLiteEnabler.enable()
 makeitleak = True
 onlyGet = False
 
-events = Events(["/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_4_0_patch1/src/HLTBTagging/nTuples/cmsswPreProcessing.root"])
+events = Events(100*["cmsswPreProcessing.root"])
 caloJets_source, caloJets_label                     = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed") #DeepNtupler: hltAK4CaloJetsCorrected as jetToken3
 calobtag_source, calobtag_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
 calodeepbtag_source, calodeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probb")
@@ -20,8 +20,8 @@ offEle_source, offEle_label                         = Handle("vector<pat::Electr
 offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
 MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
 if makeitleak:
-    eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool>>"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose::MYHLT")
-    eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool>>"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight::MYHLT")
+    eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool>>"), ("egmGsfElectronIDs:cutBasedElectronID_Fall17_94X_V1_loose")
+    eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool>>"), ("egmGsfElectronIDs:cutBasedElectronID_Fall17_94X_V1_tight")
 
 offJets_source, offJets_label                       = Handle("vector<pat::Jet>"), ("slimmedJets")
 VerticesOff_source, VerticesOff_label               = Handle("vector<reco::Vertex>"), ("offlineSlimmedPrimaryVertices")

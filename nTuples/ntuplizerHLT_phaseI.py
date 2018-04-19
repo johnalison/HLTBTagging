@@ -1312,6 +1312,6 @@ if __name__ == "__main__":
     ]
     fileOutput = "tree_phase1.root"
     maxEvents = 1000
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=False)
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=True)
 
     

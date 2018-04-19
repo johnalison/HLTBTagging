@@ -132,6 +132,10 @@ class CmsswPreprocessor :
 		f = open(configfile, 'w')
 		f.write(cmsswConfig.process.dumpPython())
 		f.close()
+                print "sed -i s/inf\)/float\( \\'inf\\'\)\)/g "+configfile
+                print "sed -i s/inf,/float\(\\'inf\\'\),/g "+configfile
+                os.system("sed -i s/inf\)/float\(\\'inf\\'\)\)/g "+configfile)
+                os.system("sed -i s/inf,/float\(\\'inf\\'\),/g "+configfile)
 		runstring="%s %s >& %s/cmsRun.log" % (self.command,configfile,wd)
 		print "Running pre-processor: %s " %runstring
                 ret=os.system(runstring)
