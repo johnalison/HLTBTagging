@@ -62,10 +62,7 @@ def getBJetValuesforFilling(btags_source):
     bJets = {}
     if btags_source.isValid():
          bjets  = btags_source.product()
-         print type(bjets)
-         print bjets.__dict__
          #import pdb; pdb.set_trace()
-         print len(bjets) == bjets.size()
          for ibjet in range(len(bjets)):
              bjet = bjets.key(ibjet).get()
              bJets[ibjet] = (bjet.eta(), bjet.phi(), bjets.value(ibjet))
@@ -75,39 +72,10 @@ def getBJetValuesforFilling_JetColl(btags_source):
     bJets = {}
     if btags_source.isValid():
          bjets  = btags_source.product()
-         print type(bjets)
-         print bjets.__dict__
          for ibjet in range(len(bjets)):
              bjet = bjets.key(ibjet).get()
              bJets[ibjet] = (bjet.eta(), bjet.phi(), bjets.value(ibjet))
     return bJets
-
-
-
-
-def getBJetValuesforFillingMulitproc(q, btags_source):
-    bJets = {}
-    if btags_source.isValid():
-         bjets  = btags_source.product()
-         for ibjet in range(len(bjets)):
-             bjet = bjets.key(ibjet).get()
-             bJets[ibjet] = (bjet.eta(), bjet.phi(), btags_source.product().value(ibjet))
-             del bjet
-    q.put(bJets)
-
-
-def getBJetValuesforFillingAll(q, sources):
-    allTags = []
-    for btags_source in sources:
-        bJets = {}
-        if btags_source.isValid():
-             bjets  = btags_source.product()
-             for ibjet in range(len(bjets)):
-                 bjet = bjets.key(ibjet).get()
-                 bJets[ibjet] = (bjet.eta(), bjet.phi(), btags_source.product().value(ibjet))
-                 del bjet
-        allTags.append(deepcopy(bJets))
-    q.put(allTags)
     
 
 def FillBtagAlt(bTagTuples, jets, jet_btags, jet_btagsRank = None, JetIndexVars = None, nBtagsgeNull = None, debug = False):
@@ -436,11 +404,10 @@ def getMuonIso(muon):
     return iso
 
     
-def FillElectronVector(source, variables, electronids):
-    #see https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+def FillElectronVector(source, variables, electronid):
     variables.num[0] = 0
     for iobj, obj in enumerate(source.productWithCheck()):
-        if electronids.get(iobj):
+        if bool(obj.electronID(electronid)): #returns float so explicit conversion necessary
             #print obj, obj.pt(), electronids.get(iobj)
             for (name, var) in variables.__dict__.items():
                 if name == "pt" :                var[variables.num[0]] = obj.pt()
@@ -547,10 +514,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "fileOutput: ",fileOutput
     print "secondaryFiles: ",secondaryFiles
     print "maxEvents: ",maxEvents
+    print "LumiSections: ",LS
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
     
-    doTriggerCut = False
+    doTriggerCut = True
     if doTriggerCut:
         print "+-----------------------------------------------------------------------------------------+"
         print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
@@ -559,7 +527,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         print "+-----------------------------------------------------------------------------------------+"
         print""
     runAOD = False
-    if runAOD:
+    if runAOD and False: # Don't do it!
         print "                             +----------------------------+"
         print "                             | IMPORTANT: Will run on AOD |"
         print "                             +----------------------------+"
@@ -604,6 +572,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             f = open(configfile, 'w')
             f.write(cmsswConfig.process.dumpPython())
             f.close()
+            print "sed -i s/inf\)/float\( \\'inf\\'\)\)/g "+configfile
+            print "sed -i s/inf,/float\(\\'inf\\'\),/g "+configfile
+            os.system("sed -i s/inf\)/float\(\\'inf\\'\)\)/g "+configfile)
+            os.system("sed -i s/inf,/float\(\\'inf\\'\),/g "+configfile)
             cmsRun_config = "mod_"+cmsRun_config
         print "Using: {0}".format(cmsRun_config)
         preprocessor = CmsswPreprocessor(cmsRun_config)
@@ -622,14 +594,14 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 config = file(cmsRun_config)
                 print config.read()
                 print "cat cmsRun.log"
-                log = file("cmsRun.log")
-                print log.read()
+            log = file("cmsRun.log")
+            print log.read()
             #preprocessor.run(cfg,".",firstEvent,maxEvents)
             raise Exception("CMSSW preprocessor failed!")
 
     print "Time to preprocess: {0:10f} s".format(time.time()-t0)    
     print "Filesize of {0:8f} MB".format(os.path.getsize("cmsswPreProcessing.root") * 1e-6)
-        
+
     f = ROOT.TFile(fileOutput,"recreate")
     tree = ROOT.TTree("tree","tree")
 
@@ -691,8 +663,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         offEle_source, offEle_label                         = Handle("vector<reco::GsfElectron>"), ("gedGsfElectrons")
         offMu_source, offMu_label                           = Handle("vector<reco::Muon>"), ("muons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
-        eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
-        eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
 
         #Jets
         offJets_source, offJets_label                       = Handle("vector<reco::PFJet>"), ("ak4PFJetsCHS") #DeepNtuple: jetToken1
@@ -712,14 +682,17 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #Gen
         #genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("ak4GenJetsNoNu")
         #genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
-        #genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("genParticles")
+        genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("genParticles")
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
     else:
-        offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
+        if isMC:
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT") #NOTE: This should match the process name in your hlt_dump!
+            idName = "cutBasedElectronID_Fall17_94X_V1_tight"
+        else:
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
+            idName = "cutBasedElectronID-Fall17-94X-V1-tight"
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
-        #eleLooseID_source, eleLooseID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
-        #eleTightID_source, eleTightID_label                 = Handle("<edm::ValueMap<bool> >"), ("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
 
         #Jets
         offJets_source, offJets_label                       = Handle("vector<pat::Jet>"), ("slimmedJets")
@@ -734,7 +707,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #Gen
         #genJets_source, genJets_label                       = Handle("vector<reco::GenJet>"), ("slimmedGenJets")
         #genMet_source, genMet_label                         = Handle("vector<reco::GenMET>"), ("genMetTrue")
-        #genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("prunedGenParticles")
+        genParticles_source, genParticles_label             = Handle("vector<reco::GenParticle>"), ("prunedGenParticles")
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
 
 
@@ -743,9 +716,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     ### create output variables ###
     #Leptons
     offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
-    #offLooseElectrons   = BookVector(tree, "offLooseElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
     offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
-    #offLooseMuons       = BookVector(tree, "offLooseMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
     
     #Jets:
     #l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','energy','matchOff','matchGen'])
@@ -756,56 +727,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     offCleanCSVJets          = BookVector(tree,"offCleanCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
     offCleanDeepCSVJets      = BookVector(tree,"offCleanDeepCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
 
-    #CSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingCSV", "I")
-    #CSVleadingPFJet = SetVariable(tree, "pfJets_ileadingCSV", "I")
-    #CSVleadingOffJet = SetVariable(tree, "offJets_ileadingCSV", "I")
-    #CSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingCSV")
-    #CSVsecondCaloJet = SetVariable(tree, "caloJets_isecondCSV", "I")
-    #CSVsecondPFJet = SetVariable(tree, "pfJets_isecondCSV", "I")
-    #CSVsecondOffJet = SetVariable(tree, "offJets_isecondCSV", "I")
-    #CSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondCSV")
-    #CSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdCSV", "I")
-    #CSVthirdPFJet = SetVariable(tree, "pfJets_ithirdCSV", "I")
-    #CSVthirdOffJet = SetVariable(tree, "offJets_ithirdCSV", "I")
-    #CSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdCSV")
-    #CSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthCSV", "I")
-    #CSVfourthPFJet = SetVariable(tree, "pfJets_ifourthCSV", "I")
-    #CSVfourthOffJet = SetVariable(tree, "offJets_ifourthCSV", "I")
-    #CSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthCSV")
-
-    #nCSVCalogeZero = SetVariable(tree, "caloJets_nCSVgeZero", "I")
-    #nCSVPFgeZero = SetVariable(tree, "pfJets_nCSVgeZero", "I")
-    #nCSVOffgeZero = SetVariable(tree, "offJets_nCSVgeZero")
-    #nCSVOffTightgeZero = SetVariable(tree, "offTightJets_nCSVgeZero", "I")
-
-    
-    #DeepCSVleadingCaloJet = SetVariable(tree, "caloJets_ileadingDeepCSV", "I")
-    #DeepCSVleadingPFJet = SetVariable(tree, "pfJets_ileadingDeepCSV", "I")
-    #DeepCSVleadingOffJet = SetVariable(tree, "offJets_ileadingDeepCSV", "I")
-    #DeepCSVleadingOffTightJet = SetVariable(tree, "offTightJets_ileadingDeepCSV")
-    #DeepCSVsecondCaloJet = SetVariable(tree, "caloJets_isecondDeepCSV", "I")
-    #DeepCSVsecondPFJet = SetVariable(tree, "pfJets_isecondDeepCSV", "I")
-    #DeepCSVsecondOffJet = SetVariable(tree, "offJets_isecondDeepCSV", "I")
-    #DeepCSVsecondOffTightJet = SetVariable(tree, "offTightJets_isecondDeepCSV")
-    #DeepCSVthirdCaloJet = SetVariable(tree, "caloJets_ithirdDeepCSV", "I")
-    #DeepCSVthirdPFJet = SetVariable(tree, "pfJets_ithirdDeepCSV", "I")
-    #DeepCSVthirdOffJet = SetVariable(tree, "offJets_ithirdDeepCSV", "I")
-    #DeepCSVthirdOffTightJet = SetVariable(tree, "offTightJets_ithirdDeepCSV")
-    #DeepCSVfourthCaloJet = SetVariable(tree, "caloJets_ifourthDeepCSV", "I")
-    #DeepCSVfourthPFJet = SetVariable(tree, "pfJets_ifourthDeepCSV", "I")
-    #DeepCSVfourthOffJet = SetVariable(tree, "offJets_ifourthDeepCSV", "I")
-    #DeepCSVfourthOffTightJet = SetVariable(tree, "offTightJets_ifourthDeepCSV")
-
-    #nDeepCSVCalogeZero = SetVariable(tree, "caloJets_nDeepCSVgeZero", "I")
-    #nDeepCSVPFgeZero = SetVariable(tree, "pfJets_nDeepCSVgeZero", "I")
-    ##nDeepCSVOffgeZero = SetVariable(tree, "offJets_nDeepCSVgeZero")
-    #nDeepCSVOffTightgeZero = SetVariable(tree, "offTightJets_nDeepCSVgeZero", "I")
-
-    
-    
+    """
     if isMC:
         genJets             = BookVector(tree,"genJets",['pt','eta','phi','mass','mcFlavour','mcPt'])
-
+    """
     #MET and HT
     #l1HT                = SetVariable(tree,'l1HT')
     caloMet             = BookVector(tree,"caloMet",['pt','phi'])
@@ -882,29 +807,20 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         event.getByLabel(offEle_label, offEle_source)
         event.getByLabel(offMu_label, offMu_source)
         event.getByLabel(MuGlobalTracks_label, MuGlobalTracks_source)
-        #event.getByLabel(eleLooseID_label , eleLooseID_source)
-        #event.getByLabel(eleTightID_label , eleTightID_source)
 
         #Getting Jet handles
         event.getByLabel(caloJets_label, caloJets_source)
-        #print "Getting calobtag by label"
         event.getByLabel(calobtag_label, calobtag_source)
-        #print "Getting calodeepbtag by label"
         event.getByLabel(calodeepbtag_label, calodeepbtag_source)
         #event.getByLabel(calodeepbtag_bb_label, calodeepbtag_bb_source)
-        #print "Getting calodeepbtagudsg by label"
         #event.getByLabel(calodeepbtag_udsg_label, calodeepbtag_udsg_source)
         event.getByLabel(caloPUid_label, caloPUid_source)
 
         
         event.getByLabel(pfJets_label, pfJets_source)
-        #print "Getting pfbtag by label"
         event.getByLabel(pfbtag_label, pfbtag_source)
-        #print "Getting pfdeepbtag by label"
         event.getByLabel(pfdeepbtag_label, pfdeepbtag_source)
-        #print "Getting pfdeepbtagbb by label"
         #event.getByLabel(pfdeepbtag_bb_label, pfdeepbtag_bb_source)
-        #print "Getting pfdeepbtagudsg by label"
         #event.getByLabel(pfdeepbtag_udsg_label, pfdeepbtag_udsg_source)
 
         #print "getting offjets by label"
@@ -937,9 +853,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #    event.getByLabel(genJets_label, genJets_source)
         #    if runAOD:
         #        event.getByLabel(genMet_label, genMet_source)
-        #    event.getByLabel(genParticles_label, genParticles_source)
+            event.getByLabel(genParticles_label, genParticles_source)
             event.getByLabel(generator_label, generator_source)
-        #    event.getByLabel(pileUp_label, pileUp_source)
+            event.getByLabel(pileUp_label, pileUp_source)
 
 
         event.getByLabel(triggerBitLabel, triggerBits)
@@ -969,11 +885,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         ####################################################
         ####################################################
 
-        #print "run"
         run[0]          = event.eventAuxiliary().run()
-        #print "lumi"
         lumi[0]         = event.eventAuxiliary().luminosityBlock()
-        #print "evt"
         evt[0]          = event.eventAuxiliary().event()
 
         if crun != run[0] or cls != lumi[0]:
@@ -988,11 +901,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #VerticesPF[0] = getVertex(VerticesPF_source)
         #VerticesL3[0] = getVertex(VerticesL3_source)
         #VerticesOff[0]= getVertex(VerticesOff_source)
-        #print "starting vertex"
         vtx, nVtx = getVertices(VerticesOff_source)
         #print "saving"
         VerticesOff[0], nOffVertices[0] = vtx, nVtx 
-        #print "finished vertex"
         
         ####################################################
         ####################################################
@@ -1010,14 +921,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 offVertex = None
                 print "Offline Vertex did not pass the selection"
 
-        #print "Filling tight electrons"
-        #print "Filling electrons"
-        ####FillElectronVector(offEle_source, offTightElectrons, eleTightID_source.productWithCheck())
-        #print "Filling loose electrons"
-        #FillElectronVector(offEle_source, offLooseElectrons, eleLooseID_source.productWithCheck())
-        #print "Filling muons"
+        FillElectronVector(offEle_source, offTightElectrons, idName )
         FillMuonVector(offMu_source, offTightMuons, offVertex, "tight")
-        #FillMuonVector(offMu_source, offLooseMuons, offVertex, "loose")
 
         ####################################################
         ####################################################
@@ -1050,49 +955,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         ####################################################
         ####################################################
         # Jets
-        #print "Getting CaloJets"
         FillVector(caloJets_source,caloJets)
-        #print "Getting pf jets"
         FillVector(pfJets_source,pfJets)
-        ##print "Getting L1 jets"
         #FillVector(l1Jets_source,l1Jets)
-        #print "Getting off jets"
         FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC)
-        #FillVector(offJets_source,offTightJets,30)
 
-
-        """
-        q = Queue()
-        #print "init process"
-        p = Process(target=getBJetValuesforFillingAll, args=(q, [calobtag_source, calodeepbtag_source, pfbtag_source, pfdeepbtag_source]))
-        #print "starting process"
-        p.start()
-        #print "Getting output"
-        ret = q.get()
-        #print ret
-        csvbtagTouples_calo = ret[0]
-        deepcsvbtagTouples_calo = ret[1]
-        csvbtagTouples_pf = ret[2]
-        deepcsvbtagTouples_pf = ret[3]
-        p.join()
-        """
-
-        #print "Filling calo btagging"
         csvbtagTouples_calo = getBJetValuesforFilling(calobtag_source)
-        #qCaloCSV = Queue()
-        #pCaloCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qCaloCSV,calobtag_source))
-        #pCaloCSV.start()
-        #csvbtagTouples_calo = qCaloCSV.get()
-        #pCaloCSV.terminate()
-
-        ##print "calo csv"
         deepcsvbtagTouples_calo = getBJetValuesforFilling(calodeepbtag_source)
-        #qCaloDeepCSV = Queue()
-        #pCaloDeepCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qCaloDeepCSV, calodeepbtag_source))
-        #pCaloDeepCSV.start()
-        #deepcsvbtagTouples_calo = qCaloDeepCSV.get()
-        #pCaloDeepCSV.terminate()
-        ##print "calo deepcsv"
         #FillBtag(calobtag_source, caloJets, caloJets.csv, caloJets.rankCSV,
         #         [CSVleadingCaloJet, CSVsecondCaloJet, CSVthirdCaloJet, CSVfourthCaloJet], nCSVCalogeZero, debug = False )
         FillBtagAlt(csvbtagTouples_calo, caloJets, caloJets.csv, caloJets.rankCSV, debug = False )
@@ -1105,18 +974,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
         #print "Filling pf btagging"
         csvbtagTouples_pf = getBJetValuesforFilling(pfbtag_source)
-        #qPFCSV = Queue()
-        #pPFCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qPFCSV,pfbtag_source))
-        #pPFCSV.start()
-        #csvbtagTouples_pf = qPFCSV.get()
-        #pPFCSV.terminate()
-        
         deepcsvbtagTouples_pf = getBJetValuesforFilling(pfdeepbtag_source)
-        #qPFDeepCSV = Queue()
-        #pPFDeepCSV = Process(target=getBJetValuesforFillingMulitproc , args=(qPFDeepCSV,pfdeepbtag_source))
-        #pPFDeepCSV.start()
-        #deepcsvbtagTouples_pf = qPFDeepCSV.get()
-        #pPFDeepCSV.terminate()
 
         #FillBtag(pfbtag_source, pfJets, pfJets.csv, pfJets.rankCSV,
         #         [CSVleadingPFJet, CSVsecondPFJet, CSVthirdPFJet, CSVfourthPFJet], nCSVPFgeZero)
@@ -1128,7 +986,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #FillBtag(pfdeepbtag_udsg_source, pfJets, pfJets.deepcsv_udsg)
         
 
-        #print "Filling offline btagging"
         if runAOD:
             FillBtag(offbtag_source, offJets, offJets.csv, offJets.rankCSV,
                      [CSVleadingOffJet, CSVsecondOffJet, CSVthirdOffJet, CSVfourthOffJet])#, nCSVOffgeZero)
@@ -1141,17 +998,12 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             
         makeDeepCSVSumRanking(offJets, offJets.deepcsv, offJets.deepcsv_b, offJets.deepcsv_bb, offJets.rankDeepCSV)
         LeptonOverlap(offJets, offTightMuons, offTightElectrons, offJets.lepOverlap04Tight)
-        #LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap04Loose)
-        #LeptonOverlap(offJets, offTightMuons, offTightElectrons, offJets.lepOverlap05Tight, DeltaR = 0.5)
-        #LeptonOverlap(offJets, offLooseMuons, offLooseElectrons, offJets.lepOverlap05Loose, DeltaR = 0.5)
 
-        #print "Finished jets"
-        
-        
-        #if isMC:
-        #    FillVector(genJets_source,genJets,15)
-            
-        #print "Matching calo jets to off jets"
+        """ Removed GenJets for now 
+        if isMC:
+            FillVector(genJets_source,genJets,15)
+        """
+
         resetArray(offJets.matchCalo, -1)
         resetArray(offJets.matchPF, -1)
         for i in range(caloJets.num[0]):
@@ -1171,6 +1023,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #    l1Jets.matchOff[i], dR = Matching(l1Jets.phi[i],l1Jets.eta[i],offJets)
         #    l1Jets.matchGen[i] = -1
 
+        """ Removed GenJets for now 
         if isMC:
             ####################################################
             # Gen patricle for Jet
@@ -1194,7 +1047,6 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             #for i in range(offJets.num[0]):
             #    offJets.matchGen[i], dR = Matching(offJets.phi[i],offJets.eta[i],genJets)
 
-            """ Not working with 94X samples..... :( But not needed with miniAOD :)
             for genParticle in genParticles_source.productWithCheck():
                 if genParticle.pt()<5: continue
                 if not (abs(genParticle.pdgId()) in [21,1,2,3,4,5,11,13,15]): continue
@@ -1253,7 +1105,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             #FillMCFlavour(offDeepCSVJets, offDeepCSVJets.matchGen, genJets.mcFlavour, offDeepCSVJets.mcFlavour)
             FillMCFlavour(caloJets, caloJets.matchGen, genJets.mcFlavour, caloJets.mcFlavour)
             FillMCFlavour(pfJets, pfJets.matchGen, genJets.mcFlavour, pfJets.mcFlavour)
-            """
+        """
         ####################################################
         ####################################################
         #print "Making cleanCollections"
@@ -1302,16 +1154,19 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 if __name__ == "__main__":
     secondaryFiles = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17DRPremix_94X_TSG_GEN-SIM-RAW_EC33C288-051E-E811-95B7-1866DA7F98A8.root"
-        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_RAW_300107_96AFE9F4-6974-E711-80D3-02163E01A3CB.root"
+        "/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/14E63E79-041E-E811-A72A-3417EBE5289A.root"
+        #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root"
         #"/store/data/Run2017C/MuonEG/RAW/v1/000/300/155/00000/5219D654-9176-E711-99E5-02163E019DED.root"
     ]
     filesInput = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17MiniAOD_94X_TSG_MINIAOD_A25F33EE-5A1F-E811-ABCC-90B11C48DA2F.root"
-        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
+        "/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/30000/AEA25818-FB21-E811-BBFB-848F69FD444B.root"
+        #"file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
+        #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_MiniAODv2_ReReco_300107_4AABB4B6-5037-E811-9F4A-0CC47A5FBE35.root"
         #"/store/data/Run2017C/MuonEG/MINIAOD/PromptReco-v2/000/300/155/00000/14B10372-AF77-E711-A0A0-02163E0133CC.root"
     ]
     fileOutput = "tree_phase1.root"
-    maxEvents = 1000
+    maxEvents = 10
     launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=True)
 
     

@@ -14,11 +14,11 @@ ROOT.FWLiteEnabler.enable()
 
 
 
-makeitleak = True
+makeitleak = False
 
 
-events = Events(["testoutMiniAOD100.root"])
-offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
+events = Events(["cmsswPreProcessing.root"])
+offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT")
 offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
 MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
 if makeitleak:
@@ -28,6 +28,16 @@ if makeitleak:
 slimmedVtx_source, slimmedVtx_label = Handle("<edm::ValueMap<float>>"), ("offlineSlimmedPrimaryVertices")
     
 offJets_source, offJets_label                       = Handle("vector<pat::Jet>"), ("slimmedJets")
+
+caloJets_source, caloJets_label                     = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed") #DeepNtupler: hltAK4CaloJetsCorrected as jetToken3
+calobtag_source, calobtag_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
+calodeepbtag_source, calodeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probb")
+
+pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltAK4PFJetsLooseIDCorrected") #DeepNtupler: hltPFJetForBtag as jetToken2
+#pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltPFJetForBtag") #DeepNtupler: hltPFJetForBtag as jetToken2
+pfbtag_source, pfbtag_label                         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCombinedSecondaryVertexBJetTagsPF")
+pfdeepbtag_source, pfdeepbtag_label                 = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probb")
+
 
 for i,event in enumerate(events):
     if i%10000==0:
@@ -42,13 +52,66 @@ for i,event in enumerate(events):
     event.getByLabel(offJets_label, offJets_source)
     event.getByLabel(slimmedVtx_label, slimmedVtx_source)
 
+    event.getByLabel(caloJets_label, caloJets_source)
+    event.getByLabel(calobtag_label, calobtag_source)
+    event.getByLabel(calodeepbtag_label, calodeepbtag_source)
+    event.getByLabel(pfJets_label, pfJets_source)
+    event.getByLabel(pfbtag_label, pfbtag_source)
+    event.getByLabel(pfdeepbtag_label, pfdeepbtag_source)
 
-    if makeitleak:
-        print "-",offEle_source.isValid(), eleTightID_source.isValid()
-        if offEle_source.isValid() and eleTightID_source.isValid():
-            for iele, ele in  offEle_source.product():
-                print ele, ele.pt(), eleTightID_source.product().get(iele)
     
+    print "-",offEle_source.isValid()
+    if offEle_source.isValid():
+        for iele, ele in  enumerate(offEle_source.product()):
+            print ele, ele.pt(), ele.electronID("cutBasedElectronID_Fall17_94X_V1_tight"), bool(ele.electronID("cutBasedElectronID_Fall17_94X_V1_tight")) is True
+
+
+
+    bJets = {}
+    if calobtag_source.isValid():
+        for jet in caloJets_source.product():
+            calobtags = calobtag_source.product()
+            for ibjet in range(len(calobtags)):
+                jobj = calobtags.key(ibjet).get()
+                #print jobj,jobj.pt(),calobtags.value(ibjet)
+                bJets[ibjet] = (jobj.eta(), jobj.phi(), calobtags.value(ibjet))
+
+    print bJets
+    bJets = {}
+    if calodeepbtag_source.isValid():
+        for jet in caloJets_source.product():
+            calobtags = calodeepbtag_source.product()
+            for ibjet in range(len(calobtags)):
+                jobj = calobtags.key(ibjet).get()
+                #print jobj,jobj.pt(),calobtags.value(ibjet)
+                bJets[ibjet] = (jobj.eta(), jobj.phi(), calobtags.value(ibjet))
+
+    print bJets
+    bJets = {}
+    if pfbtag_source.isValid(): 
+        for jet in pfJets_source.product():
+            pfbtags = pfbtag_source.product()
+            for ibjet in range(len(pfbtags)):
+                jobj = pfbtags.key(ibjet).get()
+                #print jobj,jobj.pt(),pfbtags.value(ibjet)
+                bJets[ibjet] = (jobj.eta(), jobj.phi(), pfbtags.value(ibjet))
+
+    print bJets
+    bJets = {}
+    if pfdeepbtag_source.isValid(): 
+        for jet in pfJets_source.product():
+            pfbtags = pfdeepbtag_source.product()
+            for ibjet in range(len(pfbtags)):
+                jobj = pfbtags.key(ibjet).get()
+                #print jobj,jobj.pt(),pfbtags.value(ibjet)
+                bJets[ibjet] = (jobj.eta(), jobj.phi(), pfbtags.value(ibjet))
+
+    print bJets
+
+
+
+
+            
 print "Processing event {0:10} ------ Memory: RES {1:3.2f} MB - VIRT {2:3.2f} MB ".format(i, process.memory_info().rss/1000000.0, process.memory_info().vms/1000000.0)
 
     

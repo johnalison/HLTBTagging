@@ -16,6 +16,7 @@ def launch(cmd):
 
 print "ARGV:",sys.argv
 JobNumber=sys.argv[1]
+islocal = False
 try:
     ##CRAB
     import PSet
@@ -31,6 +32,7 @@ except:
     crabSecondaryFiles=PSet.process.source.secondaryFileNames
     maxEvents=int(PSet.process.maxEvents.input.value())
     VLuminosityBlockRange = PSet.process.source.lumisToProcess
+    islocal = True
 if maxEvents<0:
     maxEvents = 1000000000
 print "crabFiles before: ",crabFiles
@@ -54,7 +56,7 @@ handle.close()
 ##replace files with crab ones
 #config.components[0].files=crabFiles
 
-launchNtupleFromHLT("tree.root",crabFiles,crabSecondaryFiles,maxEvents, LS = VLuminosityBlockRange)
+launchNtupleFromHLT("tree.root",crabFiles,crabSecondaryFiles,maxEvents, LS = VLuminosityBlockRange, local = islocal)
 
 #from PhysicsTools.HeppyCore.framework.looper import Looper
 #looper = Looper( 'Output', config, nPrint = 1)

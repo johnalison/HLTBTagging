@@ -20658,23 +20658,6 @@ process.NoFilter_CaloBTagCSV_v1 = cms.Path(process.HLTBeginSequence+process.hltP
 process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScalersRawToDigi+process.hltFEDSelector+process.hltTriggerSummaryAOD+process.hltTriggerSummaryRAW+process.hltBoolFalse)
 
 
-from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
-from RecoEgamma.ElectronIdentification.egmGsfElectronIDs_cff import *
-# turn on VID producer, indicate data format  to be
-# DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
-dataFormat = DataFormat.MiniAOD
-
-switchOnVIDElectronIdProducer(process, dataFormat)
-
-# define which IDs we want to produce
-my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V1_cff']
-
-#add them to the VID producer
-for idmod in my_id_modules:
-    setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
-process.p = cms.Path(process.egmGsfElectronIDSequence)
-
-
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                          dataset = cms.untracked.PSet(),
                                          fileName = cms.untracked.string('./cmsswPreProcessing.root'),

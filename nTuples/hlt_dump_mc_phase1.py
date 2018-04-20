@@ -4,7 +4,7 @@ process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/0416D117-B31E-E811-848B-3417EBE64CDB.root'),
-                            lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
     inputCommands = cms.untracked.vstring('keep *')
 )
 process.HLTConfigVersion = cms.PSet(
@@ -20657,33 +20657,17 @@ process.NoFilter_CaloBTagCSV_v1 = cms.Path(process.HLTBeginSequence+process.hltP
 
 process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScalersRawToDigi+process.hltFEDSelector+process.hltTriggerSummaryAOD+process.hltTriggerSummaryRAW+process.hltBoolFalse)
 
+from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
+setupEgammaPostRecoSeq(process,applyEnergyCorrections=False,
+                       applyVIDOnCorrectedEgamma=False,
+                       isMiniAOD=True)
 
-from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
-# turn on VID producer, indicate data format  to be
-# DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
-dataFormat = DataFormat.MiniAOD
 
-switchOnVIDElectronIdProducer(process, dataFormat)
-
-# define which IDs we want to produce
-my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff']
-
-#add them to the VID producer
-for idmod in my_id_modules:
-    setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
-process.p = cms.Path(process.egmGsfElectronIDSequence)
-
+process.p = cms.Path(process.egammaPostRecoSeq)
 
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                          dataset = cms.untracked.PSet(),
                                          fileName = cms.untracked.string('./cmsswPreProcessing.root'),
-                                         outputCommands = cms.untracked.vstring('keep *')
-)
-process.FULLOutput = cms.EndPath(process.hltOutputFULL)
-
-
-
-"""
                                          outputCommands = cms.untracked.vstring('drop *',
                                                                                 'keep *Egamma*_*_*_*',
                                                                                 'keep bool*ValueMap*_*Electron*_*_*',
@@ -20713,4 +20697,5 @@ process.FULLOutput = cms.EndPath(process.hltOutputFULL)
                                                                                 'drop triggerTriggerEvent_*_*_*',
                                                                                 'keep *_hltGtStage2Digis_*_*',
                                                                                 'keep *_generator_*_*')
-"""
+)
+process.FULLOutput = cms.EndPath(process.hltOutputFULL)

@@ -23,6 +23,8 @@ rehash
 Additional code for runnning the ntupler (by Silvio)
 
 ```bash
+git cms-merge-topic cms-egamma:EgammaPostRecoTools_940 #For adding 94X electron id to miniAODv1 (v2 already contains latest IDs)
+
 git clone git@github.com:kschweiger/HLTBTagging.git #Clone this repo
 
 git cms-addpkg PhysicsTools/Heppy
