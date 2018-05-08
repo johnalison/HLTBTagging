@@ -6,10 +6,9 @@ Setting up CMSSW like described in [GuideGlobalHLT](https://twiki.cern.ch/twiki/
 
 ```bash
 export SCRAM_ARCH=slc6_amd64_gcc630
-cmsrel CMSSW_9_4_6_patch1
-cd CMSSW_9_4_6_patch1/src
+cmsrel CMSSW_10_1_2_patch2
+cd CMSSW_10_1_2_patch2/src
 cmsenv
-git cms-init
 
 # HLT
 git cms-addpkg HLTrigger/Configuration
@@ -17,15 +16,12 @@ git cms-addpkg HLTrigger/Configuration
 # Dependencies and Compilation
 git cms-checkdeps -A -a
 scram b -j 6
-rehash
 ```
 
 Additional code for runnning the ntupler (by Silvio)
 
 ```bash
-git cms-merge-topic cms-egamma:EgammaPostRecoTools_940 #For adding 94X electron id to miniAODv1 (v2 already contains latest IDs)
-
-git clone git@github.com:kschweiger/HLTBTagging.git #Clone this repo
+git clone git@github.com:kschweiger/HLTBTagging.git -b 10X #Clone this repo
 
 git cms-addpkg PhysicsTools/Heppy
 git cms-addpkg PhysicsTools/HeppyCore

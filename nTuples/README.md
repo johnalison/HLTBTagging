@@ -7,27 +7,15 @@ The following steps are necessary to produce the ntuples.
 Creating of config dump for running the RAW+AOD files with HLT. The HLT tables and `--setup` depend on the usecase.
 For Data:
 ```bash
-hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
- --setup /dev/CMSSW_9_2_0/GRun/V140 \
- --data --globaltag 92X_dataRun2_HLT_v7 \
- --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root  \
+hltGetConfiguration /users/koschwei/CMMSW_10_1_2/HLT_bTag_18/V2 \
+ --setup /dev/CMSSW_10_1_0/GRun/V31 \
+ --data --globaltag 101X_dataRun2_HLT_v7 \
+ --input root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v1/000/315/647/00000/9C6A0148-DE50-E811-B7AA-02163E00B620.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltData.py
 
 edmConfigDump hltData.py > hlt_dump_phase1.py
 cmsRun  hlt_dump_phase1.py &> cmsRunData.log
-```
-For MC:
-```bash
-hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
- --setup /dev/CMSSW_9_2_0/GRun/V140 \
- --mc --globaltag 94X_mc2017_realistic_v11 \
- --input root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/0416D117-B31E-E811-848B-3417EBE64CDB.root  \
- --process MYHLT --full --offline   \
- --unprescale --max-events 10 --output none > hltMC.py
-
-edmConfigDump hltMC.py > hlt_dump_mc_phase1.py
-cmsRun hlt_dump_mc_phase1.py &> cmsRunMC.log
 ```
 
 Check `cmsRunMC.log` and/or `cmsRunMC.log` if rerunning the HLT finishes without errors.
@@ -48,15 +36,6 @@ __Remove__
 process.DQMOutput = cms.EndPath(process.dqmOutput)
 ```
 
-__Add__ the following for MC (MiniAODv1)
-```python
-from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
-setupEgammaPostRecoSeq(process,applyEnergyCorrections=False,
-                       applyVIDOnCorrectedEgamma=False,
-                       isMiniAOD=True)
-					   
-process.p = cms.Path(process.egammaPostRecoSeq)
-```
 
 __Add__ the following to the __end of the the config__ dump:
 ```python
@@ -96,14 +75,6 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 ```
 
-__Important:__ check if MINIAOD or AOD will be used and set `dataFormat` for VID ID tools accordingly!
-
-
-
-#### Changing from AOD to MiniAOD (or vice versa)
-* Change `dataFormat = DataFormat.AOD` to `dataFormat = DataFormat.MiniAOD` in the python config
-* Set `runAOD` in `ntuplizerHLT.py` to `False`
-
 ### Local test
 Edit `crab/PSet_localTest.py`to fit your needs.
 ```bash
@@ -113,7 +84,6 @@ cp ../hlt_dump.py .
 cp ../hlt_dump_mc.py .
 python script.py 0 &> script.log
 ```
-
 
 ### CRAB
 Edit 'crab/multicrab_config.py'. The main thing to check are:
