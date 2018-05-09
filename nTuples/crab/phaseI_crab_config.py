@@ -6,7 +6,7 @@
 #     2nd element: 0 if Data, 1 if MC
 Data = [
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2018A-v1/RAW","/MuonEG/Run2018A-PromptReco-v1/MINIAOD"),
+     ("/MuonEG/Run2018A-PromptReco-v1/MINIAOD","/MuonEG/Run2018A-v1/RAW"),
      "_RunA",
      True],
 ]
