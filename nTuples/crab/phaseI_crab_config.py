@@ -6,22 +6,11 @@
 #     2nd element: 0 if Data, 1 if MC
 Data = [
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017C-31Mar2018-v1/MINIAOD","/MuonEG/Run2017C-v1/RAW"),
-     "_RunC",
+     ("/MuonEG/Run2018A-v1/RAW","/MuonEG/Run2018A-PromptReco-v1/MINIAOD"),
+     "_RunA",
      True],
-    ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017D-31Mar2018-v1/MINIAOD","/MuonEG/Run2017D-v1/RAW"),
-     "_RunD",
-     True],
-    ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017E-31Mar2018-v1/MINIAOD","/MuonEG/Run2017E-v1/RAW"),
-     "_RunE",
-     True],
-    ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017F-31Mar2018-v1/MINIAOD","/MuonEG/Run2017F-v1/RAW"),
-     "_RunF",
-     True]
 ]
+"""NOTE: Placeholder
 MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
        #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
        ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
@@ -34,7 +23,7 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
         "/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
        "",
        False]]
-
+"""
 
 
 datasets = [Data[2]]
