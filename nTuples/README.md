@@ -7,7 +7,7 @@ The following steps are necessary to produce the ntuples.
 Creating of config dump for running the RAW+MiniAOD files with HLT. The HLT tables and `--setup` depend on the usecase.
 For Data:
 
-__Run A - With V1 menu__:
+#### Run A - With V1 menu:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4 \
  --setup /dev/CMSSW_10_1_0/GRun/V1 \
@@ -17,7 +17,7 @@ hltGetConfiguration /users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4 \
  --unprescale --max-events 10 --output none > hltData.py
 ```
 
-__Run A - With V2 menu but L1 from V1 (as present in RunA RAW):__
+#### Run A - With V2 menu but L1 from V1 (as present in RunA RAW):
 ```bash
 hltGetConfiguration /users/koschwei/CMMSW_10_1_2/HLT_bTag_18_L1RunA_3/V4  \
 --setup /dev/CMSSW_10_1_0/GRun \
@@ -28,7 +28,7 @@ hltGetConfiguration /users/koschwei/CMMSW_10_1_2/HLT_bTag_18_L1RunA_3/V4  \
 ```
 
 
-__With V2 menu - (not tested)__:
+#### With V2 menu - (not tested):
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
  --setup /dev/CMSSW_10_1_0/GRun \
