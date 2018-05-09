@@ -6,6 +6,7 @@ The following steps are necessary to produce the ntuples.
 ### HLT config
 Creating of config dump for running the RAW+MiniAOD files with HLT. The HLT tables and `--setup` depend on the usecase.
 For Data:
+
 __Run A - With V1 menu__:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4 \
@@ -16,12 +17,23 @@ hltGetConfiguration /users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4 \
  --unprescale --max-events 10 --output none > hltData.py
 ```
 
-__With V2 menu - onward (L1 changed)__:
+__Run A - With V2 menu but L1 from V1 (as present in RunA RAW):__
+```bash
+hltGetConfiguration /users/koschwei/CMMSW_10_1_2/HLT_bTag_18_L1RunA_3/V4  \
+--setup /dev/CMSSW_10_1_0/GRun \
+--data --globaltag 101X_dataRun2_HLT_v7 \
+--input root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root \
+--process MYHLT --full --offline  \
+--unprescale --max-events 10 --output none > hltData.py
+```
+
+
+__With V2 menu - (not tested)__:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
- --setup /dev/CMSSW_9_2_0/GRun/V140 \
- --data --globaltag 92X_dataRun2_HLT_v7 \
- --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root  \
+ --setup /dev/CMSSW_10_1_0/GRun \
+ --data --globaltag 101X_dataRun2_HLT_v7 \
+ --input root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltData.py
 ```

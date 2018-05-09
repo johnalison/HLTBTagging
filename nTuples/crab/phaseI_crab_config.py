@@ -26,7 +26,7 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
 """
 
 
-datasets = [Data[2]]
+datasets = Data
 print datasets
 raw_input("press ret to continue")
 prefix = ""

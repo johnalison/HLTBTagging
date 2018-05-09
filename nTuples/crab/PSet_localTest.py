@@ -11,7 +11,7 @@ process = cms.Process("FAKE")
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring('/store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v1/000/315/506/00000/945A60FD-384F-E811-A70D-FA163E990568.root'),
-    lumisToProcess = cms.untracked.VLuminosityBlockRange("315506:19-315506:25"),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange("315506:19-315506:21"),
     secondaryFileNames = cms.untracked.vstring('/store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root')
 )
 
