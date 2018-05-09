@@ -23,7 +23,7 @@ Handle.productWithCheck = productWithCheck
 
 maxJets         = 40
 bunchCrossing   = 0
-pt_min          = 15
+pt_min          = 20
 
 
 def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc = False):
@@ -366,26 +366,18 @@ def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
     if vertex is None:
         return False
     variables.num[0] = 0
+    if debug:
+        print "Muon valid:",source.isValid()
     for obj in source.productWithCheck():
+        if debug:
+            print "Muon passes loose ",obj.passed(obj.CutBasedIdLoose)
+            print "Muon passes medium",obj.passed(obj.CutBasedIdMedium)
+            print "Muon passes tight ",obj.passed(obj.CutBasedIdMedium)
         passesID = False
-        #Sometimes (in MC) there is no track saved/accessable for the muon. This prevents to code from crashing
-        if obj.globalTrack().isNull():
-            if debug:
-                print "Track is NULL"
-            passesID = False
-        else:
-            if muonid == "tight":
-                if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
-                       obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
-                       obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
-                       abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
-                       abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
-                       obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
-                       obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
-                    passesID = True
-            if muonid == "loose":
-                if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
-                    passesID = True
+        if muonid == "tight":
+            passesID = obj.passed(obj.CutBasedIdTight)
+        if muonid == "loose":
+            passesID = obj.passed(obj.CutBasedIdLoose)
         if passesID:
             for (name, var) in variables.__dict__.items():
                 #See https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2#Tight_Muon
@@ -404,9 +396,13 @@ def getMuonIso(muon):
     return iso
 
     
-def FillElectronVector(source, variables, electronid):
+def FillElectronVector(source, variables, electronid, debug = False):
     variables.num[0] = 0
+    if debug:
+        print "Electon valid:",source.isValid()
     for iobj, obj in enumerate(source.productWithCheck()):
+        if debug:
+            print "Electron passes id - {0}: {1}".format(electronid, obj.electronID(electronid))
         if bool(obj.electronID(electronid)): #returns float so explicit conversion necessary
             #print obj, obj.pt(), electronids.get(iobj)
             for (name, var) in variables.__dict__.items():
@@ -921,8 +917,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 offVertex = None
                 print "Offline Vertex did not pass the selection"
 
-        FillElectronVector(offEle_source, offTightElectrons, idName )
-        FillMuonVector(offMu_source, offTightMuons, offVertex, "tight")
+        FillElectronVector(offEle_source, offTightElectrons, idName , debug = True)
+        FillMuonVector(offMu_source, offTightMuons, offVertex, "tight", debug = True)
 
         ####################################################
         ####################################################
@@ -1153,20 +1149,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
 if __name__ == "__main__":
     secondaryFiles = [
-        #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17DRPremix_94X_TSG_GEN-SIM-RAW_EC33C288-051E-E811-95B7-1866DA7F98A8.root"
-        "/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/14E63E79-041E-E811-A72A-3417EBE5289A.root"
-        #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root"
-        #"/store/data/Run2017C/MuonEG/RAW/v1/000/300/155/00000/5219D654-9176-E711-99E5-02163E019DED.root"
+        "/store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root"
     ]
     filesInput = [
-        #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17MiniAOD_94X_TSG_MINIAOD_A25F33EE-5A1F-E811-ABCC-90B11C48DA2F.root"
-        "/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/30000/AEA25818-FB21-E811-BBFB-848F69FD444B.root"
-        #"file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
-        #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_MiniAODv2_ReReco_300107_4AABB4B6-5037-E811-9F4A-0CC47A5FBE35.root"
-        #"/store/data/Run2017C/MuonEG/MINIAOD/PromptReco-v2/000/300/155/00000/14B10372-AF77-E711-A0A0-02163E0133CC.root"
+        "/store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v1/000/315/506/00000/945A60FD-384F-E811-A70D-FA163E990568.root"        
     ]
     fileOutput = "tree_phase1.root"
-    maxEvents = 10
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=True)
+    maxEvents = 10000
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=False)
 
     
