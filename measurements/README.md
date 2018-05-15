@@ -59,3 +59,8 @@ The MC is split by MC flavour of a matched GenJet.
 | --eff       | Run Tag&Probe method for this measurement and output plots, efficiencies for different Was |
 
 Running with `--eff` also saves root files containing distributions (MC and data) used for efficiency calulation. With the script `makePeriodCompFromEff.py` plots/tables comparing the different run periods can be generated.
+
+
+for me: 
+make efficiency plots: python efficiencies.py --data --deepcsv --deepcsvWP 0.7 --run Test --inclusive 
+make shape comparison plots: python shapeComparison.py --perJetComp --sameTagger --data --deepcsv --run Test --skip1DComp

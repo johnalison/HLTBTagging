@@ -195,7 +195,8 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
             logging.warning("ZeroDevision Error. Not scaling histo")
         else:
             histo.Scale(1/float(histo.Integral()))
-
+    
+        
     return histo
 
 
@@ -291,7 +292,8 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
     thiscanvas.cd(1)
     idrawn = 0
     drawpostfix = ""
-
+    
+    
     if stackindex is None:
         for histo, drawstring in orderedHistoList:
             logging.debug("Drawing {0} with option {1}{2}".format(histo.GetName(),drawstring, drawpostfix))
@@ -323,6 +325,7 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
                 if ihisto != stackindex:
                     histo.Draw("{0}{1}".format(drawstring, drawpostfix))
     thiscanvas.Update()
+    
     return thiscanvas
 
 

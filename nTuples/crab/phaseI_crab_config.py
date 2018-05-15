@@ -83,11 +83,11 @@ if __name__ == '__main__':
         
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
-        config.Data.outLFNDirBase = '/store/user/koschwei/onlineBTV/' + name + prefix
+        config.Data.outLFNDirBase = '/store/user/dschafer/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
             print "Using JSON"
-            config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/ReReco/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt'
+            config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/DCSOnly/json_DCSONLY.txt'
             #config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
         config.Data.inputDataset = dataset[1][0]
         config.Data.secondaryInputDataset = dataset[1][1]
@@ -102,9 +102,10 @@ if __name__ == '__main__':
 
         
         config.section_("Site")
-        config.Site.storageSite = "T2_CH_CSCS"
+        config.Site.storageSite = "T2_DE_DESY"
         #config.Site.storageSite = "T3_CH_PSI"
         print "submitting ",dataset
+        #crabCommand('submit',config = config,dryrun=True)
         crabCommand('submit',config = config)
         print "DONE ",dataset
     

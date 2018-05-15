@@ -45,7 +45,13 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat 
         color = forceColor
     else:
         color = PlotBaseObj.color
-
+        
+    ################ save histograms quick and dirty ####
+    print " save into root file "
+    tmpoutfile = ROOT.TFile("efficiency_2018A_"+outname+".root" ,"RECREATE")
+    hnumerator.Write()
+    hdenominator.Write()
+    tmpoutfile.Close()
     
     
     modules.plotting.setStyle(hdenominator, "Line", color, PlotBaseObj.xTitle, yTitle)
@@ -106,6 +112,7 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat 
         if outname is not None:
             modules.utils.savePlot(canvas, outname, outputformat)
 
+    
     return grEff
 
 
@@ -154,9 +161,8 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
             hdenominator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel))
             logging.debug("Setting numerator")
             hnumerator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum))
-
-
-        
+    
+    
     if forceColor is not None:
         logging.debug("Forcing color: {0}".format(forceColor))
         color = forceColor

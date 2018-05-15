@@ -17,6 +17,8 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
     logger.info("Starting shape comparison")
     t0 = time.time()
     
+    binning =[100,-10,1]
+    
     if not (doMC or doData):
         if __name__ == "__main__":
             logging.warning("At least on of the flags --mc and --data should to be set")
@@ -52,9 +54,9 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         fileprefix = "RunF_"
 
     if run == "Test":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/tree_phase1.root"
-        basepaths = "testing/emilComp3K/"
-        fileprefix = "Tesing_"
+        DataInput = "/afs/cern.ch/work/d/dschafer/onlineBTV/MuonEG_run2018A.root"
+        basepaths = ""#"testing/"
+        fileprefix = "run2018A"
         
 
     #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
@@ -65,6 +67,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
 
 
+    #DeepCSVSelWP = "0.8958"
     DeepCSVSelWP = "0.8958"
     if looseSel:
         TriggerSelection = "1"
@@ -73,10 +76,10 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         CSVSelection = "1"
 
     else:
-        TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v4 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v4 > 0"
+        TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v6 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v6 > 0"
         LeptonSelection = "Sum$((abs(offTightElectrons_superClusterEta) <= 1.4442 || abs(offTightElectrons_superClusterEta) >= 1.5660) && offTightElectrons_pt > 30 && abs(offTightElectrons_eta) < 2.4) > 0 && Sum$(offTightMuons_iso < 0.25 && offTightMuons_pt > 20 && abs(offTightMuons_eta) < 2.4) > 0"
-        offlineSelection = "Sum$(cleanJets_pt > 30 && abs(cleanJets_eta) < 2.4) > 2"
-        CSVSelection = "Sum$(cleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
+        offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) > 2"
+        CSVSelection = "Sum$(offCleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
 
 
 
@@ -99,18 +102,18 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
     WPColors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+2, ROOT.kPink+7, ROOT.kViolet, ROOT.kCyan]
     
-    #CSVSelection = "Sum$(cleanJets_csv > {0}) >= 1".format(CSVSelWP)
+    #CSVSelection = "Sum$(offCleanJets_csv > {0}) >= 1".format(CSVSelWP)
 
 
-    refbyCSVRank = { 0 : "cleanJets_ileadingCSV",
-                     1 : "cleanJets_isecondCSV",
-                     2 : "cleanJets_ithirdCSV",
-                     3 : "cleanJets_ifourthCSV"}
+    refbyCSVRank = { 0 : "offCleanJets_ileadingCSV",
+                     1 : "offCleanJets_isecondCSV",
+                     2 : "offCleanJets_ithirdCSV",
+                     3 : "offCleanJets_ifourthCSV"}
 
-    refbyDeepCSVRank = { 0 : "cleanJets_ileadingDeepCSV",
-                         1 : "cleanJets_isecondDeepCSV",
-                         2 : "cleanJets_ithirdDeepCSV",
-                         3 : "cleanJets_ifourthDeepCSV"}
+    refbyDeepCSVRank = { 0 : "offCleanJets_ileadingDeepCSV",
+                         1 : "offCleanJets_isecondDeepCSV",
+                         2 : "offCleanJets_ithirdDeepCSV",
+                         3 : "offCleanJets_ifourthDeepCSV"}
 
 
     
@@ -121,12 +124,12 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
         collections = []
         if ptordered:
-            #collections.append( ("pT", "cleanJets") )
+            #collections.append( ("pT", "offCleanJets") )
             collections.append( ("pT", "offJets") )
             logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "offJets"))
         if csvordered:                
-            collections.append( ("CSV", "cleanCSVJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "cleanCSVJets"))
+            collections.append( ("CSV", "offCleanCSVJets") )
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "offCleanCSVJets"))
         
         for WP in CSVWPs:
             WPLabel = getLabel("PF WP: {0}".format(WP), 0.7, "under")
@@ -146,7 +149,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         CSVPlotBaseObjs[i] = modules.classes.PlotBase("{1}_csv[{0}]".format(i, collection),
                                                                       "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelection),
                                                                       "1",
-                                                                      [20,0,1],
+                                                                      binning,
                                                                       modules.utils.getAxisTitle("csv", i, collectionName.lower()),
                                                                       LegendPosition = [0.1,0.6,0.4,0.76])
 
@@ -187,7 +190,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                     CSVPlotBaseObjIter= modules.classes.PlotBase("{1}_csv[{0}]".format("?", collection),
                                                                  "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelectionIter),
                                                                  "1",
-                                                                 [20,0,1],
+                                                                 binning,
                                                                  modules.utils.getAxisTitle("csv", 0, collectionName.lower(), inclusive = True ),
                                                                  LegendPosition = [0.1,0.6,0.4,0.76])
                     #CSVPlotBaseObjIter.color = WPColors[0]
@@ -233,7 +236,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         DeepCSVPlotBaseIter = modules.classes.PlotBase("{1}_deepcsv[{0}]".format("?", collection),
                                                                        "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelectionIter),
                                                                        "1",
-                                                                       [20,0,1],
+                                                                       binning,
                                                                        modules.utils.getAxisTitle("deepcsv", 0, collectionName.lower(), inclusive = True),
                                                                        LegendPosition = [0.1,0.6,0.4,0.76])
                         onlysamples = []
@@ -266,7 +269,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                 CSVPlotBaseObjIter= modules.classes.PlotBase("{1}_csv[{0}]".format("?", collection),
                                                              "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelectionIter),
                                                              "1",
-                                                             [20,0,1],
+                                                             binning,
                                                              modules.utils.getAxisTitle("csv", 0, collectionName.lower(), inclusive = True ),
                                                              LegendPosition = [0.1,0.6,0.4,0.76])
                 
@@ -294,10 +297,10 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         collections = []
         if ptordered:
             collections.append( ("pT", "offJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "cleanJets"))
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "offCleanJets"))
         if csvordered:                
-            collections.append( ("DeepCSV", "cleanDeepCSVJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "cleanDeepCSVJets"))
+            collections.append( ("DeepCSV", "offCleanDeepCSVJets") )
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "offCleanDeepCSVJets"))
 
             
         for WP in DeepCSVWPs:
@@ -305,7 +308,8 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
             CaloWPLabel = getLabel("Calo WP: {0}".format(WP), 0.7, "under")
             logging.info("Using WP: {0}".format(WP))
             for collectionName, collection in collections:
-
+                print collectionName
+                print dosplit
                 if dosplit:
                     for i in range(nSplitIter):
                         if looseSel:
@@ -317,7 +321,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("{1}_deepcsv[{0}]".format(i, collection),
                                                                           "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelection),
                                                                           "1",
-                                                                          [20,0,1],
+                                                                          binning,
                                                                           modules.utils.getAxisTitle("deepcsv", i, collectionName.lower()),
                                                                           LegendPosition = [0.1,0.6,0.4,0.76])
 
@@ -351,7 +355,8 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                                                               "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, i, collection),
                                                               basepaths+"DeepCSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_DeepCSV_order{2}".format(i, WP, collectionName, fileprefix),
                                                               addSel = "{1}_matchCalo[{0}] >= 0".format(i, collection),
-                                                              label = CaloWPLabel)
+                                                             label = CaloWPLabel)
+                print doinclusive 
                 if doinclusive:
                     if looseSel:
                         JetSelectionIter = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30".format("?", collection)
@@ -362,7 +367,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                     DeepCSVPlotBaseIter = modules.classes.PlotBase("{1}_deepcsv[{0}]".format("?", collection),
                                                                    "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelectionIter),
                                                                    "1",
-                                                                   [20,0,1],
+                                                                   binning,
                                                                    modules.utils.getAxisTitle("deepcsv", 0, collectionName.lower(), inclusive = True),
                                                                    LegendPosition = [0.1,0.6,0.4,0.76])
 
@@ -374,16 +379,24 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         sample, name, label = sampleStuff
                         onlysamples.append(sample)
                         if not (doMC and doData): 
-                            modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
+                            PF_eff = modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
                                                             "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
                                                             addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
                                                             label = [label,WPLabel])
-                            modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
+                            Calo_eff = modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
                                                             "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
                                                             addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
                                                             label = [label,CaloWPLabel])
+                            ################ save histograms quick and dirty ####
+                            print " save into root file "
+                            tmpoutfile = ROOT.TFile("efficiency_2018A.root" ,"RECREATE")
+                            PF_eff.SetName("PF")
+                            Calo_eff.SetName("Calo")
+                            PF_eff.Write()
+                            Calo_eff.Write()
+                            tmpoutfile.Close()
 
                     if doMC and doData:
                         modules.effPlots.makeEffSummSCompPlot(DeepCSVPlotBaseIter, onlysamples,

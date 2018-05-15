@@ -331,6 +331,8 @@ def make2DSummedPlot(PlotBase2DObj, Sample, xVarBase, yVarBase, nIter, iterSelec
                         hObjects = [histo.ProjectionX(), histo.ProjectionY()]
         )
         
+    return [histo.ProjectionX(), histo.ProjectionY()]
+        
 
 
 
