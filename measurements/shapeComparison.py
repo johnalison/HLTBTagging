@@ -10,7 +10,7 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
     import modules.compPlot
     import modules.classes
     binning1 = [30,-1.001,1]  # [20,0,1]
-    binning2 =   [60,-1.001,1]
+    binning2 =   [40,0,1]
     binning3 = [30,-2,1]  # [20,0.5,1]
     
     setup_logging(loglevel = loglev, logname = "shapeoutput", errname = "shapeerror")
