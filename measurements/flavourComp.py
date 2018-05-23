@@ -33,7 +33,7 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         logging.warning("Falling back the only CSV")
         doCSV = True
 
-    if run not in ["CD", "E", "F"]:
+    if run not in ["C", "CD", "E", "F"]:
         logging.error("Run not supported!")
         exit()
     ##############################################################################################################
@@ -44,6 +44,13 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
     
     MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/ttbar/phase1/ttbar_0p85_mod_mod_mod.root"
+    if run == "C":
+        logging.info("Setting file, name and basepath for Run C")
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
+        puweight = "1"#"get_puWeight(pu)"
+        globalPrefix = "ProdGTData_RunC"
+        basepath = "v10_2nTuples/FlavourSplitting/RunC/" 
+
     #Run C-D
     if run == "CD":
         logging.info("Setting file, pu weight, name and basepath for Run CD")
@@ -70,14 +77,14 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     
     MCSelection = "1"
     DataSelection = "1"
-    VarSelection = "Sum$(cleanJets_deepcsv > 0.8958 && cleanJets_pt > 30 && abs(cleanJets_eta) < 2.4) >= 1 && Sum$(cleanJets_pt > 30 && abs(cleanJets_eta) < 2.4) >= 2"
+    VarSelection = "Sum$(offCleanJets_deepcsv > 0.8958 && offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) >= 1 && Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) >= 2"
     TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v4 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v4 > 0"
     LeptonSelection = "Sum$((abs(offTightElectrons_superClusterEta) <= 1.4442 || abs(offTightElectrons_superClusterEta) >= 1.5660) && offTightElectrons_pt > 30 && abs(offTightElectrons_eta) < 2.4) > 0 && Sum$(offTightMuons_iso < 0.25 && offTightMuons_pt > 20 && abs(offTightMuons_eta) < 2.4) > 0"
 
 
     
-    offlineSelection = "abs(cleanJets_eta) < 2.4 && cleanJets_pt > 30 && cleanJets_passesTightLeptVetoID > 0"
-    offlineSelectionIter = "abs(cleanJets_eta[?]) < 2.4 && cleanJets_pt[?] > 30 && cleanJets_passesTightLeptVetoID[?] > 0"
+    offlineSelection = "abs(offCleanJets_eta) < 2.4 && offCleanJets_pt > 30 && offCleanJets_passesTightLeptVetoID > 0"
+    offlineSelectionIter = "abs(offCleanJets_eta[?]) < 2.4 && offCleanJets_pt[?] > 30 && offCleanJets_passesTightLeptVetoID[?] > 0"
 
     MCsamples = []
     MCsamplesIter = []
@@ -85,15 +92,15 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     datalumi = 4591.622871124
     
     eventSelection = "({0}) && ({1}) && ({2}) && ({3})".format(VarSelection, TriggerSelection, LeptonSelection, MCSelection)
-    #MCsamples.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && (  abs(cleanJets_mcFlavour[?]) != 21 && abs(cleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && cleanJets_hadronFlavour == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && cleanJets_hadronFlavour == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && cleanJets_hadronFlavour == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
+    #MCsamples.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && (  abs(offCleanJets_mcFlavour[?]) != 21 && abs(offCleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
+    MCsamples.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
+    MCsamples.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
+    MCsamples.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
 
-    #MCsamplesIter.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && ( abs(cleanJets_mcFlavour[?]) != 21 && abs(cleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && cleanJets_hadronFlavour[?] == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && cleanJets_hadronFlavour[?] == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && cleanJets_hadronFlavour[?] == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
+    #MCsamplesIter.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && ( abs(offCleanJets_mcFlavour[?]) != 21 && abs(offCleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
+    MCsamplesIter.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
+    MCsamplesIter.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
+    MCsamplesIter.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
 
 
     if doData:
@@ -105,25 +112,25 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     if plotinclusive:
         logging.info("Making inclusive stack plots")
         if doCSV:
-            CSVOffline = modules.classes.PlotBase("cleanJets_csv", offlineSelection, "1", [20,0,1], "Offline jet csv value")
-            CSVOfflineIter = modules.classes.PlotBase("cleanJets_csv", "1", "1", [20,0,1], "Offline jet csv value")
-            CSVPF = modules.classes.PlotBase("pfJets_csv[cleanJets_matchPF2]", "{0} && {1}".format(offlineSelection, "1"), "1", [20,0,1], "PF jet csv value")
-            CSVPFIter = modules.classes.PlotBase("cleanJets_csv", "1", "1", [20,0,1], "PF jet csv value")
-            CSVCaloIter = modules.classes.PlotBase("cleanJets_csv", "1", "1", [20,0,1], "Calo jet csv value")
+            CSVOffline = modules.classes.PlotBase("offCleanJets_csv", offlineSelection, "1", [20,0,1], "Offline jet csv value")
+            CSVOfflineIter = modules.classes.PlotBase("offCleanJets_csv", "1", "1", [20,0,1], "Offline jet csv value")
+            CSVPF = modules.classes.PlotBase("pfJets_csv[offCleanJets_matchPF]", "{0} && {1}".format(offlineSelection, "1"), "1", [20,0,1], "PF jet csv value")
+            CSVPFIter = modules.classes.PlotBase("offCleanJets_csv", "1", "1", [20,0,1], "PF jet csv value")
+            CSVCaloIter = modules.classes.PlotBase("offCleanJets_csv", "1", "1", [20,0,1], "Calo jet csv value")
             #modules.DataMC.makeStackDMCPlot(CSVOffline, MCsamples, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_csv", normalized = True)
             #modules.DataMC.makeStackDMCPlot(CSVPF, MCsamples, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_csv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(CSVOfflineIter, MCsamplesIter,  "cleanJets_csv[?]", 15, offlineSelectionIter, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_sum_csv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(CSVPFIter, MCsamplesIter,  "pfJets_csv[cleanJets_matchPF2[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "cleanJets_matchPF2[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_inclusive_csv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(CSVCaloIter, MCsamplesIter,  "caloJets_csv[cleanJets_matchCalo2[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "cleanJets_matchCalo2[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_calo_inclusive_csv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(CSVOfflineIter, MCsamplesIter,  "offCleanJets_csv[?]", 15, offlineSelectionIter, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_sum_csv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(CSVPFIter, MCsamplesIter,  "pfJets_csv[offCleanJets_matchPF[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "offCleanJets_matchPF[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_inclusive_csv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(CSVCaloIter, MCsamplesIter,  "caloJets_csv[offCleanJets_matchCalo[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "offCleanJets_matchCalo[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_calo_inclusive_csv", normalized = True)
         if doDeepCSV:
-            DeepCSVOfflineIter = modules.classes.PlotBase("cleanJets_deepcsv", "1", "1", [20,0,1], "Offline jet DeepCSV value")
-            DeepCSVPFIter = modules.classes.PlotBase("cleanJets_deepcsv", "1", "1", [20,0,1], "PF jet DeepCSV value")
-            DeepCSVCaloIter = modules.classes.PlotBase("cleanJets_deepcsv", "1", "1", [20,0,1], "Calo jet DeepCSV value")
+            DeepCSVOfflineIter = modules.classes.PlotBase("offCleanJets_deepcsv", "1", "1", [20,0,1], "Offline jet DeepCSV value")
+            DeepCSVPFIter = modules.classes.PlotBase("offCleanJets_deepcsv", "1", "1", [20,0,1], "PF jet DeepCSV value")
+            DeepCSVCaloIter = modules.classes.PlotBase("offCleanJets_deepcsv", "1", "1", [20,0,1], "Calo jet DeepCSV value")
             #modules.DataMC.makeStackDMCPlot(CSVOffline, MCsamples, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_csv", normalized = True)
             #modules.DataMC.makeStackDMCPlot(CSVPF, MCsamples, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_csv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(CSVOfflineIter, MCsamplesIter,  "cleanJets_deepcsv[?]", 15, offlineSelectionIter, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_sum_csv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(DeepCSVPFIter, MCsamplesIter,  "pfJets_deepcsv[cleanJets_matchPF2[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "cleanJets_matchPF2[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_inclusive_deepcsv", normalized = True)
-            modules.DataMC.makeSumDMCPlot(DeepCSVCaloIter, MCsamplesIter,  "caloJets_deepcsv[cleanJets_matchCalo2[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "cleanJets_matchCalo2[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_calo_inclusive_deepcsv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(DeepCSVOfflineIter, MCsamplesIter,  "offCleanJets_deepcsv[?]", 15, offlineSelectionIter, dataSample, drawRatio = True, outname = basepath+globalPrefix+"_off_sum_csv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(DeepCSVPFIter, MCsamplesIter,  "pfJets_deepcsv[offCleanJets_matchPF[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "offCleanJets_matchPF[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_pf_inclusive_deepcsv", normalized = True)
+            modules.DataMC.makeSumDMCPlot(DeepCSVCaloIter, MCsamplesIter,  "caloJets_deepcsv[offCleanJets_matchCalo[?]]", 15, "{0} && {1}".format(offlineSelectionIter, "offCleanJets_matchCalo[?] >= 0"), dataSample, drawRatio = True, outname = basepath+globalPrefix+"_calo_inclusive_deepcsv", normalized = True)
 
     ##############################################################################################################
     ##############################################################################################################
@@ -138,13 +145,13 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         probeSel = offlineSelectionIter
         if doCSV:
             logging.info("Processing CSV plots")
-            OffCSVnthJet = modules.classes.PlotBase("cleanJets_csv[?]", "1", "1", [20,0,1], "Probe offline jet CSV value")
-            PFCSVnthJet = modules.classes.PlotBase("pfJets_csv[cleanJets_matchPF2[?]]", "1", "1", [20,0,1], "PF jet matched to probe CSV value")
-            CaloCSVnthJet = modules.classes.PlotBase("caloJets_csv[cleanJets_matchCalo2[?]]", "1", "1", [20,0,1], "Calo jet matched to probe CSV value")
+            OffCSVnthJet = modules.classes.PlotBase("offCleanJets_csv[?]", "1", "1", [20,0,1], "Probe offline jet CSV value")
+            PFCSVnthJet = modules.classes.PlotBase("pfJets_csv[offCleanJets_matchPF[?]]", "1", "1", [20,0,1], "PF jet matched to probe CSV value")
+            CaloCSVnthJet = modules.classes.PlotBase("caloJets_csv[offCleanJets_matchCalo[?]]", "1", "1", [20,0,1], "Calo jet matched to probe CSV value")
 
 
-            #tagSel = "{0} && {1}".format(offlineSelectionIter, "cleanJets_csv[?] >= {0}".format(TagWPCSV))
-            tagSel = "{0} && {1}".format(offlineSelectionIter, "cleanJets_deepcsv[?] >= {0}".format(TagWPDeepCSV))
+            #tagSel = "{0} && {1}".format(offlineSelectionIter, "offCleanJets_csv[?] >= {0}".format(TagWPCSV))
+            tagSel = "{0} && {1}".format(offlineSelectionIter, "offCleanJets_deepcsv[?] >= {0}".format(TagWPDeepCSV))
             WPlabel = getLabel("Tag DeepCSV WP: {0}".format(TagWPDeepCSV),  styleconfig.getfloat("CMSLabel","xStart"), pos = "topSup", scale = 0.8)
             #tagSel = "1"
             if calcEfficiency:
@@ -155,13 +162,13 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
                     logging.warning("Test flag set! Only using one WP")
                     pfCSVWPs = [0.840]
                 if not lepoverfix:
-                    modules.TagNProbe.getBEfficiency(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel,
-                                                     "pfJets_csv[cleanJets_matchPF2[?]]", pfCSVWPs, 2, data = dataSample, normalized = True,
+                    modules.TagNProbe.getBEfficiency(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
+                                                     "pfJets_csv[offCleanJets_matchPF[?]]", pfCSVWPs, 2, data = dataSample, normalized = True,
                                                      outname = basepath+"PFCSV/"+globalPrefix+"_TnP_leading_pf_csv", label = [WPlabel])
                 else:
                     logging.info("Plotting with tmp. lepton overlap removal")
-                    modules.TagNProbe.getBEfficiencyHack(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel,
-                                                             "pfJets_csv[cleanJets_matchPF2[?]]", pfCSVWPs, 2, lepveto, probeIndices = [0,1,2],
+                    modules.TagNProbe.getBEfficiencyHack(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
+                                                             "pfJets_csv[offCleanJets_matchPF[?]]", pfCSVWPs, 2, lepveto, probeIndices = [0,1,2],
                                                              tagIndices = [[1,2,3],[2,3,4],[3]], data = dataSample, normalized = True,
                                                              outname = basepath+"PFCSV/"+globalPrefix+"_TnP_leading_pf_csv", label = [WPlabel])
                     
@@ -172,13 +179,13 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
                 if not test:
                     logging.info("Calculating Calo Efficiency")
                     if not lepoverfix:
-                        modules.TagNProbe.getBEfficiency(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel,
-                                                         "caloJets_csv[cleanJets_matchCalo2[?]]", [0.435, 0.840, 0.97], 2, data = dataSample, normalized = True,
+                        modules.TagNProbe.getBEfficiency(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
+                                                         "caloJets_csv[offCleanJets_matchCalo[?]]", [0.435, 0.840, 0.97], 2, data = dataSample, normalized = True,
                                                          outname = basepath+"CaloCSV/"+globalPrefix+"_TnP_leading_calo_csv", label = [WPlabel])
                     else:
                         logging.info("Plotting with tmp. lepton overlap removal")
-                        modules.TagNProbe.getBEfficiencyHack(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel,
-                                                             "caloJets_csv[cleanJets_matchCalo2[?]]", [0.435, 0.840, 0.97], 2, lepveto, probeIndices = [0,1,2],
+                        modules.TagNProbe.getBEfficiencyHack(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
+                                                             "caloJets_csv[offCleanJets_matchCalo[?]]", [0.435, 0.840, 0.97], 2, lepveto, probeIndices = [0,1,2],
                                                              tagIndices = [[1,2,3],[2,3],[3]], data = dataSample, normalized = True,
                                                              outname = basepath+"CaloCSV/"+globalPrefix+"_TnP_leading_calo_csv", label = [WPlabel])
                 else:
@@ -187,47 +194,47 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
             else:
                 modules.TagNProbe.LeadingProbe(OffCSVnthJet, MCsamplesIter, probeSel, tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leadingoff_csv", normalized = True, label = [WPlabel])
-                modules.TagNProbe.LeadingProbe(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
+                modules.TagNProbe.LeadingProbe(PFCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leading_pf_csv", normalized = True, label = [WPlabel])
-                modules.TagNProbe.LeadingProbe(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
+                modules.TagNProbe.LeadingProbe(CaloCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leading_calo_csv", normalized = True, label = [WPlabel])
         if doDeepCSV:
             logging.info("Processing DeepCSV plots")
             WPlabel = getLabel("Tag DeepCSV WP: {0}".format(TagWPDeepCSV),  styleconfig.getfloat("CMSLabel","xStart"), pos = "topSup", scale = 0.8)
-            OffDeepCSVnthJet = modules.classes.PlotBase("cleanJets_deepcsv[?]", "1", "1", [20,0,1], "Probe offline jet DeepCSV value")
-            PFDeepCSVnthJet = modules.classes.PlotBase("pfJets_deepcsv[cleanJets_matchPF2[?]]", "1", "1", [20,0,1], "PF jet matched to probe DeepCSV value")
-            CaloDeepCSVnthJet = modules.classes.PlotBase("caloJets_deepcsv[cleanJets_matchCalo2[?]]", "1", "1", [20,0,1], "Calo jet matched to probe DeepCSV value")
+            OffDeepCSVnthJet = modules.classes.PlotBase("offCleanJets_deepcsv[?]", "1", "1", [20,0,1], "Probe offline jet DeepCSV value")
+            PFDeepCSVnthJet = modules.classes.PlotBase("pfJets_deepcsv[offCleanJets_matchPF[?]]", "1", "1", [20,0,1], "PF jet matched to probe DeepCSV value")
+            CaloDeepCSVnthJet = modules.classes.PlotBase("caloJets_deepcsv[offCleanJets_matchCalo[?]]", "1", "1", [20,0,1], "Calo jet matched to probe DeepCSV value")
 
 
-            tagSel = "{0} && {1}".format(offlineSelectionIter, "cleanJets_deepcsv[?] >= {0}".format(TagWPDeepCSV))
+            tagSel = "{0} && {1}".format(offlineSelectionIter, "offCleanJets_deepcsv[?] >= {0}".format(TagWPDeepCSV))
             #tagSel = "1"
             if calcEfficiency:
                 logging.info("Calculating PF Efficiency")
                 if not lepoverfix:
-                    modules.TagNProbe.getBEfficiency(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel,
-                                                     "pfJets_deepcsv[cleanJets_matchPF2[?]]", [0.2, 0.67, 0.955], 2, data = dataSample, normalized = True,
+                    modules.TagNProbe.getBEfficiency(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
+                                                     "pfJets_deepcsv[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, data = dataSample, normalized = True,
                                                      outname = basepath+"PFDeepCSV/"+globalPrefix+"_TnP_leading_pf_deepcsv", label = [WPlabel])
                 else:
-                    modules.TagNProbe.getBEfficiencyHack(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel,
-                                                         "pfJets_deepcsv[cleanJets_matchPF2[?]]", [0.2, 0.67, 0.955], 2, lepveto, probeIndices = [0,1,2],
+                    modules.TagNProbe.getBEfficiencyHack(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel,
+                                                         "pfJets_deepcsv[offCleanJets_matchPF[?]]", [0.2, 0.67, 0.955], 2, lepveto, probeIndices = [0,1,2],
                                                          tagIndices = [[1,2,3],[2,3],[3]], data = dataSample, normalized = True,
                                                          outname = basepath+"PFDeepCSV/"+globalPrefix+"_TnP_leading_pf_deepcsv", label = [WPlabel])
                 logging.info("Calculating Calo Efficiency")
                 if not lepoverfix:
-                    modules.TagNProbe.getBEfficiency(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel,
-                                                     "caloJets_deepcsv[cleanJets_matchCalo2[?]]", [0.205, 0.675, 0.95], 2, data = dataSample, normalized = True,
+                    modules.TagNProbe.getBEfficiency(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
+                                                     "caloJets_deepcsv[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, data = dataSample, normalized = True,
                                                      outname = basepath+"CaloDeepCSV/"+globalPrefix+"_TnP_leading_calo_deepcsv", label = [WPlabel])
                 else:
-                    modules.TagNProbe.getBEfficiencyHack(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel,
-                                                         "caloJets_deepcsv[cleanJets_matchCalo2[?]]", [0.205, 0.675, 0.95], 2, lepveto, probeIndices = [0,1,2],
+                    modules.TagNProbe.getBEfficiencyHack(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel,
+                                                         "caloJets_deepcsv[offCleanJets_matchCalo[?]]", [0.205, 0.675, 0.95], 2, lepveto, probeIndices = [0,1,2],
                                                          tagIndices = [[1,2,3],[2,3],[3]] , data = dataSample, normalized = True,
                                                          outname = basepath+"CaloDeepCSV/"+globalPrefix+"_TnP_leading_calo_deepcsv", label = [WPlabel])
             else:
                 modules.TagNProbe.LeadingProbe(OffDeepCSVnthJet, MCsamplesIter, probeSel, tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leadingoff_deepcsv", normalized = True, label = [WPlabel])
-                modules.TagNProbe.LeadingProbe(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchPF2[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
+                modules.TagNProbe.LeadingProbe(PFDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchPF[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leading_pf_deepcsv", normalized = True, label = [WPlabel])
-                modules.TagNProbe.LeadingProbe(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "cleanJets_matchCalo2[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
+                modules.TagNProbe.LeadingProbe(CaloDeepCSVnthJet, MCsamplesIter, "{0} && {1}".format(probeSel, "offCleanJets_matchCalo[?] >= 0"), tagSel, data = dataSample, convertIterSelection = True,
                                                outname = basepath+globalPrefix+"_TnP_leading_calo_deepcsv", normalized = True, label = [WPlabel])
             
 

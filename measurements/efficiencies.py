@@ -38,18 +38,28 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kBreak# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
+    if run == "C":
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
+        basepaths = "v10_2nTuples/Efficiencies/RunC/"
+        fileprefix = "RunC_"
+        MCweight = "1"
+        
     if run == "CD":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/MuonEG/MuonEG_RunCD_phase1_0p9970p996_mod_mod_mod.root"
-        basepaths = "v8nTuples/Efficiencies/RunCD/"
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/MuonEG_RunCD_93p8_99p2_mod_mod.root"
+        basepaths = "v10nTuples/Efficiencies/RunCD/"
         fileprefix = "RunCD_"
+        MCweight = "(wCSV)"
+        #MCweight = "1"
     if run == "E":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/MuonEG/RunE/phase1/MuonEG_RunE_phase1_mod_mod_mod.root"
-        basepaths = "v8nTuples/Efficiencies/RunE/"
-        fileprefix = "RunE_EmilSel_"
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/RunE/MuonEG_RunE.root"
+        basepaths = "v10nTuples/Efficiencies/RunE/"
+        fileprefix = "RunE_"
+        MCweight = "get_puWeight_E(pu)"
     if run == "F":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/MuonEG/RunF/phase1/MuonEG_RunF_phase1_mod_mod_mod.root"
-        basepaths = "v8nTuples/Efficiencies/RunF/"
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/RunF/MuonEG_RunF_84p5.root"
+        basepaths = "v10nTuples/Efficiencies/RunF/"
         fileprefix = "RunF_"
+        MCweight = "get_puWeight_F(pu)"
 
     if run == "Test":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/tree_phase1.root"
@@ -58,13 +68,15 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         
 
     #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/ttbar/phase1/ttbar_0p85_mod_mod_mod.root"
+    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod.root"
     
-    MCSelection = "1"
+    MCSelection = "1"#"(pu > 20 && pu < 70)"
+    DataSelection = "1"#"passJson == 1 && doubleEvt == 0"
     VarSelection = "1"
 
 
 
+    #DeepCSVSelWP = "0.9"
     DeepCSVSelWP = "0.8958"
     if looseSel:
         TriggerSelection = "1"
@@ -74,9 +86,10 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
     else:
         TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v4 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v4 > 0"
-        LeptonSelection = "Sum$((abs(offTightElectrons_superClusterEta) <= 1.4442 || abs(offTightElectrons_superClusterEta) >= 1.5660) && offTightElectrons_pt > 30 && abs(offTightElectrons_eta) < 2.4) > 0 && Sum$(offTightMuons_iso < 0.25 && offTightMuons_pt > 20 && abs(offTightMuons_eta) < 2.4) > 0"
-        offlineSelection = "Sum$(cleanJets_pt > 30 && abs(cleanJets_eta) < 2.4) > 2"
-        CSVSelection = "Sum$(cleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
+        LeptonSelection = "Sum$((abs(offTightElectrons_superClusterEta) <= 1.4442 || abs(offTightElectrons_superClusterEta) >= 1.5660) && offTightElectrons_pt > 30 && abs(offTightElectrons_eta) < 2.4) == 1 && Sum$(offTightMuons_iso < 0.25 && offTightMuons_pt > 20 && abs(offTightMuons_eta) < 2.4) == 1"
+        offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) > 2"
+        #CSVSelection = "Sum$(offCleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
+        CSVSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4 && offCleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
 
 
 
@@ -88,9 +101,9 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
     samples = []
     if doMC:
         eventSelection = "({0}) && ({1}) && ({2}) && ({3})".format(VarSelection, TriggerSelection, LeptonSelection, MCSelection)
-        samples.append( (modules.classes.Sample("ttbar", MCInput, eventSelection, 831.76, 4591.622871124, ROOT.kRed, 9937324, legendText = "Dataset: t#bar{t}"), "MC", getLabel("Dataset: t#bar{t}", 0.7)) )
+        samples.append( (modules.classes.Sample("ttbar", MCInput, eventSelection, 831.76, 4591.622871124, ROOT.kRed, 9937324, weight = MCweight, legendText = "Dataset: t#bar{t}"), "MC", getLabel("Dataset: t#bar{t}", 0.7)) )
     if doData:
-        eventSelection = "({0}) && ({1}) && ({2})".format(VarSelection, TriggerSelection, LeptonSelection)
+        eventSelection = "({0}) && ({1}) && ({2}) && ({3})".format(VarSelection, TriggerSelection, LeptonSelection, DataSelection)
         samples.append( (modules.classes.Sample("data", DataInput, eventSelection, legendText = "Dataset: MuonEG"),"MuonEG", getLabel("Dataset: MuonEG", 0.7)) )
 
     CSVSelWP = "0.9535"
@@ -99,18 +112,18 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
     WPColors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen+2, ROOT.kPink+7, ROOT.kViolet, ROOT.kCyan]
     
-    #CSVSelection = "Sum$(cleanJets_csv > {0}) >= 1".format(CSVSelWP)
+    #CSVSelection = "Sum$(offCleanJets_csv > {0}) >= 1".format(CSVSelWP)
 
 
-    refbyCSVRank = { 0 : "cleanJets_ileadingCSV",
-                     1 : "cleanJets_isecondCSV",
-                     2 : "cleanJets_ithirdCSV",
-                     3 : "cleanJets_ifourthCSV"}
+    refbyCSVRank = { 0 : "offCleanJets_ileadingCSV",
+                     1 : "offCleanJets_isecondCSV",
+                     2 : "offCleanJets_ithirdCSV",
+                     3 : "offCleanJets_ifourthCSV"}
 
-    refbyDeepCSVRank = { 0 : "cleanJets_ileadingDeepCSV",
-                         1 : "cleanJets_isecondDeepCSV",
-                         2 : "cleanJets_ithirdDeepCSV",
-                         3 : "cleanJets_ifourthDeepCSV"}
+    refbyDeepCSVRank = { 0 : "offCleanJets_ileadingDeepCSV",
+                         1 : "offCleanJets_isecondDeepCSV",
+                         2 : "offCleanJets_ithirdDeepCSV",
+                         3 : "offCleanJets_ifourthDeepCSV"}
 
 
     
@@ -121,9 +134,9 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
         collections = []
         if ptordered:
-            #collections.append( ("pT", "cleanJets") )
-            collections.append( ("pT", "offJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "offJets"))
+            collections.append( ("pT", "offCleanJets") )
+            #collections.append( ("pT", "offJets") )
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "offCleanJets"))
         if csvordered:                
             collections.append( ("CSV", "cleanCSVJets") )
             logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "cleanCSVJets"))
@@ -160,25 +173,25 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                                 modules.effPlots.makeEffPlot(CSVPlotBaseObjs[i], sample,
                                                              "pfJets_csv[{2}_matchPF[{1}]] >= {0}".format(WP, i, collection),
                                                              basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_CSV_order{3}".format(i, WP, name, collectionName, fileprefix),
-                                                             addSel = "{1}_matchPF[{0}] >= 0".format(i, collection),
+                                                             addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30 && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format(i, collection),
                                                              label = [label,WPLabel])
 
                                 modules.effPlots.makeEffPlot(CSVPlotBaseObjs[i], sample,
                                                              "caloJets_csv[{2}_matchCalo[{1}]] >= {0}".format(WP, i, collection),
                                                              basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_CSV_order{3}".format(i, WP, name, collectionName, fileprefix),
-                                                             addSel = "{1}_matchCalo[{0}] >= 0".format(i, collection),
+                                                             addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format(i, collection),
                                                              label = [label,CaloWPLabel])
 
                         if doMC and doData:
                             modules.effPlots.makeEffSCompPlot(CSVPlotBaseObjs[i], onlysamples,
                                                               "pfJets_csv[{2}_matchPF[{1}]] >= {0}".format(WP, i, collection),
                                                               basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_pfWP_{1}_CSV_order{2}".format(i, WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchPF[{0}] >= 0".format(i, collection),
-                                                              label = WPLabel)
+                                                              addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30 && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format(i, collection),
+                                                              label = WPLabel, drawHistos = True)
                             modules.effPlots.makeEffSCompPlot(CSVPlotBaseObjs[i], onlysamples,
                                                               "caloJets_csv[{2}_matchCalo[{1}]] >= {0}".format(WP, i, collection),
                                                               basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_CSV_order{2}".format(i, WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchCalo[{0}] >= 0".format(i, collection),
+                                                              addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format(i, collection),
                                                               label = CaloWPLabel)
                 if doinclusive:
                     JetSelectionIter = "abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format("?", collection)
@@ -200,26 +213,26 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                             modules.effPlots.makeEffSumPlot(CSVPlotBaseObjIter, sample,
                                                             "pfJets_csv[{2}_matchPF[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_CSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
-                                                            addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
+                                                            addSel = "{1}_matchPF[{0}] >= 0  && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("?", collection),
                                                             label = [label,WPLabel])
                             modules.effPlots.makeEffSumPlot(CSVPlotBaseObjIter, sample,
                                                             "caloJets_csv[{2}_matchCalo[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_CSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
-                                                            addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
+                                                            addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format("?", collection),
                                                             label = [label,CaloWPLabel])
                             
                     if doMC and doData:
                         modules.effPlots.makeEffSummSCompPlot(CSVPlotBaseObjIter, onlysamples,
                                                               "pfJets_csv[{2}_matchPF[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                               basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_pfWP_{1}_CSV_order{2}".format("incl", WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
+                                                              addSel = "{1}_matchPF[{0}] >= 0  && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("?", collection),
                                                               label = WPLabel)
                         modules.effPlots.makeEffSummSCompPlot(CSVPlotBaseObjIter, onlysamples,
                                                               "caloJets_csv[{2}_matchCalo[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                               basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_CSV_order{2}".format("incl", WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
+                                                              addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20 ".format("?", collection),
                                                               label = CaloWPLabel)
-
+                        
                 if doCross:
                     if dosplit:
                         pass
@@ -245,12 +258,12 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                             modules.effPlots.makeEffSummSCompPlot(DeepCSVPlotBaseIter, onlysamples,
                                                                   "pfJets_csv[{2}_matchPF[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                                   basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_pfWP_{1}_CSV_order{2}".format("cross", WP, collectionName, fileprefix),
-                                                                  addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
+                                                                  addSel = "{1}_matchPF[{0}] >= 0   && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("?", collection),
                                                                   label = WPLabel)
                             modules.effPlots.makeEffSummSCompPlot(DeepCSVPlotBaseIter, onlysamples,
                                                                   "caloJets_csv[{2}_matchCalo[{1}]] >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                                   basepaths+"CSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_CSV_order{2}".format("cross", WP, collectionName, fileprefix),
-                                                                  addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
+                                                                  addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format("?", collection),
                                                                   label = CaloWPLabel)
 
         if compWPs:
@@ -276,11 +289,11 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                     modules.effPlots.makeSumWPComp(CSVPlotBaseObjIter, sample,
                                                    "pfJets_csv[{1}_matchPF[{0}]]".format("?", collection), nInclusiveIter, CSVWPs, 
                                                    basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_pfWPComp_{1}_CSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
-                                                   addSel = "{1}_matchPF[{0}] >= 0".format("?", collection))
+                                                   addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("?", collection))
                     modules.effPlots.makeSumWPComp(CSVPlotBaseObjIter, sample,
                                                    "caloJets_csv[{1}_matchCalo[{0}]]".format("?", collection), nInclusiveIter, CSVWPs, 
                                                    basepaths+"CSV/{3}/{4}Eff_{2}_Jet{0}_caloWPComp_{1}_CSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
-                                                   addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection))
+                                                   addSel = "{1}_matchCalo[{0}] >= 0  && caloJets_pt[{1}_matchCalo[{0}]] > 20".format("?", collection))
 
                     
                 
@@ -293,11 +306,11 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
         collections = []
         if ptordered:
-            collections.append( ("pT", "offJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "cleanJets"))
+            collections.append( ("pT", "offCleanJets") )
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("ptOrdered", "offCleanJets"))
         if csvordered:                
-            collections.append( ("DeepCSV", "cleanDeepCSVJets") )
-            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "cleanDeepCSVJets"))
+            collections.append( ("DeepCSV", "offCleanDeepCSVJets") )
+            logging.debug("Adding {1} to collecton as ordered by {0}".format("csvOrdered", "offCleanDeepCSVJets"))
 
             
         for WP in DeepCSVWPs:
@@ -333,24 +346,24 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                                 modules.effPlots.makeEffPlot(DeepCSVPlotBaseObjs[i], sample,
                                                              "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0}".format(WP, i, collection),
                                                              basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV_order{3}".format(i, WP, name, collectionName, fileprefix),
-                                                             addSel = "{1}_matchPF[{0}] >= 0".format(i, collection),
+                                                             addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format(i, collection),
                                                              label = [label,WPLabel])
                                 modules.effPlots.makeEffPlot(DeepCSVPlotBaseObjs[i], sample,
                                                              "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, i, collection),
                                                              basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_DeepCSV_order{3}".format(i, WP, name, collectionName, fileprefix),
-                                                             addSel = "{1}_matchCalo[{0}] >= 0".format(i, collection),
+                                                             addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format(i, collection),
                                                              label = [label,CaloWPLabel])
 
                         if doMC and doData:
                             modules.effPlots.makeEffSCompPlot(DeepCSVPlotBaseObjs[i], onlysamples,
                                                               "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0}".format(WP, i, collection),
                                                               basepaths+"DeepCSV/{2}/{3}Eff_DataMC_Jet{0}_pfWP_{1}_DeepCSV_order{2}".format(i, WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchPF[{0}] >= 0".format(i, collection),
+                                                              addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format(i, collection),
                                                               label = WPLabel)
                             modules.effPlots.makeEffSCompPlot(DeepCSVPlotBaseObjs[i], onlysamples,
                                                               "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, i, collection),
                                                               basepaths+"DeepCSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_DeepCSV_order{2}".format(i, WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchCalo[{0}] >= 0".format(i, collection),
+                                                              addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format(i, collection),
                                                               label = CaloWPLabel)
                 if doinclusive:
                     if looseSel:
@@ -376,25 +389,25 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         if not (doMC and doData): 
                             modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
                                                             "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
-                                                            basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
+                                                            basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV_order{3}  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("incl", WP, name, collectionName, fileprefix),
                                                             addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
                                                             label = [label,WPLabel])
                             modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
                                                             "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
-                                                            addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
+                                                            addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format("?", collection),
                                                             label = [label,CaloWPLabel])
 
                     if doMC and doData:
                         modules.effPlots.makeEffSummSCompPlot(DeepCSVPlotBaseIter, onlysamples,
                                                               "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0} && {2}_matchPF[{1}] >= 0".format(WP, "?", collection), nInclusiveIter,
                                                               basepaths+"DeepCSV/{2}/{3}Eff_DataMC_Jet{0}_pfWP_{1}_DeepCSV_order{2}".format("incl", WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
+                                                              addSel = "{1}_matchPF[{0}] >= 0 && pfJets_pt[{1}_matchPF[{0}]] > 30  && abs(pfJets_eta[{1}_matchPF[{0}]]) < 2.4".format("?", collection),
                                                               label = WPLabel)
                         modules.effPlots.makeEffSummSCompPlot(DeepCSVPlotBaseIter, onlysamples,
                                                               "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                               basepaths+"DeepCSV/{2}/{3}Eff_DataMC_Jet{0}_caloWP_{1}_DeepCSV_order{2}".format("incl", WP, collectionName, fileprefix),
-                                                              addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
+                                                              addSel = "{1}_matchCalo[{0}] >= 0 && caloJets_pt[{1}_matchCalo[{0}]] > 20".format("?", collection),
                                                               label = CaloWPLabel)
 
         if compWPs:
@@ -459,7 +472,7 @@ if __name__ == "__main__":
         action = "store",
         help = "Set Run for measurement. Option CD, E, F, Test",
         type = str,
-        choices = ["CD", "E", "F", "Test"]
+        choices = ["C", "CD", "E", "F", "Test"]
     )
     argumentparser.add_argument(
         "--mc",

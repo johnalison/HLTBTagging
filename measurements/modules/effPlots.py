@@ -143,17 +143,18 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
         iterVar = str(PlotBaseObj.variable).replace("?",str(i))
         iterSel = str("({0} && {1} && ({2}))".format(PlotBaseObj.selection, Sample.selection, addSel)).replace("?",str(i))
         iterSelnum = str("(({0}) && ({1}) && ({2}) && ({3}))".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel)).replace("?",str(i))
+        weight = "({0})".format(Sample.weight)
         if not hset:
             logging.debug("Setting denominator (initial)")
-            hdenominator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel)
+            hdenominator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel, weight = Sample.weight)
             logging.debug("Setting numerator (initial)")
-            hnumerator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum)
+            hnumerator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum, weight = Sample.weight)
             hset = True
         else:
             logging.debug("Setting denominator")
-            hdenominator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel))
+            hdenominator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel, weight = Sample.weight))
             logging.debug("Setting numerator")
-            hnumerator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum))
+            hnumerator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum, weight = Sample.weight))
 
 
         
