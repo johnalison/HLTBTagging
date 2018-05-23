@@ -105,8 +105,8 @@ if __name__ == '__main__':
 #       config.Data.publishDataName = config.General.requestName
         config.Data.outputDatasetTag = name
         config.Data.allowNonValidInputDataset = True
-        config.Site.blacklist = ['T0_*','T3_*','T2_AT_*','T2_CH_*','T2_BE_*','T2_BR_*','T2_DE_RWTH','T2_ES_*','T2_EE_*','T2_FR_*','T2_FI_*','T2_GR_*','T2_HU_*','T2_IN_*','T2_IT_*','T2_KR_*','T2_MY_*','T2_PK_*','T2_PL_*','T2_PT_*','T2_RU_*','T2_TH_*','T2_TR_*','T2_TW_*','T2_UA_*','T2_UK_*','T2_US_*'] # == config.Site.whitelist = ["T2_DE_DESY"]
-        #config.Site.whitelist = ["T2_DE_DESY"]
+        #config.Site.blacklist = ['T0_*','T3_*','T2_AT_*','T2_CH_*','T2_BE_*','T2_BR_*','T2_DE_RWTH','T2_ES_*','T2_EE_*','T2_FR_*','T2_FI_*','T2_GR_*','T2_HU_*','T2_IN_*','T2_IT_*','T2_KR_*','T2_MY_*','T2_PK_*','T2_PL_*','T2_PT_*','T2_RU_*','T2_TH_*','T2_TR_*','T2_TW_*','T2_UA_*','T2_UK_*','T2_US_*'] # == config.Site.whitelist = ["T2_DE_DESY"]
+        config.Site.whitelist = ["T2_DE_DESY"]
 
         
         config.section_("Site")
