@@ -20255,10 +20255,14 @@ process.GlobalTag = cms.ESSource("PoolDBESSource",
     RefreshEachRun = cms.untracked.bool(False),
     RefreshOpenIOVs = cms.untracked.bool(False),
     connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
-    globaltag = cms.string('92X_dataRun2_HLT_v7'),
+    globaltag = cms.string('94X_dataRun2_ReReco_EOY17_v1'),
     pfnPostfix = cms.untracked.string('None'),
     snapshotTime = cms.string(''),
-    toGet = cms.VPSet()
+    toGet = cms.VPSet(cms.PSet(
+        connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
+        record = cms.string('SiPixelGainCalibrationForHLTRcd'),
+        tag = cms.string('SiPixelGainCalibrationHLT_2009runs_hlt')
+    ))
 )
 
 
@@ -20658,6 +20662,13 @@ process.NoFilter_CaloBTagCSV_v1 = cms.Path(process.HLTBeginSequence+process.hltP
 process.HLTriggerFinalPath = cms.Path(process.hltGtStage2Digis+process.hltScalersRawToDigi+process.hltFEDSelector+process.hltTriggerSummaryAOD+process.hltTriggerSummaryRAW+process.hltBoolFalse)
 
 
+from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
+setupEgammaPostRecoSeq(process,applyEnergyCorrections=False,
+                       applyVIDOnCorrectedEgamma=False,
+                       isMiniAOD=True)
+					   
+process.p = cms.Path(process.egammaPostRecoSeq)
+
 process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                          dataset = cms.untracked.PSet(),
                                          fileName = cms.untracked.string('./cmsswPreProcessing.root'),
@@ -20692,8 +20703,6 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'keep *_generator_*_*')
 )
 process.FULLOutput = cms.EndPath(process.hltOutputFULL)
-
-
 
 
 

@@ -7,7 +7,7 @@ import sys
 cpp = True
 
 datafile = sys.argv[1]
-mcfile = "ttbar_v3.root"
+mcfile = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0.root"
 
 print "Using datafile: {0}".format(datafile)
 print "Using mcfile: {0}".format(mcfile)
@@ -58,7 +58,7 @@ c1.Update()
 
 if cpp:
     print "std::map<int, float> weights;"
-    for i in range(70):
+    for i in range(100):
         print "weights[{0}] = {1};".format(i-1, hpuw.GetBinContent(i))
 else:
     string = "puWeights = {"

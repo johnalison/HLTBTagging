@@ -9,11 +9,29 @@ For Data:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
  --setup /dev/CMSSW_9_2_0/GRun/V140 \
- --data --globaltag 92X_dataRun2_HLT_v7 \
+ --data --globaltag 94X_dataRun2_ReReco_EOY17_v1 \
  --input root://cms-xrd-global.cern.ch//store/data/Run2017C/MuonEG/RAW/v1/000/299/368/00000/00E9C4F1-E76B-E711-8952-02163E01A27B.root  \
  --process MYHLT --full --offline   \
  --unprescale --max-events 10 --output none > hltData.py
-
+```
+Add 
+```python
+process.GlobalTag.toGet.append(
+	cms.PSet(
+		record = cms.string("SiPixelGainCalibrationForHLTRcd"),
+		tag = cms.string("SiPixelGainCalibrationHLT_2009runs_hlt"),
+		connect = cms.string("frontier://FrontierProd/CMS_CONDITIONS")
+	)
+)
+```
+just below
+```python
+if 'GlobalTag' in process.__dict__:
+    from Configuration.AlCa.GlobalTag import GlobalTag as customiseGlobalTag
+	process.GlobalTag = customiseGlobalTag(process.GlobalTag, globaltag = '94X_dataRun2_ReReco_EOY17_v1')
+```
+and then do
+```bash
 edmConfigDump hltData.py > hlt_dump_phase1.py
 cmsRun  hlt_dump_phase1.py &> cmsRunData.log
 ```

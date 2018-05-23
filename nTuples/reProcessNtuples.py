@@ -3,7 +3,7 @@ from array import array
 import utils
 
 import os, time
-
+import json, yaml
 
 def printDict(input_, nElem = 8, EIOs = ["csv","pt","deepcsv"]):
     for key in input_:
@@ -26,9 +26,198 @@ def printDict(input_, nElem = 8, EIOs = ["csv","pt","deepcsv"]):
             print key, elems
 
 
+def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("offCleanJets", "offCleanJets_num")]):
+    t0 = time.time()
+    print "Executing: cp {0}.root {0}_mod.root"
+    os.system("cp {0}.root {0}_mod.root".format(inputfile))
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
+    rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
+
+    tree = rfile.Get("tree")
 
 
+    nEvents = tree.GetEntries()
+    
+    ROOT.gSystem.Load('libCondFormatsBTauObjects') 
+    ROOT.gSystem.Load('libCondToolsBTau')
+    calib = ROOT.BTagCalibration('csvv1', 'CSVv2_94XSF_V2_B_F.csv')
 
+    v_sys = getattr(ROOT, 'vector<string>')()
+    #v_sys.push_back('up')
+    #v_sys.push_back('down')
+    reader = ROOT.BTagCalibrationReader(
+        3,              # 0 is for loose op, 1: medium, 2: tight, 3: discr. reshaping
+        "central",      # central systematic type
+        v_sys,          # vector of other sys. types
+    )
+    reader.load(
+        calib, 
+        0,          # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
+        "iterativefit"      # measurement type
+    )
+
+
+    newBrnaches = []
+    newBranchNames = []
+    arrays = {}
+    for brPrefix, lenvar in branchprefixandlen:
+        name = brPrefix+"_csvSF["+lenvar+"]"
+        newBranchNames.append(name)
+        arrays[name] = array("f",40*[1.0])
+        newBrnaches.append(tree.Branch(name,  arrays[name], name+"/F"))
+
+
+    WCSVarray = array("f",[1.0])
+    newBrnaches.append(tree.Branch("wCSV", WCSVarray, "wCSV/F"))
+        
+    print arrays[name]
+    for iev in range(skipevents, nEvents):
+        tree.GetEvent(iev)
+        tree.GetEvent(iev)
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
+            
+        evtW = 1.0
+        
+        for brPrefix, lenvar in branchprefixandlen:
+            name =  brPrefix+"_csvSF["+lenvar+"]"
+            utils.resetArray(arrays[name], 1.0)
+            nJets =tree.__getattr__(lenvar)
+            if debug:
+                print "-------------------- New Event --------------------------"
+                print "---------------------------------------------------------"
+                print "---- nJets {0} ---".format(nJets)
+            for i in range(nJets):
+                
+                jetEta = tree.__getattr__(brPrefix+"_eta")[i]
+                jetPt = tree.__getattr__(brPrefix+"_pt")[i]
+                jetCsv = tree.__getattr__(brPrefix+"_csv")[i]
+                jetID = tree.__getattr__(brPrefix+"_passesTightLeptVetoID")[i]
+
+                sf = reader.eval_auto_bounds('central', 0, jetEta, jetPt, jetCsv)                                    
+                if debug:
+                    print "Eta {0} | pt {1} | csv {2} | SF {3}".format(jetEta, jetPt, jetCsv, sf)
+                if sf > 0:
+                    arrays[name][i] = sf
+                if abs(jetEta) < 2.5 and jetPt > 30:
+                    evtW = evtW * arrays[name][i]
+            WCSVarray[0] = evtW
+        for branch in newBrnaches:
+            branch.Fill()
+
+            
+    tree.Write("",ROOT.TFile.kOverwrite)
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
+                
+                
+        
+def filterLS(inputfile, jsonFile, debug = False, skipevents = 0, mc = False):
+    t0 = time.time()
+    print "Executing: cp {0}.root {0}_mod.root"
+    os.system("cp {0}.root {0}_mod.root".format(inputfile))
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
+    rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
+
+    tree = rfile.Get("tree")
+
+
+    nEvents = tree.GetEntries()
+    
+    newBrnaches = []
+    newBranchNames = []
+    barray = array("i",[-1])
+    newBranch = tree.Branch("passJson", barray, "passJson/I")
+
+    validLS = None
+    
+    with open(jsonFile, 'r') as f:
+        validLS = yaml.safe_load(f) #json loads all entries as unicode (u'..')
+
+    if debug:
+        print validLS
+        print validLS.keys()
+        raw_input("press ret")
+    
+    for iev in range(skipevents, nEvents):
+        tree.GetEvent(iev)
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
+
+
+        if mc is False:
+            inJson = False
+            if str(int(tree.run)) in validLS.keys():
+                if debug:
+                    print str(int(tree.run)) in validLS
+                # ls 5 block [5,9] --> 5 >= 5 and 5 <= 9 --> yes
+                # ls 9 block [5,9] --> 9 >= 5 and 9 <= 9 --> yes
+                # ls 10 block [5,9] --> 10 >= 5 and 10 <= 9 --> no
+                for block in validLS[str(int(tree.run))]:
+                    if int(tree.lumi) >= block[0] and int(tree.lumi) <= block[1]:
+                        inJson = True
+                        break
+        else:
+            inJson = True            
+
+            
+        if debug:
+            print int(tree.run), int(tree.lumi), inJson
+        barray[0] = int(inJson)
+        newBranch.Fill()
+
+
+    tree.Write("",ROOT.TFile.kOverwrite)
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
+
+
+def vetoDoubleEvents(inputfile, debug, skipevents = 0):
+    t0 = time.time()
+    print "Executing: cp {0}.root {0}_mod.root"
+    os.system("cp {0}.root {0}_mod.root".format(inputfile))
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
+    rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
+    
+    tree = rfile.Get("tree")
+
+
+    nEvents = tree.GetEntries()
+    
+    newBrnaches = []
+    newBranchNames = []
+    barray = array("i",[-1])
+    newBranch = tree.Branch("doubleEvt", barray, "doubleEvt/I")
+
+    listofevents = {}
+    for iev in range(skipevents, nEvents):
+        tree.GetEvent(iev)
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
+            
+        evt = tree.evt
+        if not evt in listofevents:
+            listofevents[evt] = 1
+            double = False
+        else:
+            double = True
+            if debug:
+                print "Already seen event",evt
+
+
+        barray[0] = int(double)
+
+        newBranch.Fill()
+
+    tree.Write("",ROOT.TFile.kOverwrite)
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
+
+
+        
 def redomatching(inputfile, debug = False, skipevents = 0, branchprefixandlen = [("offJets", "offJets_num")]):
     t0 = time.time()
     print "Executing: cp {0}.root {0}_mod.root"
@@ -388,7 +577,35 @@ if __name__ == "__main__":
         help = "Enable Debug messages",
     )
     argumentparser.add_argument(
+        "--addCSVSF",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+
+    argumentparser.add_argument(
         "--correctMatching",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    argumentparser.add_argument(
+        "--jsonfilter",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    argumentparser.add_argument(
+        "--double",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    argumentparser.add_argument(
+        "--json",
+        action = "store",
+        help = "Paths to json file",
+        type = str,
+        required = False,
+    )
+    argumentparser.add_argument(
+        "--mc",
         action = "store_true",
         help = "Enable Debug messages",
     )
@@ -402,6 +619,10 @@ if __name__ == "__main__":
         redomatching(args.Inputfile, args.debug, args.skipevents)
     elif args.addCleanJets:
         addCleanJets(args.Inputfile, args.debug, args.skipevents)
-                
-
+    elif args.jsonfilter:
+        filterLS(args.Inputfile, args.json, args.debug, args.skipevents, args.mc)
+    elif args.double:
+        vetoDoubleEvents(args.Inputfile, args.debug, args.skipevents)
+    elif args.addCSVSF:
+        addBTagSF(args.Inputfile, args.debug, args.skipevents)
     

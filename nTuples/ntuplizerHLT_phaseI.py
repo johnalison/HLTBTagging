@@ -273,7 +273,17 @@ def sortJetCollection(inputcollection, outputcollection, ordervalue, saveinputor
     return True
 
 def cleanCollection(inputcollection, outputcollection, cutVariable, cutValue, indexsaveVariable, boolCut = True, verbose = False):
+#def cleanCollection(inputcollection, outputcollection, cuts, indexsaveVariable, verbose = False): # cuts = (cutVariable, cutValue, boolCut)
     passingindices = []
+    """
+    idexdict = {}
+    for cutVariable, cutValue, boolCut in cuts:
+        for i in range(inputcollection.num[0]):
+            idexdict[i] = False
+            if boolCut:
+                if inputcollection.__dict__[cutVariable][i] == cutValue:
+                    idexdict = idexdict or True
+    """
     for i in range(inputcollection.num[0]):
         if boolCut:
             if inputcollection.__dict__[cutVariable][i] == cutValue:
@@ -361,31 +371,24 @@ def LeptonOverlap(jets, muons, electrons, fillVariable, DeltaR = 0.4):
                     break
         #print "Jet", j, "-",overlap
         fillVariable[j] = int(overlap)
-            
+
+
 def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
     if vertex is None:
         return False
     variables.num[0] = 0
+    if debug:
+        print "Muon valid:",source.isValid()
     for obj in source.productWithCheck():
+        if debug:
+            print "Muon passes loose ",obj.passed(obj.CutBasedIdLoose)
+            print "Muon passes medium",obj.passed(obj.CutBasedIdMedium)
+            print "Muon passes tight ",obj.passed(obj.CutBasedIdMedium)
         passesID = False
-        #Sometimes (in MC) there is no track saved/accessable for the muon. This prevents to code from crashing
-        if obj.globalTrack().isNull():
-            if debug:
-                print "Track is NULL"
-            passesID = False
-        else:
-            if muonid == "tight":
-                if ( obj.globalTrack().normalizedChi2() < 10 and obj.isPFMuon() and
-                       obj.globalTrack().hitPattern().numberOfValidMuonHits() > 0 and
-                       obj.numberOfMatchedStations() > 1 and obj.isGlobalMuon()  and
-                       abs(obj.muonBestTrack().dxy(vertex.position())) < 0.2 and
-                       abs(obj.muonBestTrack().dz(vertex.position())) < 0.5 and
-                       obj.innerTrack().hitPattern().numberOfValidPixelHits() > 0 and
-                       obj.innerTrack().hitPattern().trackerLayersWithMeasurement() > 5 ):
-                    passesID = True
-            if muonid == "loose":
-                if ( obj.isPFMuon() and ( obj.isGlobalMuon() or obj.isTrackerMuon() )):
-                    passesID = True
+        if muonid == "tight":
+            passesID = obj.passed(obj.CutBasedIdTight)
+        if muonid == "loose":
+            passesID = obj.passed(obj.CutBasedIdLoose)
         if passesID:
             for (name, var) in variables.__dict__.items():
                 #See https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonIdRun2#Tight_Muon
@@ -408,7 +411,7 @@ def FillElectronVector(source, variables, electronid):
     variables.num[0] = 0
     for iobj, obj in enumerate(source.productWithCheck()):
         if bool(obj.electronID(electronid)): #returns float so explicit conversion necessary
-            #print obj, obj.pt(), electronids.get(iobj)
+            #print obj, obj.pt(), obj.electronID(electronid)
             for (name, var) in variables.__dict__.items():
                 if name == "pt" :                var[variables.num[0]] = obj.pt()
                 elif name == "eta" :             var[variables.num[0]] = obj.eta()
@@ -628,7 +631,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
     #calodeepbtag_bb_source, calodeepbtag_bb_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probbb")
     #calodeepbtag_udsg_source, calodeepbtag_udsg_label   = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probudsg")
-    caloPUid_source, caloPUid_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCaloJetFromPV")
+    caloPUid_source, caloPUid_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltCaloJetFromPV")
 
     pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltAK4PFJetsLooseIDCorrected") #DeepNtupler: hltPFJetForBtag as jetToken2
     #pfJets_source, pfJets_label                         = Handle("vector<reco::PFJet>"), ("hltPFJetForBtag") #DeepNtupler: hltPFJetForBtag as jetToken2
@@ -687,10 +690,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     else:
         if isMC:
             offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT") #NOTE: This should match the process name in your hlt_dump!
-            idName = "cutBasedElectronID_Fall17_94X_V1_tight"
+            idName = "cutBasedElectronID_Fall17_94X_V1_tight" #in MINIAODv2 change _ to -
         else:
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
-            idName = "cutBasedElectronID-Fall17-94X-V1-tight"
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT")
+            idName = "cutBasedElectronID_Fall17_94X_V1_tight" #in MINIAODv2 change _ to -
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
 
@@ -1127,6 +1130,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                     Exception("Check pileupSummaryInfos!")
                 print "I'm using bunchCrossing=",bunchCrossing
             pu[0] = pileUp_source.productWithCheck().at(bunchCrossing).getTrueNumInteractions()
+            print pu[0], pileUp_source.productWithCheck().at(bunchCrossing).getTrueNumInteractions()
             """
             wPURunC[0] = getPUweight("RunC", pu[0])
             wPURunD[0] = getPUweight("RunD", pu[0])
@@ -1140,7 +1144,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             for ptHat_ in pileUp_source.productWithCheck().at(bunchCrossing).getPU_pT_hats():
                 maxPUptHat[0] = max(maxPUptHat[0],ptHat_)
                 
-        if iev%1000==1: print "Event: ",iev," done."
+        if iev%10000==1: print "Event: ",iev," done."
         #print "Event: ",iev," done."
         nPassHisto.Fill(1)
         tree.Fill()
@@ -1154,19 +1158,21 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 if __name__ == "__main__":
     secondaryFiles = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17DRPremix_94X_TSG_GEN-SIM-RAW_EC33C288-051E-E811-95B7-1866DA7F98A8.root"
-        "/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/14E63E79-041E-E811-A72A-3417EBE5289A.root"
+        'file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root'
+        #"/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/14E63E79-041E-E811-A72A-3417EBE5289A.root"
         #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root"
         #"/store/data/Run2017C/MuonEG/RAW/v1/000/300/155/00000/5219D654-9176-E711-99E5-02163E019DED.root"
     ]
     filesInput = [
         #"file:/afs/cern.ch/work/k/koschwei/public/TTTo2L2Nu_RunIIFall17MiniAOD_94X_TSG_MINIAOD_A25F33EE-5A1F-E811-ABCC-90B11C48DA2F.root"
-        "/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/30000/AEA25818-FB21-E811-BBFB-848F69FD444B.root"
-        #"file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
+        #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_MiniAODv2_ReReco_300107_4AABB4B6-5037-E811-9F4A-0CC47A5FBE35.root"
+        #"/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/30000/AEA25818-FB21-E811-BBFB-848F69FD444B.root"
+        "file:/afs/cern.ch/work/k/koschwei/public/MuonEGRunC_MiniAOD_ReReco_300107_221A60AF-A1EC-E711-9510-A4BF011259A8.root"
         #"file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_MiniAODv2_ReReco_300107_4AABB4B6-5037-E811-9F4A-0CC47A5FBE35.root"
         #"/store/data/Run2017C/MuonEG/MINIAOD/PromptReco-v2/000/300/155/00000/14B10372-AF77-E711-A0A0-02163E0133CC.root"
     ]
     fileOutput = "tree_phase1.root"
     maxEvents = 10
-    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=True)
+    launchNtupleFromHLT(fileOutput,filesInput,secondaryFiles,maxEvents, local = True, preProcessing=False)
 
     

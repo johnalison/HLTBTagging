@@ -6,19 +6,19 @@
 #     2nd element: 0 if Data, 1 if MC
 Data = [
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017C-31Mar2018-v1/MINIAOD","/MuonEG/Run2017C-v1/RAW"),
+     ("/MuonEG/Run2017C-17Nov2017-v1/MINIAOD","/MuonEG/Run2017C-v1/RAW"),
      "_RunC",
      True],
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017D-31Mar2018-v1/MINIAOD","/MuonEG/Run2017D-v1/RAW"),
+     ("/MuonEG/Run2017D-17Nov2017-v1/MINIAOD","/MuonEG/Run2017D-v1/RAW"),
      "_RunD",
      True],
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017E-31Mar2018-v1/MINIAOD","/MuonEG/Run2017E-v1/RAW"),
+     ("/MuonEG/Run2017E-17Nov2017-v1/MINIAOD","/MuonEG/Run2017E-v1/RAW"),
      "_RunE",
      True],
     ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2017F-31Mar2018-v1/MINIAOD","/MuonEG/Run2017F-v1/RAW"),
+     ("/MuonEG/Run2017F-17Nov2017-v1/MINIAOD","/MuonEG/Run2017F-v1/RAW"),
      "_RunF",
      True]
 ]
@@ -37,10 +37,10 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
 
 
 
-datasets = [Data[2]]
+datasets = [Data[0]]
 print datasets
 raw_input("press ret to continue")
-prefix = ""
+prefix = "_v2_testing_15LS"
 
 
 if __name__ == '__main__':
@@ -62,8 +62,8 @@ if __name__ == '__main__':
         config.section_("JobType")
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
-        config.JobType.maxMemoryMB = 10000
-        config.JobType.maxJobRuntimeMin = 2000
+        config.JobType.maxMemoryMB = 6000
+        #config.JobType.maxJobRuntimeMin = 2000
         config.JobType.sendPythonFolder = True
         config.JobType.pluginName = 'Analysis'
         config.JobType.psetName = 'crab_fake_pset.py'
@@ -85,15 +85,15 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 40 ##FIXME: use 20
+            config.Data.unitsPerJob = 50 ##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 20
+            config.Data.unitsPerJob = 1
             ##FIXME: use 20
         
 
-        config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
+        config.Data.totalUnits = 1 #10*config.Data.unitsPerJob #FIXME: use -1
         config.Data.outLFNDirBase = '/store/user/koschwei/onlineBTV/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
@@ -105,7 +105,8 @@ if __name__ == '__main__':
 #       config.Data.publishDataName = config.General.requestName
         config.Data.outputDatasetTag = name
         config.Data.allowNonValidInputDataset = True
-        config.Site.blacklist = ['T0_*']
+        config.Site.blacklist = ['T0_*','T3_*','T2_AT_*','T2_CH_*','T2_BE_*','T2_BR_*','T2_DE_RWTH','T2_ES_*','T2_EE_*','T2_FR_*','T2_FI_*','T2_GR_*','T2_HU_*','T2_IN_*','T2_IT_*','T2_KR_*','T2_MY_*','T2_PK_*','T2_PL_*','T2_PT_*','T2_RU_*','T2_TH_*','T2_TR_*','T2_TW_*','T2_UA_*','T2_UK_*','T2_US_*'] # == config.Site.whitelist = ["T2_DE_DESY"]
+        #config.Site.whitelist = ["T2_DE_DESY"]
         #config.Site.blacklist = ['T2_BR_UERJ', 'T2_TR_MET', 'T2_RU_SINP', 'T2_RU_PNPI', 'T3_RU_FIAN', 'T3_US_MIT', 'T3_UK_London_UCL', 'T3_US_UCD', 'T3_CO_Uniandes', 'T3_US_Princeton_ARM', 'T3_ES_Oviedo', 'T3_US_N', 'T3_US_NotreDame', 'T3_KR_KISTI', 'T3_IN_PUHEP', 'T3_UK_ScotGrid_ECDF', 'T2_IT_Rome', 'T2_MY_UPM_BIRUNI', 'T2_TH_CUNSTDA', 'T3_CH_CERN_HelixNebula', 'T3_US_Princeton_ICSE', 'T3_IN_TIFRCloud', 'T0_CH_CERN', 'T3_GR_IASA', 'T3_CN_PK', 'T3_US_Kansas', 'T3_IR_IPM', 'T3_US_JH', 'T3_BY_NCPHEP', 'T3_US_FS', 'T3_KR_UOS', 'T3_CH_PSI']
         #For Run C
         #config.Site.ignoreGlobalBlacklist = True
