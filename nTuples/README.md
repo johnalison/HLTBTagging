@@ -5,7 +5,7 @@ Creation of flat trees with HLT objects. For this the HLT has to be rerun on RAW
 The following steps are necessary to produce the ntuples.
 ### HLT config
 Creating of config dump for running the RAW+AOD files with HLT. The HLT tables and `--setup` depend on the usecase.
-For Data:
+#### For Data:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
  --setup /dev/CMSSW_9_2_0/GRun/V140 \
@@ -35,7 +35,7 @@ and then do
 edmConfigDump hltData.py > hlt_dump_phase1.py
 cmsRun  hlt_dump_phase1.py &> cmsRunData.log
 ```
-For MC:
+#### For MC:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
  --setup /dev/CMSSW_9_2_0/GRun/V140 \
