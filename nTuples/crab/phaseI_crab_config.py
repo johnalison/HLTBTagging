@@ -62,7 +62,7 @@ if __name__ == '__main__':
         config.section_("JobType")
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
-        config.JobType.maxMemoryMB = 6000
+        config.JobType.maxMemoryMB = 5000
         #config.JobType.maxJobRuntimeMin = 2000
         config.JobType.sendPythonFolder = True
         config.JobType.pluginName = 'Analysis'
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 50 ##FIXME: use 20
+            config.Data.unitsPerJob = 40 ##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'
