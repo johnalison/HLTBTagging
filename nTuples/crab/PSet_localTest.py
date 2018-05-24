@@ -11,12 +11,12 @@ process = cms.Process("FAKE")
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        #'file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_MiniAODv2_ReReco_300107_4AABB4B6-5037-E811-9F4A-0CC47A5FBE35.root'
-        '/store/data/Run2017C/MuonEG/MINIAOD/17Nov2017-v1/60000/B20555F6-65E4-E711-B663-001CC4A6ABA8.root'
+	'/store/data/Run2017D/MuonEG/MINIAOD/17Nov2017-v1/70000/FAB825A5-ABE2-E711-845D-008CFA1C6448.root'
+        #'/store/data/Run2017C/MuonEG/MINIAOD/17Nov2017-v1/60000/B20555F6-65E4-E711-B663-001CC4A6ABA8.root'
         #'file:/afs/cern.ch/user/k/koschwei/work/public/MuonEGRunC_MiniAOD_300107_3E580A66-3477-E711-8027-02163E0142F6.root'
     ),
-    lumisToProcess = cms.untracked.VLuminosityBlockRange("300107:1-300107:1"),
-    secondaryFileNames = cms.untracked.vstring('file:/mnt/t3nfs01/data01/shome/koschwei/scratch/MuonEGRunC_RAW_300107_348E3CF3-6974-E711-80DE-02163E01A5DC.root')
+    lumisToProcess = cms.untracked.VLuminosityBlockRange("302573:1-302573:1"),
+    secondaryFileNames = cms.untracked.vstring('/store/data/Run2017D/MuonEG/RAW/v1/000/302/031/00000/74EA91B8-6C8D-E711-9382-02163E013521.root')
 )
 
 """
