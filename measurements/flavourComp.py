@@ -43,11 +43,12 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
     
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/ttbar/phase1/ttbar_0p85_mod_mod_mod.root"
+    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod.root"
+    MC2Input = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ST/ST_tW_part.root"
     if run == "C":
         logging.info("Setting file, name and basepath for Run C")
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
-        puweight = "1"#"get_puWeight(pu)"
+        puweight = "get_puWeight_C_ReReco(pu)"
         globalPrefix = "ProdGTData_RunC"
         basepath = "v10_2nTuples/FlavourSplitting/RunC/" 
 
@@ -92,17 +93,33 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     datalumi = 4591.622871124
     
     eventSelection = "({0}) && ({1}) && ({2}) && ({3})".format(VarSelection, TriggerSelection, LeptonSelection, MCSelection)
-    #MCsamples.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && (  abs(offCleanJets_mcFlavour[?]) != 21 && abs(offCleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
-    MCsamples.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
+    ttbarOnly = True
+    if ttbarOnly:
+        MCsamples.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour == 0".format(eventSelection),
+                                                 831.76, datalumi, ROOT.kBlue, 941634, weight = puweight, legendText = "light jets (t#bar{t})") )
+        MCsamples.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour == 4".format(eventSelection),
+                                                 831.76, datalumi, ROOT.kGreen+2, 941634, weight = puweight, legendText = "c jets (t#bar{t})") )
+        MCsamples.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour == 5".format(eventSelection),
+                                                 831.76, datalumi, ROOT.kRed, 941634, weight = puweight, legendText = "b jets (t#bar{t})") )
 
-    #MCsamplesIter.append( modules.classes.Sample("ttbar_unmatchedJets", MCInput, "{0} && ( abs(offCleanJets_mcFlavour[?]) != 21 && abs(offCleanJets_mcFlavour[?]) > 5 )".format(eventSelection), 831.76, datalumi, ROOT.kWhite, 9767140, weight = puweight, legendText = "unmatched jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 0".format(eventSelection), 831.76, datalumi, ROOT.kBlue, 9767140, weight = puweight, legendText = "light jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 4".format(eventSelection), 831.76, datalumi, ROOT.kGreen+2, 9767140, weight = puweight, legendText = "c jets (t#bar{t})") )
-    MCsamplesIter.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 5".format(eventSelection), 831.76, datalumi, ROOT.kRed, 9767140, weight = puweight, legendText = "b jets (t#bar{t})") )
+        MCsamplesIter.append( modules.classes.Sample("ttbar_udsgJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 0".format(eventSelection),
+                                                     831.76, datalumi, ROOT.kBlue, 941634, weight = puweight, legendText = "light jets (t#bar{t})") )
+        MCsamplesIter.append( modules.classes.Sample("ttbar_cJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 4".format(eventSelection),
+                                                     831.76, datalumi, ROOT.kGreen+2, 941634, weight = puweight, legendText = "c jets (t#bar{t})") )
+        MCsamplesIter.append( modules.classes.Sample("ttbar_bJets", MCInput, "{0} && offCleanJets_hadronFlavour[?] == 5".format(eventSelection),
+                                                     831.76, datalumi, ROOT.kRed, 941634, weight = puweight, legendText = "b jets (t#bar{t})") )
 
-
+    else:
+        MCsamples.append( modules.classes.Sample("ttbar", MCInput, "{0}".format(eventSelection),
+                                                 831.76, datalumi, ROOT.kBlue, 941634, weight = puweight, legendText = "t#bar{t}") )
+        MCsamples.append( modules.classes.Sample("STtW", MC2Input, "{0}".format(eventSelection),
+                                                 1, datalumi, ROOT.kRed, 727212, weight = puweight, legendText = "ST tW") )
+        
+        MCsamplesIter.append( modules.classes.Sample("ttbar", MCInput, "{0}".format(eventSelection),
+                                                     831.76, datalumi, ROOT.kBlue, 941634, weight = puweight, legendText = "t#bar{t}") )
+        MCsamplesIter.append( modules.classes.Sample("STtW", MC2Input, "{0}".format(eventSelection),
+                                                     1, datalumi, ROOT.kBlue, 727212, weight = puweight, legendText = "ST tW") )
+                
     if doData:
         eventSelection = "({0}) && ({1}) && ({2})".format(VarSelection, TriggerSelection, LeptonSelection)
         dataSample = modules.classes.Sample("data", DataInput, eventSelection, color= ROOT.kBlue, legendText = "Data")
