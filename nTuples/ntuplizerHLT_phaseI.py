@@ -781,6 +781,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     cls = 0
     ##get trigger names
     events.to(0)
+    print events
     for event in events: break
     event.getByLabel(triggerBitLabel, triggerBits)
     names = event.object().triggerNames(triggerBits.product())

@@ -37,10 +37,10 @@ MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
 
 
 
-datasets = [Data[0]]
+datasets = [Data[1]]
 print datasets
 raw_input("press ret to continue")
-prefix = "_2"
+prefix = "v2_2"
 
 
 if __name__ == '__main__':
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 40 ##FIXME: use 20
+            config.Data.unitsPerJob = 60##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'

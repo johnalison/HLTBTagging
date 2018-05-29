@@ -15,7 +15,7 @@ process.source = cms.Source("PoolSource",
         #'/store/data/Run2017C/MuonEG/MINIAOD/17Nov2017-v1/60000/B20555F6-65E4-E711-B663-001CC4A6ABA8.root'
         #'file:/afs/cern.ch/user/k/koschwei/work/public/MuonEGRunC_MiniAOD_300107_3E580A66-3477-E711-8027-02163E0142F6.root'
     ),
-    lumisToProcess = cms.untracked.VLuminosityBlockRange("302573:1-302573:1"),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange("302031:1-302031:1"),
     secondaryFileNames = cms.untracked.vstring('/store/data/Run2017D/MuonEG/RAW/v1/000/302/031/00000/74EA91B8-6C8D-E711-9382-02163E013521.root')
 )
 
@@ -28,7 +28,7 @@ process.source = cms.Source("PoolSource",
 )
 """
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(2000)
+    input = cms.untracked.int32(10)
 )
 
 process.options = cms.PSet(
