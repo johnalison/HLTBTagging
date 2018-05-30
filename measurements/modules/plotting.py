@@ -149,7 +149,7 @@ def setStyle(histo, histoType, color = 1, xAxisTitle = "", yAxisTitle = ""):
     
     return True
 
-def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = None, normalized = False):
+def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = None, normalized = False, moveOverUnderFlowBin = True):
     """
     Function for TTree projection into a TH1 hisogram.
 
@@ -170,6 +170,8 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
         and random number
     normalized : bool
         If True, histogram is scaled to unity
+    moveOverUnderFlowBin : bool
+        If True, Overflow and Underflow bins will be moved to the first/last bin
 
     Returns
     -------
@@ -185,6 +187,11 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
     logging.subdebug("Wei:"+weight)
     nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
 
+
+    if moveOverUnderFlowBin:
+        moveOverUnderFlow(histo)
+    
+    
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
     if normalized:
@@ -199,7 +206,38 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
     return histo
 
 
-def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection, weight = "1", hname = None):
+def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection, weight = "1", hname = None, moveOverUnderFlowBin = True):
+    """
+    Function for TTree projection into a TH2 hisogram.
+
+    Parameters
+    ----------
+    tree : ROOT.TTree
+    xVariable : string
+        Variable that is projected to the to the x-axis on the TH2F
+    yVariable : string
+        Variable that is projected to the to the y-axis on the TH2F
+    weight : string
+        Weight that is used for the projection
+    xBinning : list, int, len(3)
+        Binning for the x-axis of the 2D histogram with nBins, first bins, last bin
+    yBinning : list, int, len(3)
+        Binning for the y-axis of the 2D histogram with nBins, first bins, last bin
+    selection : string
+        Selection that is used for the projection
+    hname : string
+        If not set, a name will be generated from the variable parameter
+        and random number
+    moveOverUnderFlowBin : bool
+        If True, Overflow and Underflow bins will be moved to the first/last bin
+        ---> This included the the bins where both values went in overflow/underflow 
+             or one in underflow and the other in overflow
+             -> If unclear try with a 2*2bin 2D plot (it has 16 bins)
+
+    Returns
+    -------
+    TH2F
+    """
     if hname is None:
         hname = "{0}_{1}_{2}".format(xVariable, yVariable, ROOT.gRandom.Integer(10000))
 
@@ -209,21 +247,12 @@ def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection
     logging.debug(selection)
     logging.debug("Drawing TH2 with: x: {0} and y: {1}".format(xVariable, yVariable))
     nPassing = tree.Project(hname, "{0}:{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
+
+    if moveOverUnderFlowBin:
+        moveOverUnderFlow2D(histo)
     
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
-    """
-    if normalized:
-        logging.info("Normalizing {0}".format(histo.GetName()))
-        try:
-            i = 1/float(histo.Integral())
-        except ZeroDivisionError:
-            logging.warning("ZeroDevision Error. Not scaling histo")
-        else:
-            histo.Scale(1/float(histo.Integral()))
-    """
-
-    
     return histo
 
 
@@ -245,6 +274,7 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
     yTitle : sring
         Only needed for stack plots.
 
+
     Returns:
     --------
     ROOT.TCanvas
@@ -259,7 +289,7 @@ def drawHistos(orderedHistoList, stackindex = None, canvas = None, orderedRatioL
         if histo.GetMaximum() > maxval:
             maxval = histo.GetMaximum()
     
-    
+            
     if canvas is None:
         if orderedRatioList is None:
             logging.debug("Creaing new canvas")
@@ -452,3 +482,67 @@ def makeEffGraph(hpass, htot, yAxis):
     graph.SetMarkerStyle(20);
 
     return graph
+
+
+def moveOverUnderFlow(histo, moveOverFlow=True, moveUnderFlow=True):
+    """
+    Function for moving the overflow and (or) underflow bin to the first/last bin
+    """
+    nBins = histo.GetNbinsX()
+    if moveUnderFlow:
+        underflow = histo.GetBinContent(0)
+        fistBinContent = histo.GetBinContent(1)
+        histo.SetBinContent(1, fistBinContent+underflow)
+        histo.SetBinContent(0, 0)
+    if moveOverFlow:
+        overflow = histo.GetBinContent(nBins+1)
+        lastBinContent = histo.GetBinContent(nBins)
+        histo.SetBinContent(nBins, lastBinContent+overflow)
+        histo.SetBinContent(nBins+1, 0)
+
+
+def moveOverUnderFlow2D(histo, moveOverFlow=True, moveUnderFlow=True):
+    nBinsX = histo.GetNbinsX()
+    nBinsY = histo.GetNbinsY()
+
+
+    if moveUnderFlow:
+        #Fist move overflow from the bins where one values was inside the histogram
+        for iY in range(1,nBinsY+1):
+            newBinContent = histo.GetBinContent(0,iY) + histo.GetBinContent(1,iY)
+            histo.SetBinContent(1,iY, newBinContent)
+            histo.SetBinContent(0,iY, 0)
+
+        for iX in range(1,nBinsX+1):
+            newBinContent = histo.GetBinContent(iX,0) + histo.GetBinContent(iX,1)
+            histo.SetBinContent(iX,1, newBinContent)
+            histo.SetBinContent(iX,0, 0)
+
+        #Move the "corner" bins <-> where both values where outside the histgram
+        newBinContent = histo.GetBinContent(0,0) + histo.GetBinContent(1,1)
+        histo.SetBinContent(1,1, newBinContent)
+        histo.SetBinContent(0, 0, 0)
+        newBinContent = histo.GetBinContent(0,nBinsY+1) + histo.GetBinContent(1,nBinsY)
+        histo.SetBinContent(1,nBinsY, newBinContent)
+        histo.SetBinContent(0,nBinsY+1, 0)
+
+    if moveOverFlow:
+        #Fist move overflow from the bins where one values was inside the histogram
+        for iY in range(1,nBinsY+1):
+            newBinContent = histo.GetBinContent(nBinsX+1,iY) + histo.GetBinContent(nBinsX,iY)
+            histo.SetBinContent(nBinsX,iY, newBinContent)
+            histo.SetBinContent(nBinsX+1,iY, 0)
+
+        for iX in range(1,nBinsX+1):
+            newBinContent = histo.GetBinContent(iX,nBinsY+1) + histo.GetBinContent(iX,nBinsY)
+            histo.SetBinContent(iX,nBinsY, newBinContent)
+            histo.SetBinContent(iX,nBinsY+1, 0)
+
+        #Move the "corner" bins <-> where both values where outside the histgram
+        newBinContent = histo.GetBinContent(nBinsX+1,nBinsY+1) + histo.GetBinContent(nBinsX,nBinsY)
+        histo.SetBinContent(nBinsX,nBinsY, newBinContent)
+        histo.SetBinContent(nBinsX+1,nBinsY+1, 0)
+        newBinContent = histo.GetBinContent(nBinsX+1,0) + histo.GetBinContent(nBinsX,1)
+        histo.SetBinContent(nBinsX,1,newBinContent)
+        histo.SetBinContent(nBinsX+1,0, 0)
+    
