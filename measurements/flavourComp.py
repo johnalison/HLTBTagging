@@ -49,8 +49,8 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
         logging.info("Setting file, name and basepath for Run C")
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
         puweight = "get_puWeight_C_ReReco(pu)"
-        globalPrefix = "ProdGTData_RunC_OverUnder"
-        basepath = "TESTING_v10_2nTuples/FlavourSplitting/RunC/" 
+        globalPrefix = "ProdGTData_RunC"
+        basepath = "v10_2nTuples_OverFlow/FlavourSplitting/RunC/" 
 
     #Run C-D
     if run == "CD":

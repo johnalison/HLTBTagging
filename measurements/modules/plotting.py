@@ -502,6 +502,7 @@ def moveOverUnderFlow(histo, moveOverFlow=True, moveUnderFlow=True):
 
 
 def moveOverUnderFlow2D(histo, moveOverFlow=True, moveUnderFlow=True):
+    logging.subdebug("Running Overflow/Underflow function for 2D histograms")
     nBinsX = histo.GetNbinsX()
     nBinsY = histo.GetNbinsY()
 
