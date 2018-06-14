@@ -3,8 +3,17 @@ Creation of flat trees with HLT objects. For this the HLT has to be rerun on RAW
 
 ## Usage
 The following steps are necessary to produce the ntuples.
+
+### Custom HLT Menu
+In order to rerun the b-tagging on every event/jet instead of only running it when the modules are reached in a path, a custom HLT menu has t be created. Use the CMS [ConfDBGUI](https://twiki.cern.ch/twiki/bin/viewauth/CMS/EvfConfDBGUI). As a starting point create a new menu in the version of the main HLT menu you want to use and deep import a stable path with b-tagging (this ensures you have the most resent versions of the b-tagging modules/sequences). Then create new path for Calo and PF b-tagging with the following modules/sequences:
+
+![noFilter paths in confDB](menu-desc.png)
+
+These paths run the jet and b-tagging sequences for Calo and PF jets in every event without filtering you any. The deep imported b-tagging path can be removed after this. Furthermore all paths that should be present in the nTupler also need to be copied to this new custom menu. The default setting of the nTupler only keeps events that pass at least one of the `HLT_*`paths in the custom menu.
+
 ### HLT config
-Creating of config dump for running the RAW+AOD files with HLT. The HLT tables and `--setup` depend on the usecase.
+Creating of config dump for running the RAW+MiniAOD files with HLT. The HLT tables and `--setup` depend on the usecase. For the most recent menu/runs check instructions on [HLT Twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideGlobalHLT).
+
 #### For Data:
 ```bash
 hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \

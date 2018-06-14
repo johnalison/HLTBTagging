@@ -1,5 +1,25 @@
 # Online BTagging measurements
 
+## Performance plot commands
+These are the options to produce the usual performance plots:
+
+**2D plots and projections:**
+```bash
+python shapeComparison.py  --mc --data --deepcsv --perJetComp --sameTagger --skip1DComp 
+```
+
+**Inclusive efficiency (no T&P):**
+```bash
+python efficiencies.py --data --mc --deepcsv --deepcsvWP 0.6 --ptordered --inclusive --ninclusive 15
+```
+
+**Plots with flavour splitting and T&P plots:**
+```bash
+python flavourComp.py --data --deepcsv --inclusive --TnP
+```
+
+The `--run` option is used to choose between different runs defined in the beginning of the plots scripts in the `measurement/` folder.
+
 ## Plot scripts
 The general idea for the plotting is to:
 1. Define the sampels you want to use, as **Sample class** (see `modules/classes.py`)
