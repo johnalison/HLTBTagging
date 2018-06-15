@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root'),
+    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2018B/MuonEG/AOD/PromptReco-v1/000/317/087/00000/060BD4F4-8B64-E811-A768-FA163E2C305A.root'),
     lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
     inputCommands = cms.untracked.vstring('keep *')
 )

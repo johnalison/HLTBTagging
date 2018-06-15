@@ -5,9 +5,9 @@
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
 Data = [
-    ["HLT_Ntuple_BTagging_DiLepton_v10",
-     ("/MuonEG/Run2018A-PromptReco-v1/MINIAOD","/MuonEG/Run2018A-v1/RAW"),
-     "_RunA",
+    ["HLT_Ntuple_BTagging_DiLepton_RunB",
+     ("/MuonEG/Run2018B-PromptReco-v1/MINIAOD","/MuonEG/Run2018B-v1/RAW"),
+     "_RunB",
      True],
 ]
 """NOTE: Placeholder
@@ -87,14 +87,14 @@ if __name__ == '__main__':
         config.Data.publication = False
         if dataset[3]:
             print "Using JSON"
-            config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/DCSOnly/json_DCSONLY.txt'
+            config.Data.lumiMask = '/afs/cern.ch/user/d/dschafer/CMSSW_10_1_2_patch2/src/HLTBTagging/nTuples/myjson.txt'
             #config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
         config.Data.inputDataset = dataset[1][0]
         config.Data.secondaryInputDataset = dataset[1][1]
 #       config.Data.publishDataName = config.General.requestName
         config.Data.outputDatasetTag = name
         config.Data.allowNonValidInputDataset = True
-        config.Site.blacklist = ['T0_*']
+        #config.Site.blacklist = ['T0_*'] # didn"t work anymore when I wanted to submit jobs 
         #config.Site.blacklist = ['T2_BR_UERJ', 'T2_TR_MET', 'T2_RU_SINP', 'T2_RU_PNPI', 'T3_RU_FIAN', 'T3_US_MIT', 'T3_UK_London_UCL', 'T3_US_UCD', 'T3_CO_Uniandes', 'T3_US_Princeton_ARM', 'T3_ES_Oviedo', 'T3_US_N', 'T3_US_NotreDame', 'T3_KR_KISTI', 'T3_IN_PUHEP', 'T3_UK_ScotGrid_ECDF', 'T2_IT_Rome', 'T2_MY_UPM_BIRUNI', 'T2_TH_CUNSTDA', 'T3_CH_CERN_HelixNebula', 'T3_US_Princeton_ICSE', 'T3_IN_TIFRCloud', 'T0_CH_CERN', 'T3_GR_IASA', 'T3_CN_PK', 'T3_US_Kansas', 'T3_IR_IPM', 'T3_US_JH', 'T3_BY_NCPHEP', 'T3_US_FS', 'T3_KR_UOS', 'T3_CH_PSI']
         #For Run C
         #config.Site.ignoreGlobalBlacklist = True

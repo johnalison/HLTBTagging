@@ -10,7 +10,7 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
     import modules.compPlot
     import modules.classes
     binning1 = [30,-1.001,1]  # [20,0,1]
-    binning2 =   [40,0,1]
+    binning2 = [40,-1,1]
     binning3 = [30,-2,1]  # [20,0.5,1]
     
     setup_logging(loglevel = loglev, logname = "shapeoutput", errname = "shapeerror")
@@ -320,14 +320,15 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
                     logging.info("Processing sample: "+sample.name)
                     DSlabel = getLabel("Dataset: {0}".format(nicename), 0.5)
                     #Define plots
+                    print "use right collection "
                     DeepCSV2DFullLog = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv", "pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", binning2, binning2 , "Offline DeepCSV", "matched PF DeepCSV")
                     DeepCSV2DFullLogCalo = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv", "caloJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", binning2, binning2 , "Offline DeepCSV", "matched calo DeepCSV")
 
-                    DeepCSV2DQ1 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", binning3, binning3 , "Offline DeepCSV", "matched PF DeepCSV")
-                    DeepCSV2DQ3 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline DeepCSV", "matched PF DeepCSV")
+                    #DeepCSV2DQ1 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", binning3, binning3 , "Offline DeepCSV", "matched PF DeepCSV")
+                    #DeepCSV2DQ3 = modules.classes.PlotBase2D("offCleanDeepCSVJets_deepcsv","pfJets_deepcsv", "{0} && {1}".format(plotVarSelection, offlineeventSelection), "1", [20,0,0.5], [20,0,0.5] , "Offline DeepCSV", "matched PF DeepCSV")
                     #Make Plots
                     # Full range
-                    fullhistPF=modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, "offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
+                    fullhistPF=modules.compPlot.make2DSummedPlot(DeepCSV2DFullLog, sample, " offCleanDeepCSVJets_deepcsv[?]", "pfJets_deepcsv[offCleanDeepCSVJets_matchPF[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvPF_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value", iterStart = 1)
                     fullHistCalo=modules.compPlot.make2DSummedPlot(DeepCSV2DFullLogCalo, sample, "offCleanDeepCSVJets_deepcsv[?]", "caloJets_deepcsv[offCleanDeepCSVJets_matchCalo[?]]", 10, outname = "{2}{3}/{0}_DeepCSV_2D_OFFvCalo_{1}".format(globalPrefix, postfix, basepath, subfolder),
                                                       iterSelection = commonCaloJetSelection, drawindividualhistos = False, LogZ = True, label = DSlabel, drawProjection = True, projectionTitle = "DeepCSV Value", iterStart = 1)

@@ -209,7 +209,7 @@ def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection
     
     logging.debug(selection)
     logging.debug("Drawing TH2 with: x: {0} and y: {1}".format(xVariable, yVariable))
-    nPassing = tree.Project(hname, "{0}:{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
+    nPassing = tree.Project(hname, "max(-0.5,{0}):{1}".format(yVariable, xVariable),"({0})*({1})".format(selection, weight))
     
     logging.debug("Number of events passing this selection: {0}".format(nPassing))
 
