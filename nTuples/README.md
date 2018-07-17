@@ -11,6 +11,7 @@ In order to rerun the b-tagging on every event/jet instead of only running it wh
 
 These paths run the jet and b-tagging sequences for Calo and PF jets in every event without filtering you any. The deep imported b-tagging path can be removed after this. Furthermore all paths that should be present in the nTupler also need to be copied to this new custom menu. The default setting of the nTupler only keeps events that pass at least one of the `HLT_*`paths in the custom menu.
 
+For detailed instruction on how to create these paths visist [this Twiki page](https://twiki.cern.ch/twiki/bin/view/Main/RerunHLTBTagging)
 ### HLT config
 Creating of config dump for running the RAW+MiniAOD files with HLT. The HLT tables and `--setup` depend on the usecase. For the most recent menu/runs check instructions on [HLT Twiki](https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideGlobalHLT).
 
