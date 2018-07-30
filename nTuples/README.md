@@ -28,17 +28,21 @@ hltGetConfiguration /users/koschwei/CMMSW_10_1_2/HLT_bTag_18_L1RunA_3/V4  \
 ```
 
 
-#### With V2 menu - (not tested):
+#### With V2 menu - (for CMSSW_10_1_7):
 ```bash
-hltGetConfiguration /users/koschwei/CMSSW_9_2_10/HLT_TnP_BTag_Phase1v2/V2 \
- --setup /dev/CMSSW_10_1_0/GRun \
- --data --globaltag 101X_dataRun2_HLT_v7 \
- --input root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/315/506/00000/08090981-324D-E811-A7B1-02163E017FF8.root  \
- --process MYHLT --full --offline   \
- --unprescale --max-events 10 --output none > hltData.py
+hltGetConfiguration /users/koschwei/CMSSW_10_1_7/HLT_GRunV56/V3 --setup /dev/CMSSW_10_1_0/GRun/V56 --data --globaltag 101X_dataRun2_HLT_HEmiss_v1 --input root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_1_7/MuonEG/FEVTDEBUGHLT/101X_dataRun2_HLT_HEmiss_v1_RelVal_muEG2018B-v1/10000/00538A51-D57F-E811-B85D-0025905B8606.root  --process MYHLT --full --offline --unprescale --max-events 10 --output none > hltData.py
 ```
+hltGetConfiguration /users/koschwei/CMSSW_10_1_7/HLT_GRunV56/V3 --setup /dev/CMSSW_10_1_0/GRun/V56 --data --globaltag 101X_dataRun2_HLT_v7 --input root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_1_7/MuonEG/FEVTDEBUGHLT/101X_dataRun2_HLT_v7_RelVal_muEG2018B-v1/10000/008175B3-E67F-E811-9432-0025905AA9CC.root  --process MYHLT --full --offline --unprescale --max-events 10 --output none > hltData.py
+
+hltGetConfiguration /users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4  --setup /dev/CMSSW_10_1_0/GRun/V1 --mc --globaltag 101X_mc2017_realistic_TSG_v1 --input root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root --process MYHLT --full --offline   --unprescale --max-events 10 --output none > hltMC.py
+
+
+
 
 ```bash
+edmConfigDump hltMC.py > hlt_dump_mc_HEmiss.py
+cmsRun hlt_dump_mc_HEmiss.py &> cmsRunMC.log
+
 edmConfigDump hltData.py > hlt_dump_phase1.py
 cmsRun  hlt_dump_phase1.py &> cmsRunData.log
 ```

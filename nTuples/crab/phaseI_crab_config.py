@@ -4,26 +4,26 @@
 #     0th element: name
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
-Data = [
-    ["HLT_Ntuple_BTagging_DiLepton_RunB",
-     ("/MuonEG/Run2018B-PromptReco-v1/MINIAOD","/MuonEG/Run2018B-v1/RAW"),
-     "_RunB",
-     True],
-]
-"""NOTE: Placeholder
-MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
-       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
-       ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-        "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+#Data = [
+    #["MuonEG_HE",
+     #("/MuonEG/CMSSW_10_1_7-101X_dataRun2_Prompt_v11_RelVal_muEG2018B-v1/MINIAOD","/MuonEG/CMSSW_10_1_7-101X_dataRun2_HLT_v7_RelVal_muEG2018B-v1/FEVTDEBUGHLT"),
+     #"_HE",
+     #True],
+#]
+# NOTE: Placeholder
+Data = [["HEmiss_MCTT_v3",
+       ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17MiniAOD-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/MINIAODSIM",
+        "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
        "",
        False],
-      ["HLT_Ntuple_BTagging_DiLepton_v10",
-       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
-       ("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-        "/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
-       "",
-       False]]
-"""
+      #["HLT_Ntuple_BTagging_DiLepton_v10",
+       ##("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+       #("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+        #"/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+       #"",
+       #False]
+       ]
+
 
 
 datasets = Data
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         config.section_("JobType")
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
-        config.JobType.maxMemoryMB = 10000
+        config.JobType.maxMemoryMB = 3000
         config.JobType.maxJobRuntimeMin = 2000
         config.JobType.sendPythonFolder = True
         config.JobType.pluginName = 'Analysis'
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         os.system("voms-proxy-info -path | xargs -i  cp {}  .")
         config.JobType.inputFiles = [
             'hlt_dump_phase1.py',
-            'hlt_dump_mc_phase1.py',
+            'hlt_dump_mc_HEmiss.py',
             'fwlite_config_phaseI.py',
             'script_phaseI.py',
             'utils.py',
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         config.Data.publication = False
         if dataset[3]:
             print "Using JSON"
-            config.Data.lumiMask = '/afs/cern.ch/user/d/dschafer/CMSSW_10_1_2_patch2/src/HLTBTagging/nTuples/myjson.txt'
+            config.Data.lumiMask = '/afs/cern.ch/user/d/dschafer/CMSSW_10_1_7/src/HLTBTagging/nTuples/myjson.txt'
             #config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
         config.Data.inputDataset = dataset[1][0]
         config.Data.secondaryInputDataset = dataset[1][1]
@@ -100,9 +100,19 @@ if __name__ == '__main__':
         #config.Site.ignoreGlobalBlacklist = True
         #config.Site.whitelist = ["T1_*","T2_RU_ITEP"]
 
+        # use normally#
+        #config.section_("Site")
+        #config.Site.storageSite = "T2_DE_DESY"
+        #use normally end#
         
-        config.section_("Site")
-        config.Site.storageSite = "T2_DE_DESY"
+        # use for copied mc sample#
+        config.section_("Site") 
+        config.Site.storageSite = 'T2_DE_DESY' 
+        #config.Site.whitelist = ['T2_DE_DESY'] 
+        #config.section_("User") 
+        #config.User.voGroup = "dcms"
+        # use for copied mc sample end#
+        
         #config.Site.storageSite = "T3_CH_PSI"
         print "submitting ",dataset
         #crabCommand('submit',config = config,dryrun=True)

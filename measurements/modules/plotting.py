@@ -200,6 +200,53 @@ def getHistoFromTree(tree, variable, binning, selection, weight = "1", hname = N
     return histo
 
 
+def getHistoFromTreeLog(tree, variable, binning, selection, weight = "1", hname = None, normalized = False):
+
+    if hname is None:
+        hname = "{0}_{1}".format(variable, ROOT.gRandom.Integer(10000))
+
+    histo = ROOT.TH1F(hname, hname, binning[0], binning[1], binning[2])
+    histo.Sumw2()
+    logging.subdebug("Sel:"+selection)
+    logging.subdebug("Var:"+variable)
+    logging.subdebug("Wei:"+weight)
+    selectedTree = tree.CopyTree(selection)
+    print tree.GetEntries()
+    print selectedTree.GetEntries()
+    print selectedTree
+    #branch = selectedTree.GetBranch(variable.replace("[0]",""))
+    #leaf = selectedTree.GetLeaf(variable.replace("[0]",""))
+    #print variable
+    #print branch
+    #print leaf
+    #for i in range(0,branch.GetEntries()):
+        #branch.GetEntry(i)
+        #b = branch.GetLeaf(variable)
+        #l = b.GetValue()
+    if variable.find("offJets_deepcsv")==-1:
+        print "ATTENTION log doesn't work with variable name "+variable
+    njet = int((variable.split("[")[1]).split("]")[0])
+    print njet
+    for event in selectedTree:
+        histo.Fill(-ROOT.TMath.Log(1-event.offJets_deepcsv[njet]))
+    nPassing = histo.Integral()
+    #nPassing = tree.Project(hname, variable,"({0})*({1})".format(selection, weight))
+
+    logging.debug("Number of events passing this selection: {0}".format(nPassing))
+
+    if normalized:
+        logging.info("Normalizing {0}".format(histo.GetName()))
+        try:
+            i = 1/float(histo.Integral())
+        except ZeroDivisionError:
+            logging.warning("ZeroDevision Error. Not scaling histo")
+        else:
+            histo.Scale(1/float(histo.Integral()))
+    
+        
+    return histo
+
+
 def get2DHistoFromTree(tree, xVariable, yVariable, xBinning, yBinning, selection, weight = "1", hname = None):
     if hname is None:
         hname = "{0}_{1}_{2}".format(xVariable, yVariable, ROOT.gRandom.Integer(10000))

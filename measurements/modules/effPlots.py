@@ -9,7 +9,7 @@ import modules.utils
 
 
 
-def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1"):
+def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1",dolog=False):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -35,10 +35,13 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat 
     binning = PlotBaseObj.binning
 
     
+    if dolog==False:
+        hdenominator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1} && {2})".format(PlotBaseObj.selection, Sample.selection, addSel))
+        hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}) && {3})".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel))
     
-    hdenominator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1} && {2})".format(PlotBaseObj.selection, Sample.selection, addSel))
-    hnumerator = modules.plotting.getHistoFromTree(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}) && {3})".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel))
-
+    else:
+        hdenominator = modules.plotting.getHistoFromTreeLog(Sample.tree, PlotBaseObj.variable, binning, "({0} && {1} && {2})".format(PlotBaseObj.selection, Sample.selection, addSel))
+        hnumerator = modules.plotting.getHistoFromTreeLog(Sample.tree, PlotBaseObj.variable, binning, "(({0}) && ({1}) && ({2}) && {3})".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel))
         
     if forceColor is not None:
         logging.debug("Forcing color: {0}".format(forceColor))
@@ -116,7 +119,7 @@ def makeEffPlot(PlotBaseObj, Sample, numSelection, outname = None, outputformat 
     return grEff
 
 
-def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1"):
+def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, outputformat = "pdf", label = None, drawEff = True, forceColor = None, drawHistos = False, addSel = "1",dolog=True):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 
@@ -150,18 +153,30 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
         iterVar = str(PlotBaseObj.variable).replace("?",str(i))
         iterSel = str("({0} && {1} && ({2}))".format(PlotBaseObj.selection, Sample.selection, addSel)).replace("?",str(i))
         iterSelnum = str("(({0}) && ({1}) && ({2}) && ({3}))".format(PlotBaseObj.selection, Sample.selection, numSelection, addSel)).replace("?",str(i))
-        if not hset:
+        if not hset and not dolog:
             logging.debug("Setting denominator (initial)")
             hdenominator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel)
             logging.debug("Setting numerator (initial)")
             hnumerator = modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum)
             hset = True
-        else:
+        if hset and not dolog:
             logging.debug("Setting denominator")
             hdenominator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSel))
             logging.debug("Setting numerator")
             hnumerator.Add(modules.plotting.getHistoFromTree(Sample.tree, iterVar, binning, iterSelnum))
     
+        if not hset and dolog:
+            logging.debug("Setting denominator (initial)")
+            hdenominator = modules.plotting.getHistoFromTreeLog(Sample.tree, iterVar, binning, iterSel)
+            logging.debug("Setting numerator (initial)")
+            hnumerator = modules.plotting.getHistoFromTreeLog(Sample.tree, iterVar, binning, iterSelnum)
+            hset = True
+            
+        if hset and dolog:
+            logging.debug("Setting denominator")
+            hdenominator.Add(modules.plotting.getHistoFromTreeLog(Sample.tree, iterVar, binning, iterSel))
+            logging.debug("Setting numerator")
+            hnumerator.Add(modules.plotting.getHistoFromTreeLog(Sample.tree, iterVar, binning, iterSelnum))
     
     if forceColor is not None:
         logging.debug("Forcing color: {0}".format(forceColor))
@@ -227,7 +242,7 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
         if outname is not None:
             modules.utils.savePlot(canvas, outname, outputformat)
 
-    return grEff
+    return [grEff,hnumerator,hdenominator]
 
 
     

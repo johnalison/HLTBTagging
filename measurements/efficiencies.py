@@ -4,7 +4,7 @@ import logging
 import logging.config
 from modules.utils import setup_logging, getLabel
 
-def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs, ptordered, csvordered, doinclusive, nInclusiveIter, dosplit, nSplitIter, doCross, compWPs, looseSel):
+def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs, ptordered, csvordered, doinclusive, nInclusiveIter, dosplit, nSplitIter, doCross, compWPs, looseSel,dolog):
     import ROOT
 
     import modules.classes
@@ -17,7 +17,9 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
     logger.info("Starting shape comparison")
     t0 = time.time()
     
-    binning =[100,-10,1]
+    binning =[110,-10,1]
+    if dolog:
+        binning =[10,0,7]
     
     if not (doMC or doData):
         if __name__ == "__main__":
@@ -41,9 +43,10 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         ROOT.gErrorIgnoreLevel = ROOT.kBreak# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
     if run == "CD":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/MuonEG/MuonEG_RunCD_phase1_0p9970p996_mod_mod_mod.root"
+        DataInput = "root://eosuser-internal.cern.ch//eos/user/k/koschwei/ServiceWork/OnlineBTV/nTuples/v8/MuonEG_RunCD_phase1_0p9970p996_mod_mod_mod.root"
         basepaths = "v8nTuples/Efficiencies/RunCD/"
         fileprefix = "RunCD_"
+        nameoutfile="eff_run2017CD.root"
     if run == "E":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v8/MuonEG/RunE/phase1/MuonEG_RunE_phase1_mod_mod_mod.root"
         basepaths = "v8nTuples/Efficiencies/RunE/"
@@ -57,6 +60,15 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         DataInput = "/afs/cern.ch/work/d/dschafer/onlineBTV/MuonEG_run2018A.root"
         basepaths = ""#"testing/"
         fileprefix = "run2018A"
+        nameoutfile="eff_run2018A.root"
+        
+    if run == "HEmiss":
+        DataInput = "/afs/cern.ch/work/d/dschafer/onlineBTV/MuonEG_HEmiss.root"
+        basepaths = ""#"testing/"
+        fileprefix = "HEmiss"
+        nameoutfile="eff_HEmiss_MuonEG_missingHEsector_in_PF.root"
+        nameoutfile="eff_HEmiss_MuonEG_missingHEsector_out_PF.root"
+        #nameoutfile="eff_HEmiss_MuonEG.root"
         
 
     #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
@@ -66,19 +78,30 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
     VarSelection = "1"
 
 
+    
+    
+    
 
-    #DeepCSVSelWP = "0.8958"
-    DeepCSVSelWP = "0.8958"
+    #DeepCSVSelWP = "0.8958" # tight 
+    DeepCSVSelWP = "0.4941" #medium
+    #DeepCSVSelWP = "0.1522" #loose
     if looseSel:
-        TriggerSelection = "1"
-        LeptonSelection = "1"
-        offlineSelection = "1"
-        CSVSelection = "1"
+        TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v7 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v7 > 0"
+        LeptonSelection =  "1" #perhaps later require at leas 1 lepton with pt larger 20 and one with pT larger 15, we'll see
+        offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) > 2"
+        if nameoutfile.find("missingHEsector_in")!=-1:
+            # for missing HE sector : eta = [-3.1 , -1.4] phi = [-2.5 , -0.5]
+            selMissingHEsector = "Sum$((pfJets_eta > -3.1 && pfJets_eta < -1.4) && (pfJets_phi > -2.5 && pfJets_phi < -0.5)) >= 1"
+            if nameoutfile.find("Calo")!=-1:
+                selMissingHEsector = "Sum$((caloJets_eta > -3.1 && caloJets_eta < -1.4) && (caloJets_phi > -2.5 && caloJets_phi < -0.5)) >= 1"
+            offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) > 2"+" && "+selMissingHEsector
+        CSVSelection = "Sum$(offCleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
 
     else:
-        TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v6 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v6 > 0"
+        TriggerSelection = "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v7 > 0 || HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v7 > 0"
         LeptonSelection = "Sum$((abs(offTightElectrons_superClusterEta) <= 1.4442 || abs(offTightElectrons_superClusterEta) >= 1.5660) && offTightElectrons_pt > 30 && abs(offTightElectrons_eta) < 2.4) > 0 && Sum$(offTightMuons_iso < 0.25 && offTightMuons_pt > 20 && abs(offTightMuons_eta) < 2.4) > 0"
         offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) > 2"
+        #offlineSelection = "Sum$(offCleanJets_pt > 30 && abs(offCleanJets_eta) < 1.48) > 2"
         CSVSelection = "Sum$(offCleanJets_deepcsv > {0}) >= 1".format(DeepCSVSelWP)
 
 
@@ -230,7 +253,8 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         if looseSel:
                             JetSelectionIter = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30".format("?", collection)
                         else:
-                            JetSelectionIter = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format("?", collection)
+                            #{1}_deepcsv[{0}] >= 0 &&
+                            JetSelectionIter = " abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format("?", collection)
                         logging.info("Making inclusive effciency ordered by {0} w/ DeepCSV as tagger".format(collectionName))
                         logging.subinfo("Using collection: {0}".format(collection))
                         DeepCSVPlotBaseIter = modules.classes.PlotBase("{1}_deepcsv[{0}]".format("?", collection),
@@ -317,6 +341,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                         else:
                             JetSelection = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format(i, collection)
                         logging.info("Making effciency for Jet {0} ordered by {1} w/ DeepCSV as tagger".format(i, collectionName))
+                        
                         logging.subinfo("Using collection: {0}".format(collection))
                         DeepCSVPlotBaseObjs[i] = modules.classes.PlotBase("{1}_deepcsv[{0}]".format(i, collection),
                                                                           "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelection),
@@ -358,13 +383,19 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                                                              label = CaloWPLabel)
                 print doinclusive 
                 if doinclusive:
+                    print "meeeeeeeeeeeeeeeeeep"
                     if looseSel:
-                        JetSelectionIter = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30".format("?", collection)
+                        JetSelectionIter = " abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30".format("?", collection)
+                        if nameoutfile.find("missingHEsector_out")!=-1:
+                            #JetSelectionIter = " abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && ({1}_eta[{0}] > -1.4) && ({1}_phi[{0}] < -2.5 || {1}_phi[{0}] > -0.5)".format("?", collection)
+                            JetSelectionIter = " abs({1}_eta[pfJets_matchOff[{0}]]) < 2.4 && {1}_pt[pfJets_matchOff[{0}]] > 30 && (pfJets_eta[{0}] > -1.4 || pfJets_eta[{0}] < -3.1) && (pfJets_phi[{0}] < -2.5 || pfJets_phi[{0}] > -0.5)".format("?", collection)
+                            if nameoutfile.find("Calo")!=-1:
+                                JetSelectionIter = " abs({1}_eta[caloJets_matchOff[{0}]]) < 2.4 && {1}_pt[caloJets_matchOff[{0}]] > 30 && (caloJets_eta[{0}] > -1.4 || caloJets_eta[{0}] < -3.1) && (caloJets_phi[{0}] < -2.5 || caloJets_phi[{0}] > -0.5)".format("?", collection)
                     else:
-                        JetSelectionIter = "{1}_deepcsv[{0}] >= 0 && abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format("?", collection)
+                        JetSelectionIter = " abs({1}_eta[{0}]) < 2.4 && {1}_pt[{0}] > 30 && {1}_passesTightLeptVetoID[{0}] > 0".format("?", collection)
                     logging.info("Making inclusive effciency ordered by {0} w/ DeepCSV as tagger".format(collectionName))
                     logging.subinfo("Using collection: {0}".format(collection))
-                    DeepCSVPlotBaseIter = modules.classes.PlotBase("{1}_deepcsv[{0}]".format("?", collection),
+                    DeepCSVPlotBaseIter = modules.classes.PlotBase("{1}_deepcsv[{0}] ".format("?", collection),
                                                                    "{0} && {1} && ({2})".format(CSVSelection, offlineSelection, JetSelectionIter),
                                                                    "1",
                                                                    binning,
@@ -383,19 +414,30 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
                                                             "(pfJets_deepcsv[{2}_matchPF[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_pfWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
                                                             addSel = "{1}_matchPF[{0}] >= 0".format("?", collection),
-                                                            label = [label,WPLabel])
+                                                            label = [label,WPLabel],dolog = dolog)
                             Calo_eff = modules.effPlots.makeEffSumPlot(DeepCSVPlotBaseIter, sample,
                                                             "(caloJets_deepcsv[{2}_matchCalo[{1}]]) >= {0}".format(WP, "?", collection), nInclusiveIter,
                                                             basepaths+"DeepCSV/{3}/{4}Eff_{2}_Jet{0}_caloWP_{1}_DeepCSV_order{3}".format("incl", WP, name, collectionName, fileprefix),
                                                             addSel = "{1}_matchCalo[{0}] >= 0".format("?", collection),
-                                                            label = [label,CaloWPLabel])
+                                                            label = [label,CaloWPLabel],dolog = dolog)
                             ################ save histograms quick and dirty ####
                             print " save into root file "
-                            tmpoutfile = ROOT.TFile("efficiency_2018A.root" ,"RECREATE")
-                            PF_eff.SetName("PF")
-                            Calo_eff.SetName("Calo")
-                            PF_eff.Write()
-                            Calo_eff.Write()
+                            tmpoutfile = ROOT.TFile(nameoutfile ,"RECREATE")
+                            PF_eff[0].SetName("PF")
+                            Calo_eff[0].SetName("Calo")
+                            PF_eff[0].Write()
+                            Calo_eff[0].Write()
+                            PF_eff[1].SetName("numerator_PF")
+                            PF_eff[2].SetName("denominator_PF")
+                            
+                            Calo_eff[1].SetName("numerator_Calo")
+                            Calo_eff[2].SetName("denominator_Calo")
+                            
+                            PF_eff[1].Write()
+                            PF_eff[2].Write()
+                            
+                            Calo_eff[1].Write()
+                            Calo_eff[2].Write()
                             tmpoutfile.Close()
 
                     if doMC and doData:
@@ -472,7 +514,7 @@ if __name__ == "__main__":
         action = "store",
         help = "Set Run for measurement. Option CD, E, F, Test",
         type = str,
-        choices = ["CD", "E", "F", "Test"]
+        choices = ["CD", "E", "F", "Test","HEmiss"]
     )
     argumentparser.add_argument(
         "--mc",
@@ -531,6 +573,11 @@ if __name__ == "__main__":
         help = "Call without argument!",
     )
     argumentparser.add_argument(
+        "--log",
+        action = "store_true",
+        help = "Call without argument!",
+    )
+    argumentparser.add_argument(
         "--ninclusive",
         action = "store",
         help = "Number of iterations for inclusive efficiencies",
@@ -575,6 +622,6 @@ if __name__ == "__main__":
     ##############################################################################################################
 
         
-    efficiencies(loglev = args.logging, run = args.run, doMC = args.mc, doData = args.data, doCSV = args.csv, doDeepCSV = args.deepcsv, CSVWPs = args.csvWP, DeepCSVWPs = args.deepcsvWP, ptordered = args.ptordered, csvordered = args.csvordered, doinclusive = args.inclusive, nInclusiveIter = args.ninclusive, dosplit = args.split, nSplitIter = args.nsplit, doCross = args.crossTagger, compWPs = args.compWPs, looseSel=  args.looseSel)
+    efficiencies(loglev = args.logging, run = args.run, doMC = args.mc, doData = args.data, doCSV = args.csv, doDeepCSV = args.deepcsv, CSVWPs = args.csvWP, DeepCSVWPs = args.deepcsvWP, ptordered = args.ptordered, csvordered = args.csvordered, doinclusive = args.inclusive, nInclusiveIter = args.ninclusive, dosplit = args.split, nSplitIter = args.nsplit, doCross = args.crossTagger, compWPs = args.compWPs, looseSel=  args.looseSel,dolog = args.log)
 
     logging.info("Exiting efficiencies.py")
