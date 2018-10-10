@@ -3,7 +3,8 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_1_7/MuonEG/FEVTDEBUGHLT/101X_dataRun2_HLT_v7_RelVal_muEG2018B-v1/10000/008175B3-E67F-E811-9432-0025905AA9CC.root'),
+    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_1_7/MuonEG/FEVTDEBUGHLT/101X_dataRun2_HLT_HEmiss_v1_RelVal_muEG2018B-v1/10000/00538A51-D57F-E811-B85D-0025905B8606.root'),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
     inputCommands = cms.untracked.vstring('keep *')
 )
 process.HLTConfigVersion = cms.PSet(
@@ -18151,7 +18152,7 @@ process.GlobalTag = cms.ESSource("PoolDBESSource",
     RefreshEachRun = cms.untracked.bool(False),
     RefreshOpenIOVs = cms.untracked.bool(False),
     connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
-    globaltag = cms.string('101X_dataRun2_HLT_v7'),
+    globaltag = cms.string('101X_dataRun2_HLT_HEmiss_v1'),
     pfnPostfix = cms.untracked.string('None'),
     snapshotTime = cms.string(''),
     toGet = cms.VPSet()
@@ -18524,7 +18525,43 @@ process.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v7 = cms.Path(process.HL
 process.HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v15 = cms.Path(process.HLTBeginSequence+process.hltL1sMu23EG10IorMu20EG17+process.hltPreMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLDZ+process.HLTMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLMuonlegSequence+process.HLTMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLElectronlegSequence+process.hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLDZFilter+process.HLTEndSequence)
 
 
-process.DQMOutput = cms.EndPath(process.dqmOutput)
 
 
 
+
+process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
+                                         dataset = cms.untracked.PSet(),
+                                         fileName = cms.untracked.string('./cmsswPreProcessing.root'),
+                                         outputCommands = cms.untracked.vstring('drop *',
+                                                                                'keep *Egamma*_*_*_*',
+                                                                                'keep bool*ValueMap*_*Electron*_*_*',
+                                                                                'keep l1t*_*_*_*',
+                                                                                'keep *_*Ht*_*_*',
+                                                                                'keep *Jet*_*_*_*',
+                                                                                'keep *Electron*_*_*_*',
+                                                                                'keep *Muon*_*_*_*',
+                                                                                'keep *Track*_*_*_*',
+                                                                                'drop *Track*_hlt*_*_*',
+                                                                                'drop SimTracks_*_*_*',
+                                                                                'keep *SuperCluster*_*_*_*',
+                                                                                'keep *MET*_*_*_*',
+                                                                                'keep *Vertex*_*_*_*',
+                                                                                'keep *_hltDeepCombinedSecondaryVertexBJetTagsInfos_*_*',
+                                                                                'keep *_hltDeepCombinedSecondaryVertexBJetTagsInfosCalo_*_*',
+                                                                                #######
+                                                                                'keep *_genParticles_*_*',#AOD
+                                                                                'keep *_prunedGenParticles_*_*',#MINIAOD
+                                                                                #######
+                                                                                'keep *genParticles_*_*_*',
+                                                                                'keep *Trigger*_*_*_*',
+                                                                                'keep recoJetedmRefToBaseProdTofloatsAssociationVector_*_*_*',
+                                                                                #######
+                                                                                'keep *_addPileupInfo_*_*', #AOD
+                                                                                'keep *_slimmedAddPileupInfo_*_*',#MINIAOD
+                                                                                #######
+                                                                                'drop *_*Digis*_*_*',
+                                                                                'drop triggerTriggerEvent_*_*_*',
+                                                                                'keep *_hltGtStage2Digis_*_*',
+                                                                                'keep *_generator_*_*')
+)
+process.FULLOutput = cms.EndPath(process.hltOutputFULL)

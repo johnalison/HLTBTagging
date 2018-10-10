@@ -1,17 +1,14 @@
 import FWCore.ParameterSet.Config as cms
-from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
 
 process = cms.Process("MYHLT")
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root'),
-    lumisToProcess = cms.untracked.VLuminosityBlockRange( ),
+    fileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/842B63A6-701E-E811-B405-FA163E8280B6.root'),
     inputCommands = cms.untracked.vstring('keep *')
 )
 process.HLTConfigVersion = cms.PSet(
     tableName = cms.string('/users/koschwei/CMSSW_10_1_0/HLT_BTag_18_V1Menu/V4')
 )
-
 
 process.HLTIter0GroupedCkfTrajectoryBuilderIT = cms.PSet(
     ComponentType = cms.string('GroupedCkfTrajectoryBuilder'),
@@ -3647,7 +3644,7 @@ process.datasets = cms.PSet(
 )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(10000)
 )
 
 process.options = cms.untracked.PSet(
@@ -18102,6 +18099,8 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'keep *SuperCluster*_*_*_*',
                                                                                 'keep *MET*_*_*_*',
                                                                                 'keep *Vertex*_*_*_*',
+                                                                                'keep *_hltDeepCombinedSecondaryVertexBJetTagsInfos_*_*',
+                                                                                'keep *_hltDeepCombinedSecondaryVertexBJetTagsInfosCalo_*_*',
                                                                                 #######
                                                                                 'keep *_genParticles_*_*',#AOD
                                                                                 'keep *_prunedGenParticles_*_*',#MINIAOD
@@ -18117,7 +18116,34 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'drop triggerTriggerEvent_*_*_*',
                                                                                 'keep *_hltGtStage2Digis_*_*',
                                                                                 'keep *_generator_*_*')
+                                         )
+
+from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask
+patAlgosToolsTask = getPatAlgosToolsTask(process)
+
+process.FULLOutput = cms.EndPath(process.hltOutputFULL, patAlgosToolsTask)
+
+
+
+from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+
+
+print updateJetCollection.__doc__
+for par_name, par in updateJetCollection._parameters.iteritems():
+    print '   - %s:  %s' % (par_name, par.description)
+
+
+
+updateJetCollection(
+    process,
+    jetSource = cms.InputTag('slimmedJets'),
+    #jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet']), 'None'),
+    jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
+    btagDiscriminators = ['pfDeepCSVJetTags:probbb','pfCombinedSecondaryVertexV2BJetTags'], ## to add discriminators
+    btagInfos = ["pfDeepCSVTagInfos"],
+    btagPrefix = 'TEST',
 )
-process.FULLOutput = cms.EndPath(process.hltOutputFULL)
 
-
+##process.out.outputCommands.append('keep *_selectedUpdatedPatJets_*_*')
+process.hltOutputFULL.outputCommands.append('keep *_selectedUpdatedPatJets_*_*')
+process.hltOutputFULL.outputCommands.append('keep *_*TagInfos*_*_*'), 

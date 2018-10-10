@@ -57,7 +57,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         fileprefix = "RunF_"
 
     if run == "Test":
-        DataInput = "/afs/cern.ch/work/d/dschafer/onlineBTV/MuonEG_run2018A.root"
+        DataInput = "/afs/cern.ch/work/j/johnda/public/BJetTrigger/CMSSW_10_1_7/src/HLTBTagging//nTuples/crab/tree.root"
         basepaths = ""#"testing/"
         fileprefix = "run2018A"
         nameoutfile="eff_run2018A.root"
@@ -493,6 +493,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
     logger.info("Runtime: {0:8f}s".format(time.time()-t0))
     logger.info("Closing efficiency turnon calc")
+
 if __name__ == "__main__":
     import argparse
     ##############################################################################################################

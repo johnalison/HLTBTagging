@@ -25,6 +25,12 @@ Data = [["HEmiss_MCTT_v3",
        ]
 
 
+Data = [["MCTTTEST",
+         ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+         "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+         "",
+         False],
+        ]
 
 datasets = Data
 print datasets
@@ -40,13 +46,15 @@ if __name__ == '__main__':
     for dataset in datasets:
         name = dataset[0]
         config.section_("General")
-        config.General.workArea = 'crab_' + name + prefix 
+        config.General.workArea = 'crab_projects'
         config.General.transferLogs=True
 #       config.General.requestName = name+"_"+dataset.replace('/',"_")
-        config.General.requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0] + dataset[2]
-
-        print "Requestname: ", name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0] + dataset[2]
-        #raw_input("press ret")
+        requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2].replace("-powheg-pythia8/","")
+        requestName = "TestSep28_v3" #TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIIFall17MiniAOD-TSG_94X_mc2017_v1"
+        config.General.requestName = requestName
+        print "Requestname: ", requestName
+        #name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2]
+        raw_input("press ret")
         
         config.section_("JobType")
 #        config.JobType.numCores = 4
@@ -62,7 +70,7 @@ if __name__ == '__main__':
         os.system("voms-proxy-info -path | xargs -i  cp {}  .")
         config.JobType.inputFiles = [
             'hlt_dump_phase1.py',
-            'hlt_dump_mc_HEmiss.py',
+            'hlt_dump_mc_HE.py',
             'fwlite_config_phaseI.py',
             'script_phaseI.py',
             'utils.py',
@@ -83,7 +91,7 @@ if __name__ == '__main__':
         
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
-        config.Data.outLFNDirBase = '/store/user/dschafer/' + name + prefix
+        config.Data.outLFNDirBase = '/store/user/johnda/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
             print "Using JSON"
@@ -107,7 +115,7 @@ if __name__ == '__main__':
         
         # use for copied mc sample#
         config.section_("Site") 
-        config.Site.storageSite = 'T2_DE_DESY' 
+        config.Site.storageSite = 'T3_US_FNALLPC' 
         #config.Site.whitelist = ['T2_DE_DESY'] 
         #config.section_("User") 
         #config.User.voGroup = "dcms"

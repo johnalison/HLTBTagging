@@ -1,5 +1,6 @@
 from math import sqrt, pi, log10, log, exp
 from array import array
+import ROOT
 
 class EmptyClass():
     def size(self):
@@ -34,6 +35,16 @@ def matching(eta,phi,offJet_eta,offJet_phi,offJet_num):
     
     return index
     
+def SetVariableVector(tree,name):
+    variable    = ROOT.std.vector('float')()
+    tree.Branch( name,    variable  )
+    return variable
+
+def SetVariableVectorVector(tree,name):
+    variable    = ROOT.std.vector('vector<float>')()
+    tree.Branch( name,    variable  )
+    return variable
+
 
 def SetVariable(tree,name,option='F',lenght=1,maxLenght=50):
     if option is 'F': arraytype='f'
