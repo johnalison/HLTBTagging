@@ -33,19 +33,29 @@ process = cms.Process("FAKE")
 #                            secondaryFileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/5A055FAF-B61E-E811-B1EA-3417EBE2F0C7.root'),
 #                            )
 
-
-#process.source = cms.Source("PoolSource",
+## MC working
+#process.source = cms.Source("PoolSource", 
 #                            fileNames = cms.untracked.vstring('/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/70000/F065E54E-4622-E811-B1F8-008CFAFBE0DC.root'),
 #                            lumisToProcess = cms.untracked.VLuminosityBlockRange("1:9225-1:9225"),
 #                            secondaryFileNames = cms.untracked.vstring('/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/GEN-SIM-RAW/TSG_94X_mc2017_realistic_v11-v1/30000/5A055FAF-B61E-E811-B1EA-3417EBE2F0C7.root'),
 #                            )
-#
 
-process.source = cms.Source("PoolSource",
-                            fileNames = cms.untracked.vstring('/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/70000/F065E54E-4622-E811-B1F8-008CFAFBE0DC.root'),
-                            lumisToProcess = cms.untracked.VLuminosityBlockRange("1:9225-1:9225"),
-                            secondaryFileNames = cms.untracked.vstring('/store/relval/CMSSW_9_4_0/RelValProdTTbar_13/GEN-SIM-RAW/94X_mcRun2_asymptotic_v0-v1/10000/2C420C43-B8C8-E711-808F-0CC47A4D76A0.root '),
+
+# 2018 Testing
+process.source = cms.Source("PoolSource", 
+                            fileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v3/000/316/995/00000/6468B1E5-E166-E811-AC29-FA163EC1F063.root"),
+                            lumisToProcess = cms.untracked.VLuminosityBlockRange("316995:327-316995:335"),
+                            secondaryFileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/316/995/00000/FABFDCF7-E564-E811-A498-FA163EC31020.root'),
                             )
+
+
+
+
+#process.source = cms.Source("PoolSource",
+#                            fileNames = cms.untracked.vstring('/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/70000/F065E54E-4622-E811-B1F8-008CFAFBE0DC.root'),
+#                            lumisToProcess = cms.untracked.VLuminosityBlockRange("1:9225-1:9225"),
+#                            secondaryFileNames = cms.untracked.vstring('/store/relval/CMSSW_9_4_0/RelValProdTTbar_13/GEN-SIM-RAW/94X_mcRun2_asymptotic_v0-v1/10000/2C420C43-B8C8-E711-808F-0CC47A4D76A0.root '),
+#                            )
 
 
 

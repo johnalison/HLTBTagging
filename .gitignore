@@ -106,3 +106,10 @@ ENV/
 #mac
 *DS_Store*
 *._*
+
+nTuples/crab/*root
+
+nTuples/crab/python.tar.gz
+nTuples/crab/x509up_u16020
+nTuples/crab/TriggerStudies/
+measurements

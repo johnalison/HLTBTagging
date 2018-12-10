@@ -10,24 +10,54 @@
      #"_HE",
      #True],
 #]
-# NOTE: Placeholder
-Data = [["HEmiss_MCTT_v3",
-       ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17MiniAOD-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/MINIAODSIM",
-        "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
-       "",
-       False],
-      #["HLT_Ntuple_BTagging_DiLepton_v10",
-       ##("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
-       #("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-        #"/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
-       #"",
-       #False]
-       ]
 
 
-Data = [["MCTTTEST",
-         ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-         "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+## NOTE: Placeholder
+#Data = [["HEmiss_MCTT_v3",
+#       ("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17MiniAOD-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/MINIAODSIM",
+#        "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/GEN-SIM-RAW"),
+#       "",
+#       False],
+#      #["HLT_Ntuple_BTagging_DiLepton_v10",
+#       ##("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+#       #("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+#        #"/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+#       #"",
+#       #False]
+#       ]
+
+
+#Data = [["MCTTTEST",
+#         ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+#         "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+#         "",
+#         False],
+#        ]
+
+#Data = [["Data_2018A",
+#         ("/MuonEG/Run2018A-PromptReco-v3/MINIAOD",
+#          "/MuonEG/Run2018A-v1/RAW"),
+#         "",
+#         False],
+#        ]
+
+#Data = [["Data_2018B",
+#         ("/MuonEG/Run2018B-PromptReco-v2/MINIAOD",
+#          "/MuonEG/Run2018B-v1/RAW"),
+#         "",
+#         False],
+#        ]
+
+#Data = [["Data_2018C",
+#         ("/MuonEG/Run2018C-PromptReco-v3/MINIAOD",
+#          "/MuonEG/Run2018C-v1/RAW"),
+#         "",
+#         False],
+#        ]
+
+Data = [["Data_2018D",
+         ("/MuonEG/Run2018D-PromptReco-v2/MINIAOD",
+         "/MuonEG/Run2018D-v1/RAW"),
          "",
          False],
         ]
@@ -49,8 +79,8 @@ if __name__ == '__main__':
         config.General.workArea = 'crab_projects'
         config.General.transferLogs=True
 #       config.General.requestName = name+"_"+dataset.replace('/',"_")
-        requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2].replace("-powheg-pythia8/","")
-        requestName = "TestSep28_v3" #TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIIFall17MiniAOD-TSG_94X_mc2017_v1"
+        #requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2].replace("-powheg-pythia8/","")
+        requestName = "Nov13_2018D" #TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIIFall17MiniAOD-TSG_94X_mc2017_v1"
         config.General.requestName = requestName
         print "Requestname: ", requestName
         #name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2]
@@ -69,8 +99,8 @@ if __name__ == '__main__':
         os.system("tar czf python.tar.gz --dereference --directory $CMSSW_BASE python")
         os.system("voms-proxy-info -path | xargs -i  cp {}  .")
         config.JobType.inputFiles = [
-            'hlt_dump_phase1.py',
             'hlt_dump_mc_HE.py',
+            'hlt_dump_2018.py',
             'fwlite_config_phaseI.py',
             'script_phaseI.py',
             'utils.py',
@@ -82,7 +112,7 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 40 ##FIXME: use 20
+            config.Data.unitsPerJob = 20 ##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'
@@ -94,8 +124,11 @@ if __name__ == '__main__':
         config.Data.outLFNDirBase = '/store/user/johnda/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
-            print "Using JSON"
-            config.Data.lumiMask = '/afs/cern.ch/user/d/dschafer/CMSSW_10_1_7/src/HLTBTagging/nTuples/myjson.txt'
+            print "Not Using JSON"
+            #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325175_13TeV_PromptReco_Collisions18_JSON.txt'
+            
+            #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325114_13TeV_PromptReco_Collisions18_JSON.txt'
+            #config.Data.lumiMask = '/afs/cern.ch/user/d/dschafer/CMSSW_10_1_7/src/HLTBTagging/nTuples/myjson.txt'
             #config.Data.lumiMask = '/afs/cern.ch/work/k/koschwei/public/test/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/PU28to63_Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt'
         config.Data.inputDataset = dataset[1][0]
         config.Data.secondaryInputDataset = dataset[1][1]
@@ -106,7 +139,8 @@ if __name__ == '__main__':
         #config.Site.blacklist = ['T2_BR_UERJ', 'T2_TR_MET', 'T2_RU_SINP', 'T2_RU_PNPI', 'T3_RU_FIAN', 'T3_US_MIT', 'T3_UK_London_UCL', 'T3_US_UCD', 'T3_CO_Uniandes', 'T3_US_Princeton_ARM', 'T3_ES_Oviedo', 'T3_US_N', 'T3_US_NotreDame', 'T3_KR_KISTI', 'T3_IN_PUHEP', 'T3_UK_ScotGrid_ECDF', 'T2_IT_Rome', 'T2_MY_UPM_BIRUNI', 'T2_TH_CUNSTDA', 'T3_CH_CERN_HelixNebula', 'T3_US_Princeton_ICSE', 'T3_IN_TIFRCloud', 'T0_CH_CERN', 'T3_GR_IASA', 'T3_CN_PK', 'T3_US_Kansas', 'T3_IR_IPM', 'T3_US_JH', 'T3_BY_NCPHEP', 'T3_US_FS', 'T3_KR_UOS', 'T3_CH_PSI']
         #For Run C
         #config.Site.ignoreGlobalBlacklist = True
-        #config.Site.whitelist = ["T1_*","T2_RU_ITEP"]
+        #config.Site.whitelist = ["T2_IT_Bari"]
+        #config.Site.whitelist = ["T1_US_FNAL"]
 
         # use normally#
         #config.section_("Site")

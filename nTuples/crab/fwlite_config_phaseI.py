@@ -69,6 +69,8 @@ def FillVectorShallowTag(shallowTag_source,variables, jetVarNames,trkVarNames,ru
         for tVar in trkVarNames:
             getattr(variables,tVar).push_back(ROOT.std.vector('float')())
 
+        if debug: print "Shallow Tag source len", len(shallowTag_source.productWithCheck())
+
         for obj in shallowTag_source.productWithCheck():
             tagVars = obj.taggingVariables()
         
@@ -103,6 +105,7 @@ def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc
         print "In FillVector before ",variables.pt
     variables.num[0] = 0
     for obj in source.productWithCheck():
+
         if obj.pt()<minPt:
             continue
         if variables.num[0]<len(variables.pt):
@@ -602,14 +605,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
     
-    doTriggerCut = False#True
-    if doTriggerCut:
-        print "+-----------------------------------------------------------------------------------------+"
-        print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
-        print "| Note: If --setup is used only the path in the actual menu are considered for this.      |" 
-        print "|       Not the ones in the setup.                                                        |"
-        print "+-----------------------------------------------------------------------------------------+"
-        print""
+    doTriggerCut = False
     runAOD = False
     if runAOD and False: # Don't do it!
         print "                             +----------------------------+"
@@ -632,18 +628,28 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         print "filesinput[0] has at least on of {0}".format(dataflags)
         isMC = False
         Signal = False
+        doTriggerCut = True
     else:
         isMC = True
         Signal = False
 
     print "isMC = {0}".format(isMC)
 
+    if doTriggerCut:
+        print "+-----------------------------------------------------------------------------------------+"
+        print "| TriggerCut is active. All events passing none of the triggers in the menu are discarded!|"
+        print "| Note: If --setup is used only the path in the actual menu are considered for this.      |" 
+        print "|       Not the ones in the setup.                                                        |"
+        print "+-----------------------------------------------------------------------------------------+"
+        print""
+
+
     ## Pre-processing
     if preProcessing:
         from PhysicsTools.Heppy.utils.cmsswPreprocessor import CmsswPreprocessor
         from PhysicsTools.HeppyCore.framework.config import MCComponent
         if not isMC:
-            cmsRun_config = "hlt_dump_phase1.py"
+            cmsRun_config = "hlt_dump_2018.py"
         else:
             cmsRun_config = "hlt_dump_mc_HE.py"
         if LS is not None:
@@ -980,8 +986,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         event.getByLabel(offMu_label, offMu_source)
         event.getByLabel(MuGlobalTracks_label, MuGlobalTracks_source)
 
-        print "NElecs",offEle_source.productWithCheck(),len(offEle_source.productWithCheck())
-        print "NMuons",offMu_source.productWithCheck(),len(offMu_source.productWithCheck())
+        #print "NElecs",offEle_source.productWithCheck(),len(offEle_source.productWithCheck())
+        #print "NMuons",offMu_source.productWithCheck(),len(offMu_source.productWithCheck())
 
         #Getting Jet handles
         event.getByLabel(caloJets_label, caloJets_source)
@@ -1102,7 +1108,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 offVertex = None
                 print "Offline Vertex did not pass the selection"
 
-        FillElectronVector(offEle_source, offTightElectrons, idName , runAOD=runAOD,debug = True)
+        FillElectronVector(offEle_source, offTightElectrons, idName , runAOD=runAOD,debug = False)
         FillMuonVector(offMu_source, offTightMuons, offVertex, "tight", debug = False)
 
         ####################################################
@@ -1154,7 +1160,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
 
         #FillVector(l1Jets_source,l1Jets)
-        FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC)
+        FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC, debug=False)
         FillVectorShallowTag(offShallowTag_source, offJets, jetVars, trkVars, debug=False)
 
         csvbtagTouples_calo = getBJetValuesforFilling(calobtag_source)
