@@ -21,6 +21,7 @@ process = cms.Process("FAKE")
 #)
 #
 #John 
+
 #process.source = cms.Source("PoolSource",
 #    fileNames = cms.untracked.vstring('/store/mc/RunIIFall17DRPremix/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/AODSIM/TSG_94X_mc2017_realistic_v11-v1/70000/4EAA44A8-4F22-E811-8E2F-7CD30AD0A750.root'),
 #    lumisToProcess = cms.untracked.VLuminosityBlockRange("1:8695-1:8695"),
@@ -65,6 +66,22 @@ process.source = cms.Source("PoolSource",
 #    #lumisToProcess = cms.untracked.VLuminosityBlockRange("300107:2-300107:3"),
 #    lumisToProcess = cms.untracked.VLuminosityBlockRange("1:14344-1:14344"),
 #    secondaryFileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root')
+#)
+
+#### for testing data run D:
+###process.source = cms.Source("PoolSource",
+###    fileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root'),
+###    lumisToProcess = cms.untracked.VLuminosityBlockRange("321012:1-321012:31"),
+###    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root')
+###)
+
+
+#MC
+#process.source = cms.Source("PoolSource",
+    #fileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIISummer17MiniAOD/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50000/C0D716E7-88A2-E711-A108-FA163EB5E2DE.root'),
+    ##lumisToProcess = cms.untracked.VLuminosityBlockRange("300107:2-300107:3"),
+    #lumisToProcess = cms.untracked.VLuminosityBlockRange("1:14344-1:14344"),
+    #secondaryFileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root')
 #)
 
 
