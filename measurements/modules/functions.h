@@ -23,7 +23,7 @@ int leptonoverlap(float jetpt, float jeteta, float jetphi, float lpt, float leta
 float get_puWeight_CD(float x){
   std::map<int, float> weights;
   /* Run C+D */
-  weights[0] = 3.92524999357e-06;
+  weights[0] = 0;
   weights[1] = 1.10028909832e-05;
   weights[2] = 1.90667164898e-05;
   weights[3] = 7.04997943604e-05;
@@ -525,6 +525,240 @@ float get_puWeight_C_ReReco(float x){
   weights[97] = 0.0;
   weights[98] = 0.0;
   for(auto elem : weights){
+    if(x >= elem.first && x < (elem.first + 1)){
+      return elem.second;
+    }
+  }
+  return 0.0;
+}
+
+
+
+
+
+float get_puWeight_D(float x){
+  std::map<int, float> weights;
+  weights[-1] = 0.0;
+  weights[0] = 4.84490342616e-10;
+  weights[1] = 0.0046540675694;
+  weights[2] = 0.0564300290917;
+  weights[3] = 0.101819281656;
+  weights[4] = 0.140440571003;
+  weights[5] = 0.141229736041;
+  weights[6] = 0.173330050634;
+  weights[7] = 0.306497331992;
+  weights[8] = 0.167080038617;
+  weights[9] = 0.175533441523;
+  weights[10] = 0.0892620266643;
+  weights[11] = 0.0837227717663;
+  weights[12] = 0.0734532851772;
+  weights[13] = 0.0967070751503;
+  weights[14] = 0.14616932168;
+  weights[15] = 0.352753131901;
+  weights[16] = 0.733390397521;
+  weights[17] = 1.09691152335;
+  weights[18] = 1.58628245176;
+  weights[19] = 1.65426974254;
+  weights[20] = 1.78984615939;
+  weights[21] = 1.80038029644;
+  weights[22] = 1.9174711919;
+  weights[23] = 1.868241881;
+  weights[24] = 1.98308660474;
+  weights[25] = 2.14144211327;
+  weights[26] = 2.22520734623;
+  weights[27] = 2.29211298338;
+  weights[28] = 2.25074226735;
+  weights[29] = 2.21346845404;
+  weights[30] = 2.11500603443;
+  weights[31] = 1.85267233531;
+  weights[32] = 1.5533069846;
+  weights[33] = 1.34867187817;
+  weights[34] = 1.08786020877;
+  weights[35] = 0.877541399599;
+  weights[36] = 0.736324515732;
+  weights[37] = 0.596182512758;
+  weights[38] = 0.452232442029;
+  weights[39] = 0.353635145409;
+  weights[40] = 0.270294979479;
+  weights[41] = 0.196958686011;
+  weights[42] = 0.148753210846;
+  weights[43] = 0.11838808904;
+  weights[44] = 0.085801288067;
+  weights[45] = 0.0576124034753;
+  weights[46] = 0.0371482477844;
+  weights[47] = 0.0231242194797;
+  weights[48] = 0.0132828602969;
+  weights[49] = 0.00794954909576;
+  weights[50] = 0.00436397827656;
+  weights[51] = 0.00232080672866;
+  weights[52] = 0.00120073979036;
+  weights[53] = 0.000612542660601;
+  weights[54] = 0.000292784436266;
+  weights[55] = 0.000142852016796;
+  weights[56] = 6.68479082016e-05;
+  weights[57] = 3.07555328988e-05;
+  weights[58] = 1.39862971896e-05;
+  weights[59] = 6.27827109511e-06;
+  weights[60] = 2.8340166869e-06;
+  weights[61] = 1.25822006856e-06;
+  weights[62] = 5.97318708178e-07;
+  weights[63] = 2.76003909635e-07;
+  weights[64] = 1.29931100335e-07;
+  weights[65] = 5.17728477158e-08;
+  weights[66] = 1.92819651354e-08;
+  weights[67] = 7.89624953876e-09;
+  weights[68] = 3.215314065e-09;
+  weights[69] = 8.55067345844e-10;
+  weights[70] = 3.45441664313e-10;
+  weights[71] = 8.87974252779e-11;
+  weights[72] = 5.12339102312e-11;
+  weights[73] = 1.98193580802e-11;
+  weights[74] = 5.06075578781e-12;
+  weights[75] = 1.74549038298e-12;
+  weights[76] = 5.05318060439e-13;
+  weights[77] = 2.09350197954e-13;
+  weights[78] = 6.04777630321e-14;
+  weights[79] = 1.35657712394e-14;
+  weights[80] = 5.80919412372e-16;
+  weights[81] = 1.3654065023e-15;
+  weights[82] = 0.0;
+  weights[83] = 0.0;
+  weights[84] = 0.0;
+  weights[85] = 0.0;
+  weights[86] = 0.0;
+  weights[87] = 0.0;
+  weights[88] = 0.0;
+  weights[89] = 0.0;
+  weights[90] = 0.0;
+  weights[91] = 0.0;
+  weights[92] = 0.0;
+  weights[93] = 0.0;
+  weights[94] = 0.0;
+  weights[95] = 0.0;
+  weights[96] = 0.0;
+  weights[97] = 0.0;
+  weights[98] = 0.0;
+  for(auto elem : weights){
+    if(x >= elem.first && x < (elem.first + 1)){
+      return elem.second;
+    }
+  }
+  return 0.0;
+}
+
+
+
+
+
+
+
+
+
+
+
+float get_puWeight_CDF(float x){
+std::map<int, float> weights;
+weights[-1] = 0.0;
+weights[0] = 0.000465590148667;
+weights[1] = 0.0367175652083;
+weights[2] = 0.161420135746;
+weights[3] = 0.133351874592;
+weights[4] = 0.15219660625;
+weights[5] = 0.115660034546;
+weights[6] = 0.146759529467;
+weights[7] = 0.257145748859;
+weights[8] = 0.195375754746;
+weights[9] = 0.599569766502;
+weights[10] = 0.585607856834;
+weights[11] = 0.859614252386;
+weights[12] = 0.936452641336;
+weights[13] = 0.967797239431;
+weights[14] = 0.884950640954;
+weights[15] = 1.03067964552;
+weights[16] = 1.10335095186;
+weights[17] = 1.0733779579;
+weights[18] = 1.23841593245;
+weights[19] = 1.19690561402;
+weights[20] = 1.24778035984;
+weights[21] = 1.25227161183;
+weights[22] = 1.34965690084;
+weights[23] = 1.33801905619;
+weights[24] = 1.38681150135;
+weights[25] = 1.42347144963;
+weights[26] = 1.43571941767;
+weights[27] = 1.44429160312;
+weights[28] = 1.41839853672;
+weights[29] = 1.40484699138;
+weights[30] = 1.3713491663;
+weights[31] = 1.26570292804;
+weights[32] = 1.15042541938;
+weights[33] = 1.07751154482;
+weights[34] = 0.97054313368;
+weights[35] = 0.882352214635;
+weights[36] = 0.839395422473;
+weights[37] = 0.793476184154;
+weights[38] = 0.713688135294;
+weights[39] = 0.678977645294;
+weights[40] = 0.660386203274;
+weights[41] = 0.658928853322;
+weights[42] = 0.717550302785;
+weights[43] = 0.874041113035;
+weights[44] = 1.02604503359;
+weights[45] = 1.20669553323;
+weights[46] = 1.39536092527;
+weights[47] = 1.51188079689;
+weights[48] = 1.56129429129;
+weights[49] = 1.57496125174;
+weights[50] = 1.44240643659;
+weights[51] = 1.24530210813;
+weights[52] = 1.01548334372;
+weights[53] = 0.779729095275;
+weights[54] = 0.571691543393;
+weights[55] = 0.412658404284;
+weights[56] = 0.283821062882;
+weights[57] = 0.189388281958;
+weights[58] = 0.125713864274;
+weights[59] = 0.0795604962279;
+weights[60] = 0.0549860943471;
+weights[61] = 0.0366323940988;
+weights[62] = 0.0264835860546;
+weights[63] = 0.0187752330765;
+weights[64] = 0.0137727046721;
+weights[65] = 0.00887634310487;
+weights[66] = 0.00546925308592;
+weights[67] = 0.00376447282051;
+weights[68] = 0.00266491681581;
+weights[69] = 0.00138003784252;
+weights[70] = 0.00101816103088;
+weights[71] = 0.000528416106451;
+weights[72] = 0.000581379933306;
+weights[73] = 0.000416755883362;
+weights[74] = 0.000267124054277;
+weights[75] = 0.000208609229877;
+weights[76] = 0.000155279140902;
+weights[77] = 0.000180303131818;
+weights[78] = 0.000146021788052;
+weights[79] = 0.000102172129683;
+weights[80] = 7.19908477648e-06;
+weights[81] = 0.000105903656239;
+weights[82] = 6.27487951147e-05;
+weights[83] = 4.92265064212e-05;
+weights[84] = 4.38861341861e-07;
+weights[85] = 7.59462862854e-05;
+weights[86] = 1.64094083237e-05;
+weights[87] = 9.74654991297e-07;
+weights[88] = 1.44225832073e-05;
+weights[89] = 2.23232020425e-07;
+weights[90] = 0.0;
+weights[91] = 0.0;
+weights[92] = 0.0;
+weights[93] = 0.0;
+weights[94] = 0.0;
+weights[95] = 0.0;
+weights[96] = 0.0;
+weights[97] = 0.0;
+weights[98] = 0.0;
+   for(auto elem : weights){
     if(x >= elem.first && x < (elem.first + 1)){
       return elem.second;
     }

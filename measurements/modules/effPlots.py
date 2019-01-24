@@ -226,7 +226,7 @@ def makeEffSumPlot(PlotBaseObj, Sample, numSelection, nIter, outname = None, out
 
 
     
-def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputformat = "pdf", label = None, drawHistos = False, addSel = "1"):
+def makeEffSCompPlot(PlotBaseObj, Samples, numSelection, outname = None, outputformat = "pdf", label = None, drawHistos = False, addSel = "1", mergeMC = False):
     styleconfig = SafeConfigParser()
     styleconfig.read("config/plotting.cfg")
 

@@ -2,14 +2,14 @@ import logging
 from copy import deepcopy
 import math
 import ROOT
-
+from collections import OrderedDict
 import modules.DataMC
 import modules.plotting
 from modules.utils import setup_logging, getLabel, addHistoList
 
 
 
-def LeadingProbe(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, plottag = False, convertIterSelection = True, probeIndex = 0, tagIndex = 1, data = None , normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None, skipPlots = False):
+def LeadingProbe(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, plottag = False, convertIterSelection = True, probeIndex = 0, tagIndex = 1, probeWeight = "1", tagWeight = "1", data = None , normalized = False, drawRatio = True, outname = None, outputformat = "pdf", label = None, skipPlots = False):
     """
     Function for plotting a distribution of a porbe jet depending on a probe jet selection. Calls
     modules.DataMC.StackDMCPlotBase for plotting. 
@@ -33,6 +33,14 @@ def LeadingProbe(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, plott
         Index of the probe Jet in the jet array
     tagIndex
         Index of the tag Jet in the jet array
+    probeWeight : str
+        Special weight applyied for the probe Jet. If not [?] in string, 
+        "1" will be uesd. Genera lweights are expected to be set in the 
+        sample definition
+    tagWeight : str
+        Special weight applyied for the tag Jet. If not [?] in string, 
+        "1" will be uesd. Genera lweights are expected to be set in the 
+        sample definition
     data : modules.classes.sample object
         If None is provide the sum of all stacked histograms (passed in
         Samples2Stack will be used as "data"
@@ -50,21 +58,73 @@ def LeadingProbe(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, plott
             xVarBase = PlotBaseObj.variable.replace("?", str(probeIndex))
     else:
         xVarBase = PlotBaseObj.variable
+
+    if "[?]" in probeWeight:
+        probeWeight = probeWeight.replace("?", str(probeIndex))
+    else:
+        probeWeight = "1"
+    if "[?]" in tagWeight:
+        tagWeight = tagWeight.replace("?", str(tagIndex))
+    else:
+        tagWeight = "1"
+
+    logging.info("Will use {0} as tag and {1} as probe weight".format(tagWeight, probeWeight))
+        
     for isample, sample in enumerate(Samples2Stack):
 
         selection = "{0} && {1}".format(PlotBaseObj.selection, sample.selection).replace("?", str(probeIndex))
         
-        StackHistos.append(getPorbeHisto( PlotBaseObj, sample, xVarBase, selection, probeSelection, tagSelection, isMC = True) )
-        if isample == 0:
+        StackHistos.append(getPorbeHisto( PlotBaseObj, sample, xVarBase, selection, probeSelection, tagSelection, isMC = True, addWeight = "({0} * {1})".format(probeWeight, tagWeight) ) )
+
+    #for isample, sample in enumerate(Samples2Stack):
+    #    print sample.name, StackHistos[isample], StackHistos[isample].Integral()#
+
+    #raw_input(".........................")
+        
+    """ Merge all sample that end with the same string after _  """
+    #print Samples2Stack
+    mergedStackHistos = []
+    samples2Merge = OrderedDict() # Dict with sample name postfix as key and list of indices as
+    Samples2StackResorted = []
+    for isample, sample in enumerate(Samples2Stack):
+        print sample, sample.name, sample.color
+        postfix = sample.name.split("_")[-1]
+        if not postfix in samples2Merge:
+            samples2Merge[postfix] = []
+        samples2Merge[postfix].append(isample)
+        Samples2StackResorted.append(sample)
+    logging.debug("Merging sampes with same postfix")
+    for merge in samples2Merge: #Loop over gourps
+        #print "-----------------"
+        for iIndex, index in enumerate(samples2Merge[merge]):
+            #iIndex: Number of histos in the current merge
+            #index: index in the total list of samples
+            #print merge, StackHistos[index].Integral()
+            if iIndex == 0:
+                logging.info("Creating merged histos"+" with postfix "+str(merge))
+                mergedHisto = StackHistos[index].Clone()
+                mergedHisto.SetName("Merge_"+str(merge))
+                mergedHisto.SetTitle("Merge_"+str(merge))
+            else:
+                logging.debug("Adding sample to merge")
+                mergedHisto.Add(StackHistos[index])
+        #print "--------",mergedHisto.Integral()
+        mergedStackHistos.append(mergedHisto)
+    # mergedStackHistos : Has len() of different sample name postfixes
+    #print mergedStackHistos
+    StackSum = None
+    for imergedHisto, mergedHisto in enumerate(mergedStackHistos):
+        if imergedHisto == 0:
             logging.debug("Creating stacksum"+" with name "+str(sample.name))
-            StackSum = StackHistos[0].Clone()
+            StackSum = mergedHisto.Clone()
             StackSum.SetName("Stacksum_"+StackSum.GetName())
             StackSum.SetTitle("Stacksum_"+StackSum.GetTitle())
         else:
             logging.debug("Adding histo to stacksum "+str(isample)+" with name "+str(sample.name))
-            StackSum.Add(StackHistos[isample])
-
+            StackSum.Add(mergedHisto)
+        #print "++++++++++++++++****",StackSum.Integral()
     logging.subinfo("Stack histos finished")
+    #print "StackSum:",StackSum.Integral()
     if data is None:
         logging.warning("No data set -> Setting data to Stacksum")
         hData = StackSum.Clone()
@@ -72,16 +132,21 @@ def LeadingProbe(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, plott
     else:
         selection = "{0} && {1}".format(PlotBaseObj.selection, data.selection).replace("?", str(probeIndex))
         hData = getPorbeHisto( PlotBaseObj, data, xVarBase, selection, probeSelection, tagSelection, isMC = False)
+    print "StackSum:",StackSum.Integral()
+    print "hData:",hData.Integral()
 
     if not skipPlots:
-        modules.DataMC.StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, data, normalized, drawRatio, outname, outputformat, label)
+        logging.info("Will Start printing here")
+        modules.DataMC.StackDMCPlotBase(StackSum, mergedStackHistos, hData, PlotBaseObj, Samples2StackResorted, data, normalized, drawRatio, outname, outputformat, label)
 
-    return StackSum, StackHistos, hData
+    print "StackSum:",StackSum.Integral()
+    #raw_input(".........................")
+    return StackSum, mergedStackHistos, hData
 
-def getPorbeHisto(PlotBaseObj, sample, xVarBase, selection, probeselection, tagselection, isMC):
+def getPorbeHisto(PlotBaseObj, sample, xVarBase, selection, probeselection, tagselection, isMC, addWeight = "1"):
     logging.subinfo("Making tag histo for sample: {0}".format(sample.name))
     if isMC:
-        weight = "{0} * {1}".format(sample.getSampleWeight(), sample.weight)
+        weight = "{0} * {1} * {2}".format(sample.getSampleWeight(), sample.weight, addWeight)
     else:
         weight = "1"
     logging.subdebug("Probe Selection: {0}".format(tagselection))
@@ -203,6 +268,8 @@ def getBEfficiency(PlotBaseObj, Samples2Stack, probeSelection, tagSelection, add
         StackSum_num, StackHistos_num, hData_num = LeadingProbe(PlotBaseObj, Samples2Stack, "{0} && {1}".format(probeSelection, numWP), tagSelection, False, convertIterSelection, probeIndex, tagIndex, data, skipPlots = True)
         outfile.cd()
         ##Normalization to data
+        print "---------------"
+        print StackHistos_denom
         try:
             hData_denom.Integral()/StackSum_denom.Integral()
         except ZeroDivisionError:

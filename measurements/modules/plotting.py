@@ -547,3 +547,83 @@ def moveOverUnderFlow2D(histo, moveOverFlow=True, moveUnderFlow=True):
         histo.SetBinContent(nBinsX,1,newBinContent)
         histo.SetBinContent(nBinsX+1,0, 0)
     
+
+def makeErrorband(stackSum):
+    """
+    Method to make errorbands.
+    Errorband are statistical errors if no systematcally shifted samples are
+    supplied and no systematic error is given
+    returns: ROOT.TGraphAsymmErrors object and a bool defining that a errorband was set
+    """
+    logging.info("Making errorband for plot")
+    nbins = stackSum.GetNbinsX()
+    errorgraph = ROOT.TGraphAsymmErrors(nbins)
+    for ibin in range(nbins):
+        cBinErrUp = 0
+        cBinErrDown = 0
+        cBin = ibin + 1
+        cBinwidth = stackSum.GetBinWidth(cBin)
+        yCentralValue = stackSum.GetBinContent(cBin)
+        xCentralValue = stackSum.GetBinCenter(cBin)
+        cStatUp = stackSum.GetBinError(cBin)
+        cStatDown = stackSum.GetBinError(cBin)
+        #TODO implement systemtically shifted sample loop
+        systuperr = 0
+        systdownerr = 0
+        """
+        # Test if the argument has the correct types (list with tuples)
+        dosystvar = False
+        try:
+            assert(isinstance(systPairs, list))
+        except AssertionError:
+            logging.error("Variable **systPairs** is supposed to be list type")
+        else:
+            try:
+                assert(isinstance(systPairs[0], tuple))
+            except AssertionError:
+                logging.error("Variable **systPairs** should contain tuples")
+            else:
+                dosystvar = True
+        if dosystvar:
+            for pair in systPairs:
+                pass
+        """
+        # if systUp is not None and systDown is not None:
+        #    pass
+        #TODO implement rate uncertainty
+        rateunc = 0
+        errorgraph.SetPoint(ibin, xCentralValue, yCentralValue)
+        cBinErrUp += cStatUp*cStatUp + systuperr * systuperr + rateunc * rateunc
+        cBinErrDown += cStatDown*cStatDown + systdownerr * systdownerr + rateunc * rateunc
+        errorgraph.SetPointError(ibin, cBinwidth/2.0, cBinwidth/2.0, ROOT.TMath.Sqrt(cBinErrDown), ROOT.TMath.Sqrt(cBinErrUp))
+
+    errorgraph.SetFillStyle(3145)
+    errorgraph.SetFillColor(ROOT.kGray+1)
+    errorgraph.SetLineWidth(0)
+
+    return errorgraph
+
+def makeratioErrorband(errorband):
+    """
+    Method to convert the errorband into an graph for the ratio plot. This are
+    basically the relative errors.
+    returns: ROOT.TGraphAsymmErrors object and a bool defining that a ratio errorband was set
+    """
+    logging.debug("Getting errorband for ratio from band for stacked distribution")
+    ratioerrorband = ROOT.TGraphAsymmErrors(errorband.GetN())
+    x, y = ROOT.Double(0), ROOT.Double(0)
+    for i in range(errorband.GetN()):
+        errorband.GetPoint(i, x, y)
+        ratioerrorband.SetPoint(i, x, 1.0)
+        relativeErrUp = 0.0
+        relativeErrDown = 0.0
+        if y > 0.0:
+            relativeErrUp = errorband.GetErrorYhigh(i)/y
+            relativeErrDown = errorband.GetErrorYlow(i)/y
+        ratioerrorband.SetPointError(i, errorband.GetErrorXlow(i), errorband.GetErrorXhigh(i), relativeErrDown, relativeErrUp)
+
+    ratioerrorband.SetFillStyle(3145)
+    ratioerrorband.SetFillColor(ROOT.kGray+1)
+    ratioerrorband.SetLineWidth(0)
+
+    return ratioerrorband

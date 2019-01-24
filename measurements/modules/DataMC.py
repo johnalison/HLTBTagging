@@ -142,7 +142,7 @@ def StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, d
     else:
         logging.error("Something is happening here... :(")
 
-
+    logging.info("StackHistos: %s",StackHistos)
     
     styleconfig = SafeConfigParser()
     #logging.debug("Loading style config")
@@ -168,6 +168,7 @@ def StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, d
     if normalized:
         MCscale = hData.Integral()/StackSum.Integral()
         StackSum.Scale(MCscale)
+        logging.warning("MCScale %s", MCscale)
         NormLabel = modules.utils.getLabel("MC normalized to Data", 0.6)
         if label is None:
             label = [NormLabel]
@@ -181,13 +182,26 @@ def StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, d
     logging.debug("Making stack")
     HStack = ROOT.THStack("HStack_"+StackHistos[0].GetName(), "")
     for ihisto, histo in enumerate(StackHistos):
+        #print "---------------------"
+        #print Samples2Stack[ihisto].color, Samples2Stack[ihisto].name, histo.GetName()
         modules.plotting.setStyle(histo, "Solid", Samples2Stack[ihisto].color, PlotBaseObj.xTitle, yTitle)
+        #print histo.Integral()
         if normalized:
             histo.Scale(MCscale)
         HStack.Add(histo)
+        #print histo.Integral()
         ObjectsforLegend.append( (histo, Samples2Stack[ihisto].legend[0], "F") )
-    
+    #raw_input("....")
     modules.plotting.setStyle(StackSum, "Line", ROOT.kBlack, PlotBaseObj.xTitle, yTitle)
+
+    if True:
+        thisOutFile = ROOT.TFile("histos_"+str(outname.split("/")[-1])+"_"+str(ROOT.gRandom.Integer(1000))+str(".root"),  "RECREATE")
+        print thisOutFile
+        thisOutFile.cd()
+        for ihisto, histo in enumerate(StackHistos):
+            histo.Write()
+        thisOutFile.Close()
+
     
     #Make Lumi label
     if data is None:
@@ -212,14 +226,17 @@ def StackDMCPlotBase(StackSum, StackHistos, hData, PlotBaseObj, Samples2Stack, d
         logging.debug("Making Ratio")
         ratioLine, ratios, div = modules.plotting.getRatioPlot(hData, [StackSum])
 
+    StackErrorBand = modules.plotting.makeErrorband(StackSum)
+    RatioErrorBand = modules.plotting.makeratioErrorband(StackErrorBand)
+        
     canvas = modules.plotting.getCanvas(ratio = drawRatio)
 
-    h2Draw = [ (HStack, "histo"), (hData, "AE1X0") ]
-    r2Draw = [ (ratioLine, "histoe") , (ratios[0], "sameP") ]
+    h2Draw = [ (HStack, "histo"), (StackErrorBand, "same"), (hData, "AE1X0") ]
+    r2Draw = [ (ratioLine, "histoe") , (RatioErrorBand, "same2"), (ratios[0], "sameP") ]
 
     modules.plotting.drawHistos(h2Draw, stackindex = 0, canvas = canvas, orderedRatioList = r2Draw, yTitle = yTitle)
     HStack.GetYaxis().SetTitle(yTitle)
-    HStack.GetYaxis().SetTitleOffset(HStack.GetYaxis().GetTitleOffset()*
+    HStack.GetYaxis().SetTitleOffset(1.3 *
                                      styleconfig.getfloat("HistoStyle","yTitleOffsetscale")*
                                      styleconfig.getfloat("HistoStyle","yRatioTitleOffsetscale"))
     canvas.cd(0)

@@ -25,8 +25,238 @@ def printDict(input_, nElem = 8, EIOs = ["csv","pt","deepcsv"]):
         if printEle:
             print key, elems
 
+def addLeptonSF(inputfile, debug = False, skipevents = 0):
+    t0 = time.time()
+    print "Executing: cp {0}.root {0}_mod.root"
+    os.system("cp {0}.root {0}_mod.root".format(inputfile))
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
 
-def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("offCleanJets", "offCleanJets_num")]):
+    #LOAD all SFs
+    rMuID = ROOT.TFile("RunBCDEF_SF_ID.root","READ")
+    hMuID = rMuID.Get("NUM_TightID_DEN_genTracks_pt_abseta")
+    rMuIso = ROOT.TFile("RunBCDEF_SF_ISO.root","READ")
+    hMuIso = rMuIso.Get("NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta")
+    rEleID = ROOT.TFile("egammaEffi.txt_EGM2D_runBCDEF_passingTight94X.root","READ")
+    hEleID = rEleID.Get("EGamma_SF2D")
+    rEleReco = ROOT.TFile("egammaEffi.txt_EGM2D_runBCDEF_passingRECO.root","READ")
+    hEleReco = rEleReco.Get("EGamma_SF2D")
+
+    rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
+    rfile.cd()
+    
+    tree = rfile.Get("tree")
+
+    #for brPrefix, lenvar in [("offTightElectrons", "offTightElectrons_num"), ("offTightMuons", "offTightMuons_num")]:
+    nameMuID = "offTightMuons_IDSF[offTightMuons_num]"
+    nameMuISO = "offTightMuons_ISOSF[offTightMuons_num]"
+    nameMu = "offTightMuons_SF[offTightMuons_num]"
+    nameEleID = "offTightElectrons_IDSF[offTightElectrons_num]"
+    nameEleRECO = "offTightElectrons_RECOSF[offTightElectrons_num]"
+    nameEle = "offTightElectrons_SF[offTightElectrons_num]"
+
+    newBranchNames = [nameMuID, nameMuISO, nameEleID, nameEleRECO]
+    arrays = {nameMuID :  array("f",40*[1.0]),
+              nameMuISO :  array("f",40*[1.0]),
+              nameMu :  array("f",40*[1.0]),
+              nameEleID :  array("f",40*[1.0]),
+              nameEleRECO :  array("f",40*[1.0]),
+              nameEle :  array("f",40*[1.0])}
+    newBrnaches = [tree.Branch(nameMuID,  arrays[nameMuID], nameMuID+"/F"),
+                   tree.Branch(nameMuISO,  arrays[nameMuISO], nameMuISO+"/F"),
+                   tree.Branch(nameMu,  arrays[nameMu], nameMu+"/F"),
+                   tree.Branch(nameEleID,  arrays[nameEleID], nameEleID+"/F"),
+                   tree.Branch(nameEleRECO,  arrays[nameEleRECO], nameEleRECO+"/F"),
+                   tree.Branch(nameEle,  arrays[nameEle], nameEle+"/F")]
+    nEvents = tree.GetEntries()
+    for iev in range(skipevents, nEvents):
+        tree.GetEvent(iev)
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
+
+        if debug:
+            print "-------------------- New Event -->  {0} -----------------".format(iev)
+            print "---------------------------------------------------------"
+            
+        for name in newBranchNames:
+            utils.resetArray(arrays[name], 1.0)
+            
+        for imu in range(tree.offTightMuons_num):
+            MuPt, MuEta = tree.offTightMuons_pt[imu], abs(tree.offTightMuons_eta[imu])
+            arrays[nameMuID][imu] = hMuID.GetBinContent(hMuID.FindBin(MuPt, MuEta))
+            arrays[nameMuISO][imu] = hMuIso.GetBinContent(hMuIso.FindBin(MuPt, MuEta))
+            if arrays[nameMuID][imu] == 0:
+                arrays[nameMuID][imu] = 1
+            if arrays[nameMuISO][imu] == 0:
+                arrays[nameMuISO][imu] = 1
+            arrays[nameMu][imu] = arrays[nameMuID][imu] * arrays[nameMuISO][imu]
+                
+            if debug:
+                print "Muon {0}: pt = {1}, eta = {2} --> IDSF = {3}, ISOSF = {4}, Prod = {5}".format(imu, MuPt, MuEta, arrays[nameMuID][imu], arrays[nameMuISO][imu], arrays[nameMu][imu])
+
+        for iele in range(tree.offTightElectrons_num):
+            ElePt, EleSCEta = tree.offTightElectrons_pt[iele], tree.offTightElectrons_superClusterEta[iele]
+            arrays[nameEleID][iele] = hEleID.GetBinContent(hEleID.FindBin(EleSCEta, ElePt))
+            arrays[nameEleRECO][iele] = hEleReco.GetBinContent(hEleReco.FindBin(EleSCEta, ElePt))
+            if arrays[nameEleID][iele] == 0:
+                arrays[nameEleID][iele] = 1
+            if arrays[nameEleRECO][iele] == 0:
+                arrays[nameEleRECO][iele] = 1
+            arrays[nameEle][iele] = arrays[nameEleRECO][iele] * arrays[nameEleID][iele]
+            if debug:
+                print "Ele {0}: pt = {1}, SCeta = {2} --> IDSF = {3}, RECOSF = {4}, Prod = {5}".format(iele, ElePt, EleSCEta, arrays[nameEleID][iele], arrays[nameEleRECO][iele],  arrays[nameEle][iele])
+
+                
+        if debug:
+            raw_input("Next Events....")
+            pass
+        
+
+            
+        for branch in newBrnaches:
+            branch.Fill()
+
+
+    tree.Write("",ROOT.TFile.kOverwrite)
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
+
+        
+
+            
+def addWPBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("offCleanJets", "offCleanJets_num")], algo = "CSV", wp = "MEDIUM"):
+    t0 = time.time()
+    print "Executing: cp {0}.root {0}_mod.root"
+    os.system("cp {0}.root {0}_mod.root".format(inputfile))
+    print "Time to copy {0:6f}".format(time.time()-t0)
+    tdiff = time.time()
+    rfile = ROOT.TFile("{0}_mod.root".format(inputfile), "update")
+
+    tree = rfile.Get("tree")
+
+    if wp == "MEDIUM":
+        print "Using meduim WP"
+        readerWP = 1
+    if wp == "TIGHT":
+        print "Using tight WP"
+        readerWP = 2
+
+    nEvents = tree.GetEntries()
+    
+    ROOT.gSystem.Load('libCondFormatsBTauObjects') 
+    ROOT.gSystem.Load('libCondToolsBTau')
+    if algo == "CSV":
+        calib = ROOT.BTagCalibration('csvv2', 'CSVv2_94XSF_V2_B_F.csv')
+    if algo == "DeepCSV":
+        calib = ROOT.BTagCalibration('deepcsv', 'DeepCSV_94XSF_V3_B_F.csv')
+    
+    v_sys = getattr(ROOT, 'vector<string>')()
+    #v_sys.push_back('up')
+    #v_sys.push_back('down')
+    reader = ROOT.BTagCalibrationReader(
+        readerWP,              # 0 is for loose op, 1: medium, 2: tight, 3: discr. reshaping
+        "central",      # central systematic type
+        v_sys,          # vector of other sys. types
+    )
+    
+    reader.load(
+        calib, 
+        0,          # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
+        "comb"      # measurement type
+    )
+    reader.load(
+        calib, 
+        1,          # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
+        "comb"      # measurement type
+    )
+    reader.load(
+        calib, 
+        2,          # 0 is for b flavour, 1: FLAV_C, 2: FLAV_UDSG 
+        "incl"      # measurement type
+    )
+
+
+    newBrnaches = []
+    newBranchNames = []
+    arrays = {}
+    for brPrefix, lenvar in branchprefixandlen:
+        if algo == "CSV":
+            name = brPrefix+"_csvv2SF"+wp+"["+lenvar+"]"
+        if algo == "DeepCSV":
+            name = brPrefix+"_deepcsvSF"+wp+"["+lenvar+"]"
+        newBranchNames.append(name)
+        arrays[name] = array("f",40*[1.0])
+        newBrnaches.append(tree.Branch(name,  arrays[name], name+"/F"))
+
+
+    # WCSVarray = array("f",[1.0])
+    # if algo == "CSV":
+    #     newBrnaches.append(tree.Branch("wCSVv2"+wp, WCSVarray, "wCSVv2"+wp+"/F"))
+    # if algo == "DeepCSV":
+    #     newBrnaches.append(tree.Branch("wDeepCSV"+wp, WCSVarray, "wDeepCSV"+wp+"/F"))
+        
+    print arrays[name]
+    for iev in range(skipevents, nEvents):
+        tree.GetEvent(iev)
+        tree.GetEvent(iev)
+        if iev%10000 == 0:
+            print "Event {0:10d} | Total time: {1:8f} | Diff time {2:8f}".format(iev, time.time()-t0,time.time()-tdiff)
+            tdiff = time.time()
+            
+        evtW = 1.0
+        
+        for brPrefix, lenvar in branchprefixandlen:
+            if algo == "CSV":
+                name =  brPrefix+"_csvv2SF"+wp+"["+lenvar+"]"
+            if algo == "DeepCSV":
+                name =  brPrefix+"_deepcsvSF"+wp+"["+lenvar+"]"
+            utils.resetArray(arrays[name], 1.0)
+            nJets =tree.__getattr__(lenvar)
+            if debug:
+                print "-------------------- New Event --------------------------"
+                print "---------------------------------------------------------"
+                print "---- nJets {0} ---".format(nJets)
+            for i in range(nJets):
+                
+                jetEta = tree.__getattr__(brPrefix+"_eta")[i]
+                jetPt = tree.__getattr__(brPrefix+"_pt")[i]
+                jetCsv = tree.__getattr__(brPrefix+"_csv")[i]
+                jetDeepCsv = tree.__getattr__(brPrefix+"_deepcsv")[i]
+                jetID = tree.__getattr__(brPrefix+"_passesTightLeptVetoID")[i]
+                jetFlav = tree.__getattr__(brPrefix+"_hadronFlavour")[i]
+                if abs(jetFlav) == 5:
+                    btvFlav = 0
+                if abs(jetFlav) == 4:
+                    btvFlav = 1
+                if abs(jetFlav) in [ 0, 1, 2, 3, 21 ]:
+                    btvFlav = 2
+
+                #print jetFlav
+                if algo == "CSV":
+                    sf = reader.eval_auto_bounds('central', btvFlav, jetEta, jetPt)
+                if algo == "DeepCSV":
+                    sf = reader.eval_auto_bounds('central', btvFlav, jetEta, jetPt)
+                if debug:
+                    if algo == "CSV":
+                        print "Eta {0} | pt {1} | csv {2} | FLAV {4} (BTV {5}) | SF {3}".format(jetEta, jetPt, jetCsv, sf, jetFlav, btvFlav)
+                    if algo == "DeepCSV":
+                        print "Eta {0} | pt {1} | csv {2} | FLAV {4} (BTV {5}) | SF {3}".format(jetEta, jetPt, jetDeepCsv, sf, jetFlav, btvFlav)
+                    #raw_input("Next JEt")
+                if sf > 0:
+                    arrays[name][i] = sf
+                # if abs(jetEta) < 2.5 and jetPt > 30:
+                #     evtW = evtW * arrays[name][i]
+            #WCSVarray[0] = evtW
+        for branch in newBrnaches:
+            branch.Fill()
+
+            
+    tree.Write("",ROOT.TFile.kOverwrite)
+    print "Total time to finish: {0:8f}".format(time.time()-t0)
+
+            
+
+def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("offCleanJets", "offCleanJets_num")], algo = "CSV"):
     t0 = time.time()
     print "Executing: cp {0}.root {0}_mod.root"
     os.system("cp {0}.root {0}_mod.root".format(inputfile))
@@ -41,8 +271,11 @@ def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("o
     
     ROOT.gSystem.Load('libCondFormatsBTauObjects') 
     ROOT.gSystem.Load('libCondToolsBTau')
-    calib = ROOT.BTagCalibration('csvv1', 'CSVv2_94XSF_V2_B_F.csv')
-
+    if algo == "CSV":
+        calib = ROOT.BTagCalibration('csvv2', 'CSVv2_94XSF_V2_B_F.csv')
+    if algo == "DeepCSV":
+        calib = ROOT.BTagCalibration('deepcsv', 'DeepCSV_94XSF_V3_B_F.csv')
+    
     v_sys = getattr(ROOT, 'vector<string>')()
     #v_sys.push_back('up')
     #v_sys.push_back('down')
@@ -62,14 +295,20 @@ def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("o
     newBranchNames = []
     arrays = {}
     for brPrefix, lenvar in branchprefixandlen:
-        name = brPrefix+"_csvSF["+lenvar+"]"
+        if algo == "CSV":
+            name = brPrefix+"_csvv2SF["+lenvar+"]"
+        if algo == "DeepCSV":
+            name = brPrefix+"_deepcsvSF["+lenvar+"]"
         newBranchNames.append(name)
         arrays[name] = array("f",40*[1.0])
         newBrnaches.append(tree.Branch(name,  arrays[name], name+"/F"))
 
 
     WCSVarray = array("f",[1.0])
-    newBrnaches.append(tree.Branch("wCSV", WCSVarray, "wCSV/F"))
+    if algo == "CSV":
+        newBrnaches.append(tree.Branch("wCSVv2", WCSVarray, "wCSVv2/F"))
+    if algo == "DeepCSV":
+        newBrnaches.append(tree.Branch("wDeepCSV", WCSVarray, "wDeepCSV/F"))
         
     print arrays[name]
     for iev in range(skipevents, nEvents):
@@ -82,7 +321,10 @@ def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("o
         evtW = 1.0
         
         for brPrefix, lenvar in branchprefixandlen:
-            name =  brPrefix+"_csvSF["+lenvar+"]"
+            if algo == "CSV":
+                name =  brPrefix+"_csvv2SF["+lenvar+"]"
+            if algo == "DeepCSV":
+                name =  brPrefix+"_deepcsvSF["+lenvar+"]"
             utils.resetArray(arrays[name], 1.0)
             nJets =tree.__getattr__(lenvar)
             if debug:
@@ -94,11 +336,18 @@ def addBTagSF(inputfile, debug = False, skipevents = 0,branchprefixandlen = [("o
                 jetEta = tree.__getattr__(brPrefix+"_eta")[i]
                 jetPt = tree.__getattr__(brPrefix+"_pt")[i]
                 jetCsv = tree.__getattr__(brPrefix+"_csv")[i]
+                jetDeepCsv = tree.__getattr__(brPrefix+"_deepcsv")[i]
                 jetID = tree.__getattr__(brPrefix+"_passesTightLeptVetoID")[i]
-
-                sf = reader.eval_auto_bounds('central', 0, jetEta, jetPt, jetCsv)                                    
+                jetFlav = int(tree.__getattr_(brPrefix+"_hadronFlavour")[i])
+                if algo == "CSV":
+                    sf = reader.eval_auto_bounds('central', 0, jetEta, jetPt, jetCsv)
+                if algo == "DeepCSV":
+                    sf = reader.eval_auto_bounds('central', 0, jetEta, jetPt, jetDeepCsv)
                 if debug:
-                    print "Eta {0} | pt {1} | csv {2} | SF {3}".format(jetEta, jetPt, jetCsv, sf)
+                    if algo == "CSV":
+                        print "Eta {0} | pt {1} | csv {2} | SF {3}".format(jetEta, jetPt, jetCsv, sf)
+                    if algo == "DeepCSV":
+                        print "Eta {0} | pt {1} | csv {2} | SF {3}".format(jetEta, jetPt, jetDeepCsv, sf)
                 if sf > 0:
                     arrays[name][i] = sf
                 if abs(jetEta) < 2.5 and jetPt > 30:
@@ -581,7 +830,34 @@ if __name__ == "__main__":
         action = "store_true",
         help = "Enable Debug messages",
     )
+    argumentparser.add_argument(
+        "--addDeepCSVSF",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
 
+    argumentparser.add_argument(
+        "--addDeepCSVWPSF",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    argumentparser.add_argument(
+        "--addDeepCSVWPSFTight",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+
+    argumentparser.add_argument(
+        "--addCSVWPSF",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    argumentparser.add_argument(
+        "--addLeptonSF",
+        action = "store_true",
+        help = "Enable Debug messages",
+    )
+    
     argumentparser.add_argument(
         "--correctMatching",
         action = "store_true",
@@ -625,4 +901,13 @@ if __name__ == "__main__":
         vetoDoubleEvents(args.Inputfile, args.debug, args.skipevents)
     elif args.addCSVSF:
         addBTagSF(args.Inputfile, args.debug, args.skipevents)
-    
+    elif args.addDeepCSVSF:
+        addBTagSF(args.Inputfile, args.debug, args.skipevents, algo =  "DeepCSV")
+    elif args.addDeepCSVWPSF:
+        addWPBTagSF(args.Inputfile, args.debug, args.skipevents, algo =  "DeepCSV", wp = "MEDIUM")
+    elif args.addCSVWPSF:
+        addWPBTagSF(args.Inputfile, args.debug, args.skipevents, algo =  "CSV", wp = "MEDIUM")
+    elif args.addDeepCSVWPSFTight:
+        addWPBTagSF(args.Inputfile, args.debug, args.skipevents, algo =  "DeepCSV", wp = "TIGHT")
+    elif args.addLeptonSF:
+        addLeptonSF(args.Inputfile, args.debug, args.skipevents)

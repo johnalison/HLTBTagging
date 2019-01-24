@@ -3,7 +3,7 @@ import logging
 import ROOT
 
 class Sample:
-    def __init__(self, name, filename, selection = "1", xs = 1, lumi = 1, color = 1, nGen = 1, legendText = None, legendstyle = "l", weight = "1"):
+    def __init__(self, name, filename, selection = "1", xs = 1, lumi = 1, color = 1, nGen = 1, legendText = None, legendstyle = "l", weight = "1", isMC = False):
         logging.debug("Setting up sample class: {0}".format(name))
         self.filename = filename
         self.name = name
@@ -11,6 +11,7 @@ class Sample:
         self.selection = selection
         self.lumi = lumi
         self.color = color
+        self.isMC = isMC
         
         self.rootfile = ROOT.TFile.Open(self.filename)
         self.tree = self.rootfile.Get("tree")
@@ -29,7 +30,7 @@ class Sample:
         
     def getSampleWeight(self):
         weight = (self.xsec * self.lumi)/self.nGen
-        logging.subdebug("Calculated mcweight for {0} to be {1}".format(self.name, weight))
+        logging.subdebug("Calculated mcweight for {0} to be {1} with {2}*{3}/{4}".format(self.name, weight, self.xsec, self.lumi, self.nGen))
         return weight 
 
 

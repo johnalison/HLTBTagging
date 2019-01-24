@@ -22,25 +22,32 @@ Data = [
      "_RunF",
      True]
 ]
-MC = [["HLT_Ntuple_BTagging_DiLepton_v10",
-       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
-       ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-        "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
-       "",
-       False],
-      ["HLT_Ntuple_BTagging_DiLepton_v10",
-       #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
-       ("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
-        "/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
-       "",
-       False]]
+MC = [
+    ["HLT_Ntuple_BTagging_DiLepton_v10",
+     #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+     ("/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+      "/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+     "",
+     False],
+    ["HLT_Ntuple_BTagging_DiLepton_v10",
+     #("/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer17DRStdmix-NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/AODSIM",
+     ("/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAOD-TSG_94X_mc2017_realistic_v11-v1/MINIAODSIM",
+      "/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-TSG_94X_mc2017_realistic_v11-v1/GEN-SIM-RAW"),
+     "",
+     False],
+    ["HLT_Ntuple_BTagging_DiLepton_v10",
+     ("/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v2/MINIAODSIM",
+      "/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIIFall17DRPremix-PU2017_94X_mc2017_realistic_v11-v2/GEN-SIM-RAW"),
+     "",
+     False]
+]
 
 
 
-datasets = [Data[1]]+[Data[3]]
+datasets = [MC[2]]
 print datasets
 raw_input("press ret to continue")
-prefix = "v3"
+prefix = "v1"
 
 
 if __name__ == '__main__':
@@ -63,7 +70,7 @@ if __name__ == '__main__':
 #        config.JobType.numCores = 4
         config.JobType.numCores = 4
         config.JobType.maxMemoryMB = 5000
-        #config.JobType.maxJobRuntimeMin = 2000
+        config.JobType.maxJobRuntimeMin = 2000
         config.JobType.sendPythonFolder = True
         config.JobType.pluginName = 'Analysis'
         config.JobType.psetName = 'crab_fake_pset.py'
@@ -85,11 +92,11 @@ if __name__ == '__main__':
         #Data
         if dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 75##FIXME: use 20
+            config.Data.unitsPerJob = 70##FIXME: use 20
         #MC
         if not dataset[3]:
             config.Data.splitting = 'LumiBased'
-            config.Data.unitsPerJob = 50
+            config.Data.unitsPerJob = 35
             ##FIXME: use 20
         
 
@@ -106,7 +113,7 @@ if __name__ == '__main__':
         config.Data.outputDatasetTag = name
         config.Data.allowNonValidInputDataset = True
         #config.Site.blacklist = ['T0_*','T3_*','T2_AT_*','T2_CH_*','T2_BE_*','T2_BR_*','T2_DE_RWTH','T2_ES_*','T2_EE_*','T2_FR_*','T2_FI_*','T2_GR_*','T2_HU_*','T2_IN_*','T2_IT_*','T2_KR_*','T2_MY_*','T2_PK_*','T2_PL_*','T2_PT_*','T2_RU_*','T2_TH_*','T2_TR_*','T2_TW_*','T2_UA_*','T2_UK_*','T2_US_*'] # == config.Site.whitelist = ["T2_DE_DESY"]
-        config.Site.whitelist = ["T2_DE_DESY"]
+        #config.Site.whitelist = ["T2_DE_DESY"]
 
         
         config.section_("Site")

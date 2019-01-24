@@ -51,14 +51,14 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
         logging.warning("Falling back sameTagger")
         sameTaggerComp = True
 
-    if run not in ["C","CD", "E", "F"]:
+    if run not in ["C","CD", "E", "F", "CDF"]:
         logging.error("Run not supported!")
         exit()
     
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kBreak# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod.root"
+    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
     if run == "C":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
         basepath = "v10_2nTuples_OverFlow/shapeComp/"
@@ -84,7 +84,12 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
         puweight = "wPURunF"
         globalPrefix = "DeepCSVMPresel_phase1_RunF_"
         subfolder = "RunF"
-    
+    if run == "CDF":
+        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        basepath = "v10_2nTuples_Finalv2/shapeComp/"
+        puweight = "get_puWeight_F(pu) *  offTightElectrons_SF[0] * offTightMuons_SF[0]"
+        globalPrefix = "ProdGTData_RunCDF_LeptonSF_XS_mod_v2_MWP"
+        subfolder = "RunCDF/jetW/"
     if looseSel:
         MCSelection = "1"
         DataSelection = "1"
@@ -122,7 +127,7 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
         samples.append( (modules.classes.Sample("data", DataInput, eventSelection, color= ROOT.kBlue),"MuonEG", "MuonEG") )
 
     
-    plotVarSelection = "Sum$(offCleanJets_deepcsv > 0.8958 && offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) >= 1"
+    plotVarSelection = "Sum$(offCleanJets_deepcsv > 0.8001 && offCleanJets_pt > 30 && abs(offCleanJets_eta) < 2.4) >= 1"
     if doCSV and not skiponOffPlots and not onlymatch:
         logging.info("Plots: CSV for Offline, PF and Calo Jets")
         OffCSV = modules.classes.PlotBase("offCleanJets_csv", "{0} && {1}".format(plotVarSelection, offlineSelection), "1", [20,0,1], "CSV value", ROOT.kBlue, "Offline jets")

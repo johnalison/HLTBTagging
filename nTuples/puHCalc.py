@@ -7,20 +7,26 @@ import sys
 cpp = True
 
 datafile = sys.argv[1]
-mcfile = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0.root"
+mcfile = [("/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0.root",88.34,941634),
+          ("/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ST/ST_tW_part.root",35.85,727212),
+          ("/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/SantiT/ST_antitW.root",35.85,5603226)]
 
 print "Using datafile: {0}".format(datafile)
 print "Using mcfile: {0}".format(mcfile)
 
 tdatafile = ROOT.TFile.Open(datafile)
-tmcfile = ROOT.TFile.Open(mcfile)
+
 
 hData = tdatafile.Get("pileup")
-MCtree = tmcfile.Get("tree")
-
-hMC = ROOT.TH1F("hMC","hMC",90,0,90)
-
-MCtree.Project("hMC","pu")
+iAdded = 0
+hMCSum = ROOT.TH1F("hMC","hMC",90,0,90)
+for mcf, xs, ngen in mcfile:
+    tmcfile = ROOT.TFile.Open(mcf)
+    MCtree = tmcfile.Get("tree")
+    hMC = ROOT.TH1F("hMC_"+str(iAdded),"hMC_"+str(iAdded),90,0,90)
+    MCtree.Project("hMC_"+str(iAdded),"pu",str(xs/ngen))
+    iAdded += 1
+    hMCSum.Add(hMC)
 
 
 
@@ -32,18 +38,18 @@ c1 = ROOT.TCanvas("c1","c1",800,600)
 c1.cd()
 
 nData = hData.Integral()
-nMC = hMC.Integral()
+nMC = hMCSum.Integral()
 
 hData.Scale(1/float(nData))
-hMC.Scale(1/float(nMC))
+hMCSum.Scale(1/float(nMC))
 
 hData.Write()
-hMC.Write()
+hMCSum.Write()
 
 hData.Draw("")
 c1.Update()
 #raw_input("press ret")
-hMC.Draw("")
+hMCSum.Draw("")
 c1.Update()
 #raw_input("press ret")
 
@@ -51,7 +57,7 @@ hpuw = hData.Clone()
 #hpuw.SetName("weight")
 #hpuw.SetTitle("weight")
 
-hpuw.Divide(hMC)
+hpuw.Divide(hMCSum)
 hpuw.Write()
 hpuw.Draw("")
 c1.Update()
