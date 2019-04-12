@@ -33,7 +33,19 @@ def matching(eta,phi,offJet_eta,offJet_phi,offJet_num):
             index = i
     
     return index
-    
+
+import ROOT
+
+def SetVariableVector(tree,name):
+    variable    = ROOT.std.vector('float')()
+    tree.Branch( name,    variable  )
+    return variable
+
+def SetVariableVectorVector(tree,name):
+    variable    = ROOT.std.vector('vector<float>')()
+    tree.Branch( name,    variable  )
+    return variable
+
 
 def SetVariable(tree,name,option='F',lenght=1,maxLenght=50):
     if option is 'F': arraytype='f'
@@ -85,3 +97,6 @@ def checkTriggerIndex(name,index, names):
 def resetArray(array, setval):
     for i in range(len(array)):
         array[i] = setval
+
+
+

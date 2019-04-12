@@ -13,7 +13,7 @@ from array import array
 from math import sqrt, pi, log10, log, exp
 # load FWlite python libraries
 from DataFormats.FWLite import Handle, Events
-from utils import deltaR,SetVariable,DummyClass,productWithCheck,checkTriggerIndex, resetArray
+from utils import deltaR,SetVariable,SetVariableVector,SetVariableVectorVector,DummyClass,productWithCheck,checkTriggerIndex, resetArray
 from multiprocessing import Process, Queue
 from copy import deepcopy
 
@@ -23,12 +23,89 @@ Handle.productWithCheck = productWithCheck
 
 maxJets         = 40
 bunchCrossing   = 0
-pt_min          = 15
+pt_min          = 20
+
+def TaggedJet(jet, trackIPTagInfos ):
+
+    small = 1.e-5
+    jet_eta = jet.eta()
+    jet_phi = jet.phi()
+
+    for tag in trackIPTagInfos.productWithCheck():
+        jet_p = tag.jet()
+        if jet_p.isNull():
+            continue;
+
+        dr2 = (jet_p.eta()-jet_eta)**2 + (jet_p.phi()-jet_phi)**2
+        if dr2 < small:
+            return tag
+
+    print "No Match Jet",jet_eta,jet_phi
+    return None
+
+def FillVectorShallowTag(shallowTag_source,variables, jetVarNames,trkVarNames,runAOD = True, offline = False, mc = False, debug = False):
+    if debug: print "In FillVectorShallowTag"
+
+    for vMember in variables.listVectorMembers:
+        getattr(variables,vMember).clear()
+
+    
+    # 
+    # Find the corrisponding jet info
+    #
+    for i in range(variables.num[0]):
+        thisPhi  = variables.phi[i]
+        thisEta  = variables.eta[i]
+        if debug: print "thisPhi",thisPhi,"thisEta",thisEta
+        
+        #
+        # Clear btagging variables
+        #
+        for jVar in jetVarNames:
+            getattr(variables,jVar)[i] = -1
+
+        for tVar in trkVarNames:
+            getattr(variables,tVar).push_back(ROOT.std.vector('float')())
+
+        if debug: print "Shallow Tag source len", len(shallowTag_source.productWithCheck())
+
+        for obj in shallowTag_source.productWithCheck():
+            tagVars = obj.taggingVariables()
+        
+            #
+            # Get jet Pt and Eta of the btagging info
+            # 
+            tagJet = obj.jet()
+            tagJetPhi  = tagJet.phi()
+            tagJetEta  = tagJet.eta()
+            #tagJetPt  = tagVars.getList(getattr(ROOT.reco.btau,"jetPt"),False)[0]
+            #tagJetEta = tagVars.getList(getattr(ROOT.reco.btau,"jetEta"),False)[0]
+            
+            if debug: print "\ttagJetPhi",tagJetPhi,"tagJetEta",tagJetEta
+
+            if (tagJetPhi == thisPhi) and (tagJetEta == thisEta):
+                for jVar in jetVarNames:
+                    thisJVar = tagVars.getList(getattr(ROOT.reco.btau,jVar),False)
+                    if thisJVar.size() == 1:
+                        getattr(variables,jVar)[i] = thisJVar[0]
+
+                for tVar in trkVarNames:
+                    thisTVar = tagVars.getList(getattr(ROOT.reco.btau,tVar),False)
+                    if thisTVar.size() > 0:
+                        for thisVar in thisTVar:
+                            getattr(variables,tVar)[i].push_back(thisVar)
 
 
-def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc = False):
+    if debug: print "Leave FillVectorShallowTag"
+
+
+
+def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc = False, debug=False):
+    if debug:
+        print "In FillVector before ",variables.pt
     variables.num[0] = 0
     for obj in source.productWithCheck():
+
         if obj.pt()<minPt:
             continue
         if variables.num[0]<len(variables.pt):
@@ -57,6 +134,9 @@ def FillVector(source,variables,minPt=pt_min, runAOD = True, offline = False, mc
                 elif name == "hadronFlavour" and not runAOD and mc:       var[variables.num[0]] = obj.hadronFlavour()
                 
             variables.num[0] += 1
+
+    if debug:
+        print "In FillVector after ",variables.pt
 
 def getBJetValuesforFilling(btags_source):
     bJets = {}
@@ -273,17 +353,7 @@ def sortJetCollection(inputcollection, outputcollection, ordervalue, saveinputor
     return True
 
 def cleanCollection(inputcollection, outputcollection, cutVariable, cutValue, indexsaveVariable, boolCut = True, verbose = False):
-#def cleanCollection(inputcollection, outputcollection, cuts, indexsaveVariable, verbose = False): # cuts = (cutVariable, cutValue, boolCut)
     passingindices = []
-    """
-    idexdict = {}
-    for cutVariable, cutValue, boolCut in cuts:
-        for i in range(inputcollection.num[0]):
-            idexdict[i] = False
-            if boolCut:
-                if inputcollection.__dict__[cutVariable][i] == cutValue:
-                    idexdict = idexdict or True
-    """
     for i in range(inputcollection.num[0]):
         if boolCut:
             if inputcollection.__dict__[cutVariable][i] == cutValue:
@@ -298,6 +368,22 @@ def cleanCollection(inputcollection, outputcollection, cutVariable, cutValue, in
         for (inputname,inputvar) in inputcollection.__dict__.items():
             for (outputname,outputvar) in outputcollection.__dict__.items():
                 if inputname == outputname and inputname not in nonarrayvals:
+                    #print inputname
+                    #print type(inputvar[index])
+                    #print isinstance(inputvar[index], ROOT.std.vector('float'))
+                    if isinstance(inputvar[index], ROOT.std.vector('float')):
+                        #print "Filling",inputname
+                        #print iindex
+                        #print len(outputvar)
+                        #print type(outputvar)
+                        #outputvar[iindex] = ROOT.std.vector('float')()
+                        outputvar.push_back(ROOT.std.vector('float')())
+                        for vecIdx in range(inputvar[index].size()):
+                            #print inputvar[index].at(vecIdx)
+                            #print iindex
+                            outputvar[iindex].push_back(inputvar[index].at(vecIdx))
+                        #print type(inputvar[index])
+                        #continue
                     outputvar[iindex] = inputvar[index]
                     break
         indexsaveVariable[iindex] = index
@@ -373,7 +459,7 @@ def LeptonOverlap(jets, muons, electrons, fillVariable, DeltaR = 0.4):
         fillVariable[j] = int(overlap)
 
 
-def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
+def FillMuonVector(source, variables, vertex, muonid = "loose", debug = False):
     if vertex is None:
         return False
     variables.num[0] = 0
@@ -383,7 +469,7 @@ def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
         if debug:
             print "Muon passes loose ",obj.passed(obj.CutBasedIdLoose)
             print "Muon passes medium",obj.passed(obj.CutBasedIdMedium)
-            print "Muon passes tight ",obj.passed(obj.CutBasedIdMedium)
+            print "Muon passes tight ",obj.passed(obj.CutBasedIdTight)
         passesID = False
         if muonid == "tight":
             passesID = obj.passed(obj.CutBasedIdTight)
@@ -398,6 +484,16 @@ def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
                 elif name == "mass" :       var[variables.num[0]] = obj.mass()
                 elif name == "energy" :     var[variables.num[0]] = obj.energy()
                 elif name == "iso" :        var[variables.num[0]] = getMuonIso(obj)
+                elif name == "pid" :        
+                    if obj.passed(obj.CutBasedIdTight):
+                        pid = 3
+                    elif obj.passed(obj.CutBasedIdMedium):
+                        pid = 2
+                    elif obj.passed(obj.CutBasedIdLoose):
+                        pid = 1
+                    else: 
+                        pid = 0
+                    var[variables.num[0]] = pid
             variables.num[0] += 1
         return True
 
@@ -405,6 +501,8 @@ def getMuonIso(muon):
     MuIsoVars = muon.pfIsolationR04()
     iso = (MuIsoVars.sumChargedHadronPt + max(0.0, MuIsoVars.sumNeutralHadronEt + MuIsoVars.sumPhotonEt - 0.5 * MuIsoVars.sumPUPt)) / muon.pt();
     return iso
+
+
 
     
 def FillElectronVector(source, variables, electronid):
@@ -418,8 +516,26 @@ def FillElectronVector(source, variables, electronid):
                 elif name == "phi" :             var[variables.num[0]] = obj.phi()
                 elif name == "mass" :            var[variables.num[0]] = obj.mass()
                 elif name == "superClusterEta" : var[variables.num[0]] = obj.superCluster().eta()
-                
+                elif name == "iso" :             var[variables.num[0]] = getElecIso(obj)
+                elif name == "pid":
+                    if obj.electronID("cutBasedElectronID_Fall17_94X_V1_tight"):
+                        pid = 3
+                    elif obj.electronID("cutBasedElectronID_Fall17_94X_V1_medium"):
+                        pid = 2
+                    elif obj.electronID("cutBasedElectronID_Fall17_94X_V1_loose"):
+                        pid = 1
+                    else: 
+                        pid = 0
+                    var[variables.num[0]] = pid
+
             variables.num[0] += 1
+
+
+def getElecIso(elec):
+    ElecIsoVars = elec.pfIsolationVariables();
+    iso = (ElecIsoVars.sumChargedHadronPt + max(0.0, ElecIsoVars.sumNeutralHadronEt + ElecIsoVars.sumPhotonEt - 0.5 * ElecIsoVars.sumPUPt)) / elec.pt();
+    return iso
+
         
 def Matching(phi, eta, jets, debug = False):
     index = -1
@@ -465,7 +581,7 @@ def WithFallback(product,method="pt"):
     else:
         return -10
 
-def BookVector(tree,name="vector",listMembers=[]):
+def BookVector(tree,name="vector",listMembers=[],listVectorMembers=[]):
     obj = DummyClass()
     obj.num   = SetVariable(tree,name+'_num' ,'I')
     for member in listMembers:
@@ -473,6 +589,11 @@ def BookVector(tree,name="vector",listMembers=[]):
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'I',name+'_num',maxJets))
         else:
             setattr(obj,member,SetVariable(tree,name+'_'+member  ,'F',name+'_num',maxJets))
+
+    obj.listVectorMembers = list(listVectorMembers)
+    for vmember in listVectorMembers:
+        setattr(obj,vmember,SetVariableVectorVector(tree,name+'_'+vmember))
+
     return obj
 
 
@@ -628,6 +749,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     caloJets_source, caloJets_label                     = Handle("vector<reco::CaloJet>"), ("hltAK4CaloJetsCorrectedIDPassed") #DeepNtupler: hltAK4CaloJetsCorrected as jetToken3
     calobtag_source, calobtag_label                     = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCombinedSecondaryVertexBJetTagsCalo")
     calodeepbtag_source, calodeepbtag_label             = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probb")
+    caloShallowTag_source, caloShallowTag_label         = Handle("vector<reco::ShallowTagInfo>"),("hltDeepCombinedSecondaryVertexBJetTagsInfosCalo")
 
     #calodeepbtag_bb_source, calodeepbtag_bb_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probbb")
     #calodeepbtag_udsg_source, calodeepbtag_udsg_label   = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsCalo:probudsg")
@@ -638,6 +760,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 #recoJetedmRefToBaseProdTofloatsAssociationVector
     pfbtag_source, pfbtag_label                         = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltCombinedSecondaryVertexBJetTagsPF")
     pfdeepbtag_source, pfdeepbtag_label                 = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probb")
+    pfShallowTag_source, pfShallowTag_label             = Handle("vector<reco::ShallowTagInfo>"),("hltDeepCombinedSecondaryVertexBJetTagsInfos")
 
     #pfdeepbtag_bb_source, pfdeepbtag_bb_label           = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probbb")
     #pfdeepbtag_udsg_source, pfdeepbtag_udsg_label       = Handle("edm::AssociationVector<edm::RefToBaseProd<reco::Jet>,vector<float>,edm::RefToBase<reco::Jet>,unsigned int,edm::helper::AssociationIdenticalKeyReference>"), ("hltDeepCombinedSecondaryVertexBJetTagsPF:probudsg")
@@ -650,14 +773,15 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     #caloMhtNoPU_source, caloMhtNoPU_label               = Handle("vector<reco::MET>"), ("hltMHTNoPU") #Not working. .product() throws expection
 
     #Vertex
-    #FastPrimaryVertex_source, FastPrimaryVertex_label   = Handle("vector<reco::Vertex>"), ("hltFastPrimaryVertex")
-    #FPVPixelVertices_source, FPVPixelVertices_label     = Handle("vector<reco::Vertex>"), ("hltFastPVPixelVertices")
-    #PixelVertices_source, PixelVertices_label           = Handle("vector<reco::Vertex>"), ("hltPixelVertices")
-    #VerticesPF_source, VerticesPF_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesPF")
-    #VerticesL3_source, VerticesL3_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesL3")
+    FastPrimaryVertex_source, FastPrimaryVertex_label   = Handle("vector<reco::Vertex>"), ("hltFastPrimaryVertex")
+    FPVPixelVertices_source, FPVPixelVertices_label     = Handle("vector<reco::Vertex>"), ("hltFastPVPixelVertices")
+    PixelVertices_source, PixelVertices_label           = Handle("vector<reco::Vertex>"), ("hltPixelVertices")
+    VerticesPF_source, VerticesPF_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesPF")
+    VerticesL3_source, VerticesL3_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesL3")
 
     #The rest
-    triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
+    #triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
+    triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::HLT")
 
 
 
@@ -689,17 +813,22 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
     else:
         if isMC:
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT") #NOTE: This should match the process name in your hlt_dump!
-            idName = "cutBasedElectronID_Fall17_94X_V1_tight" #in MINIAODv2 change _ to -
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::RECO") #NOTE: This should match the process name in your hlt_dump!
+            idName = "cutBasedElectronID_Fall17_94X_V1_loose" #in MINIAODv2 change _ to -
         else:
             offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT")
-            idName = "cutBasedElectronID_Fall17_94X_V1_tight" #in MINIAODv2 change _ to -
+            idName = "cutBasedElectronID_Fall17_94X_V1_loose" #in MINIAODv2 change _ to -
+            #cutBasedElectronID_Fall17_94X_V1_loose
+            #cutBasedElectronID_Fall17_94X_V1_medium 
+            #cutBasedElectronID_Fall17_94X_V1_tight
+
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
 
         #Jets
         offJets_source, offJets_label                       = Handle("vector<pat::Jet>"), ("slimmedJets")
-        
+        offShallowTag_source, offShallowTag_label           = Handle("vector<reco::ShallowTagInfo>"), ("TESTpfDeepCSVTagInfos")
+
         #MET
         offMet_source, offMet_label                         = Handle("std::vector<pat::MET>"), ("slimmedMETs")
 
@@ -714,21 +843,92 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         generator_source, generator_label                   = Handle("GenEventInfoProduct"), ("generator")
 
 
+    jetVars = ["jetEnergy", "jetPt","jetEta","jetAbsEta","jetPhi","jetNTracks","jetNTracksEtaRel",
+               "jetNSecondaryVertices","jetNSelectedTracks","vertexMass","vertexNTracks","vertexFitProb",
+               "vertexEnergyRatio", "vertexJetDeltaR", "trackJetPt","trackSumJetEtRatio","trackSumJetDeltaR",         
+               "vertexCategory",
+               "vertexLeptonCategory",
+               "leptonQuality",
+               "leptonQuality2",
+               "chargedHadronEnergyFraction",
+               "neutralHadronEnergyFraction",
+               "photonEnergyFraction",
+               "electronEnergyFraction",
+               "muonEnergyFraction",
+               "chargedHadronMultiplicity",
+               "neutralHadronMultiplicity",
+               "photonMultiplicity",
+               "electronMultiplicity",
+               "muonMultiplicity",
+               "hadronMultiplicity",
+               "hadronPhotonMultiplicity",
+               "massVertexEnergyFraction",
+               "totalMultiplicity",
+               "vertexBoostOverSqrtJetPt",
+               "leptonSip2d",
+               "leptonSip3d",
+               "leptonPtRel",
+               "leptonP0Par",
+               "leptonEtaRel",
+               "leptonDeltaR",
+               "leptonRatio",
+               "leptonRatioRel",
+               "electronMVA",
+               "Jet_SoftMu",
+               "Jet_SoftEl",
+               "Jet_JBP",
+               "Jet_JP",
+               "flightDistance1dVal","flightDistance1dSig",
+               "flightDistance2dVal","flightDistance2dSig",
+               "flightDistance3dVal","flightDistance3dSig",
+               "trackSip2dValAboveCharm","trackSip2dSigAboveCharm",
+               "trackSip3dValAboveCharm","trackSip3dSigAboveCharm",
+               ]
+
+
+    trkVars = ["trackSip3dVal",
+               "trackSip3dSig",
+               "trackSip2dVal",
+               "trackSip2dSig",
+               "trackDecayLenVal",
+               "trackDecayLenSig",
+               "trackJetDistVal",
+               "trackJetDistSig",
+               "trackGhostTrackWeight",
+               "trackGhostTrackDistSig",
+               "trackGhostTrackDistVal",
+               "trackPtRel",
+               "trackMomentum",
+               "trackEta",
+               "trackPhi",
+               "trackCharge",
+               "trackPPar",
+               "trackDeltaR",
+               "trackEtaRel",
+               "trackPtRatio",
+               "trackPParRatio",
+               "trackP0Par",
+               "trackP0ParRatio",
+               "trackChi2",
+               "trackNTotalHits",
+               "trackNPixelHits",
+               ]
         
+
 
     ### create output variables ###
     #Leptons
-    offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
-    offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
+    offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta",'iso','pid'])
+    offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso','pid'])
     
     #Jets:
     #l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','energy','matchOff','matchGen'])
-    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV", "mcFlavour"])
-    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "mcFlavour"])
-    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
-    offCleanJets        = BookVector(tree,"offCleanJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "offOrder"])
-    offCleanCSVJets          = BookVector(tree,"offCleanCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
-    offCleanDeepCSVJets      = BookVector(tree,"offCleanDeepCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
+    caloJets            = BookVector(tree,"caloJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','puId','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"rankCSV", "rankDeepCSV", "mcFlavour"]+jetVars,trkVars)
+    pfJets              = BookVector(tree,"pfJets",['pt','eta','phi','mass', 'energy','matchOff','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult','csv','deepcsv','deepcsv_bb','deepcsv_udsg',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "mcFlavour"]+jetVars,trkVars)
+    offJets             = BookVector(tree,"offJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"]+jetVars,trkVars)
+    #offCleanJets        = BookVector(tree,"offCleanJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankCSV", "rankDeepCSV", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight", "offOrder"]+jetVars,trkVars)
+    #offCleanCSVJets          = BookVector(tree,"offCleanCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
+    #offCleanDeepCSVJets      = BookVector(tree,"offCleanDeepCSVJets",['pt','eta','phi','mass', 'energy','csv','deepcsv','deepcsv_bb','deepcsv_b','deepcsv_udsg','matchGen','neHadEF','neEmEF','chHadEF','chEmEF','muEF','mult','neMult','chMult',"passesTightID","passesTightLeptVetoID", "passesLooseID", "rankpt", "matchPF", "matchCalo", "mcFlavour", "partonFlavour", "hadronFlavour", "lepOverlap04Tight"])
 
     """
     if isMC:
@@ -750,11 +950,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         genMet              = BookVector(tree,"genMet",['pt','phi'])
     
     #Vertex
-    #FastPrimaryVertex   = SetVariable(tree,'FastPrimaryVertex')
-    #FPVPixelVertices    = SetVariable(tree,'FPVPixelVertices')
-    #PixelVertices       = SetVariable(tree,'PixelVertices')
-    #VerticesPF          = SetVariable(tree,'VerticesPF')
-    #VerticesL3          = SetVariable(tree,'VerticesL3')
+    FastPrimaryVertex   = SetVariable(tree,'FastPrimaryVertex')
+    FPVPixelVertices    = SetVariable(tree,'FPVPixelVertices')
+    PixelVertices       = SetVariable(tree,'PixelVertices')
+    VerticesPF          = SetVariable(tree,'VerticesPF')
+    VerticesL3          = SetVariable(tree,'VerticesL3')
     VerticesOff         = SetVariable(tree,'VerticesOff')
     nOffVertices        = SetVariable(tree,"nPV")
     trueVertex          = SetVariable(tree,'trueVertex')
@@ -790,8 +990,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     nTriggers = len(triggerNames)
     triggerVars = {}
     for trigger in triggerNames:
-        triggerVars[trigger]=array( 'i', [ 0 ] )
-        tree.Branch( trigger, triggerVars[trigger], trigger+'/O' )
+        if trigger.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or trigger.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+            triggerVars[trigger]=array( 'i', [ 0 ] )
+            tree.Branch( trigger, triggerVars[trigger], trigger+'/O' )
 
     ##event loop
     print "Starting event loop"
@@ -819,16 +1020,18 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #event.getByLabel(calodeepbtag_bb_label, calodeepbtag_bb_source)
         #event.getByLabel(calodeepbtag_udsg_label, calodeepbtag_udsg_source)
         event.getByLabel(caloPUid_label, caloPUid_source)
-
+        event.getByLabel(caloShallowTag_label, caloShallowTag_source)
         
         event.getByLabel(pfJets_label, pfJets_source)
         event.getByLabel(pfbtag_label, pfbtag_source)
         event.getByLabel(pfdeepbtag_label, pfdeepbtag_source)
         #event.getByLabel(pfdeepbtag_bb_label, pfdeepbtag_bb_source)
         #event.getByLabel(pfdeepbtag_udsg_label, pfdeepbtag_udsg_source)
+        event.getByLabel(pfShallowTag_label, pfShallowTag_source)
 
         #print "getting offjets by label"
         event.getByLabel(offJets_label, offJets_source)
+        event.getByLabel(offShallowTag_label, offShallowTag_source)
         #event.getByLabel(offJetsnoCHS_label, offJetsnoCHS_source)
         if runAOD:
             event.getByLabel(offbtag_label, offbtag_source)
@@ -845,11 +1048,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         #event.getByLabel(offMet_label, offMet_source)
 
         #Getting Vertex handles
-        #event.getByLabel(FastPrimaryVertex_label, FastPrimaryVertex_source)
-        #event.getByLabel(FPVPixelVertices_label, FPVPixelVertices_source)
-        #event.getByLabel(PixelVertices_label, PixelVertices_source)
-        #event.getByLabel(VerticesPF_label, VerticesPF_source)
-        #event.getByLabel(VerticesL3_label, VerticesL3_source)
+        event.getByLabel(FastPrimaryVertex_label, FastPrimaryVertex_source)
+        event.getByLabel(FPVPixelVertices_label, FPVPixelVertices_source)
+        event.getByLabel(PixelVertices_label, PixelVertices_source)
+        event.getByLabel(VerticesPF_label, VerticesPF_source)
+        event.getByLabel(VerticesL3_label, VerticesL3_source)
         event.getByLabel(VerticesOff_label, VerticesOff_source)
 
         #Getting Gen handles
@@ -871,15 +1074,17 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         names = event.object().triggerNames(triggerBits.product())
         triggerspassing = []
         for i,triggerName in enumerate(triggerNames):
-            index = names.triggerIndex(triggerName)
-            if checkTriggerIndex(triggerName,index,names.triggerNames()):
-                triggerVars[triggerName][0] = triggerBits.product().accept(index)
-                #print triggerName,"acc:",triggerBits.product().accept(index)
-                if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
-                    if triggerBits.product().accept(index):
-                        triggerspassing.append(triggerName)
-            else:
-                triggerVars[triggerName][0] = 0
+            if triggerName.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or triggerName.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+                index = names.triggerIndex(triggerName)
+                if checkTriggerIndex(triggerName,index,names.triggerNames()):
+                    triggerVars[triggerName][0] = triggerBits.product().accept(index)
+                    #print triggerName,"acc:",triggerBits.product().accept(index)
+                    #if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
+                    if triggerName.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or triggerName.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+                        if triggerBits.product().accept(index):
+                            triggerspassing.append(triggerName)
+                else:
+                    triggerVars[triggerName][0] = 0
 
         # NOTE: Remove this if no trigger selection is required
         if doTriggerCut:
@@ -899,11 +1104,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
             print "-------------- Processing: ",crun, cls," --------------"
 
         
-        #FastPrimaryVertex[0] = getVertex(FastPrimaryVertex_source)
-        #FPVPixelVertices[0] = getVertex(FPVPixelVertices_source)
-        #PixelVertices[0] = getVertex(PixelVertices_source)
-        #VerticesPF[0] = getVertex(VerticesPF_source)
-        #VerticesL3[0] = getVertex(VerticesL3_source)
+        FastPrimaryVertex[0] = getVertex(FastPrimaryVertex_source)
+        FPVPixelVertices[0] = getVertex(FPVPixelVertices_source)
+        PixelVertices[0] = getVertex(PixelVertices_source)
+        VerticesPF[0] = getVertex(VerticesPF_source)
+        VerticesL3[0] = getVertex(VerticesL3_source)
         #VerticesOff[0]= getVertex(VerticesOff_source)
         vtx, nVtx = getVertices(VerticesOff_source)
         #print "saving"
@@ -926,7 +1131,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 print "Offline Vertex did not pass the selection"
 
         FillElectronVector(offEle_source, offTightElectrons, idName )
-        FillMuonVector(offMu_source, offTightMuons, offVertex, "tight")
+        FillMuonVector(offMu_source, offTightMuons, offVertex, "loose")
 
         ####################################################
         ####################################################
@@ -960,9 +1165,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         ####################################################
         # Jets
         FillVector(caloJets_source,caloJets)
+        FillVectorShallowTag(caloShallowTag_source, caloJets, jetVars, trkVars)
+
         FillVector(pfJets_source,pfJets)
+        FillVectorShallowTag(pfShallowTag_source, pfJets, jetVars, trkVars)
         #FillVector(l1Jets_source,l1Jets)
         FillVector(offJets_source,offJets,20, runAOD, offline = True, mc = isMC)
+        FillVectorShallowTag(offShallowTag_source, offJets, jetVars, trkVars, debug=False)
 
         csvbtagTouples_calo = getBJetValuesforFilling(calobtag_source)
         deepcsvbtagTouples_calo = getBJetValuesforFilling(calodeepbtag_source)
@@ -1114,11 +1323,11 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         ####################################################
         #print "Making cleanCollections"
 
-        cleanCollection(offJets, offCleanJets, "lepOverlap04Tight", 0.0, offCleanJets.offOrder, verbose = False)
+        #cleanCollection(offJets, offCleanJets, "lepOverlap04Tight", 0.0, offCleanJets.offOrder, verbose = False)
         #cleanCollection(offJets, offClean05Jets, "lepOverlap05Tight", 0.0, offClean05Jets.offOrder)
 
-        sortJetCollection(offCleanJets, offCleanCSVJets, "csv", offCleanCSVJets.rankpt)
-        sortJetCollection(offCleanJets, offCleanDeepCSVJets, "deepcsv", offCleanDeepCSVJets.rankpt)
+        #sortJetCollection(offCleanJets, offCleanCSVJets, "csv", offCleanCSVJets.rankpt)
+        #sortJetCollection(offCleanJets, offCleanDeepCSVJets, "deepcsv", offCleanDeepCSVJets.rankpt)
         
         if isMC:
             if bunchCrossing>=pileUp_source.productWithCheck().size() or pileUp_source.productWithCheck().at(bunchCrossing).getBunchCrossing()!=0:

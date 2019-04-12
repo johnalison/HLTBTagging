@@ -58,7 +58,8 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kBreak# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
 
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    MCInput = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
     if run == "C":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/MuonEG_RunC_75p4.root"
         basepath = "v10_2nTuples_OverFlow/shapeComp/"
@@ -85,7 +86,8 @@ def shapeComparison(loglev, run, doMC, doData, doCSV, doDeepCSV, doperJetComp,sa
         globalPrefix = "DeepCSVMPresel_phase1_RunF_"
         subfolder = "RunF"
     if run == "CDF":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        #DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        DataInput = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10_2/RunCDF.root"
         basepath = "v10_2nTuples_Finalv2/shapeComp/"
         puweight = "get_puWeight_F(pu) *  offTightElectrons_SF[0] * offTightMuons_SF[0]"
         globalPrefix = "ProdGTData_RunCDF_LeptonSF_XS_mod_v2_MWP"

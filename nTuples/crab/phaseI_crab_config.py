@@ -5,6 +5,10 @@
 #     1st element: tuple containing primary and secondary DAS dataset name
 #     2nd element: 0 if Data, 1 if MC
 Data = [
+#    ["HLT_Ntuple_BTagging_DiLepton_v10",
+#     ("/MuonEG/Run2017B-17Nov2017-v1/MINIAOD","/MuonEG/Run2017B-v1/RAW"),
+#     "_RunB",
+#     True],
     ["HLT_Ntuple_BTagging_DiLepton_v10",
      ("/MuonEG/Run2017C-17Nov2017-v1/MINIAOD","/MuonEG/Run2017C-v1/RAW"),
      "_RunC",
@@ -43,11 +47,13 @@ MC = [
 ]
 
 
-
-datasets = [MC[2]]
+datasets = MC
+#datasets = Data
+#datasets = [MC[1],MC[2]]
+#datasets = [Data[0]]
 print datasets
 raw_input("press ret to continue")
-prefix = "v1"
+prefix = "AddTrks2p2"
 
 
 if __name__ == '__main__':
@@ -101,7 +107,8 @@ if __name__ == '__main__':
         
 
         config.Data.totalUnits = -1 #10*config.Data.unitsPerJob #FIXME: use -1
-        config.Data.outLFNDirBase = '/store/user/koschwei/onlineBTV/' + name + prefix
+        #config.Data.outLFNDirBase = '/store/user/koschwei/onlineBTV/' + name + prefix
+        config.Data.outLFNDirBase = '/store/user/johnda/' + name + prefix
         config.Data.publication = True
         if dataset[3]:
             print "Using JSON"
@@ -117,7 +124,8 @@ if __name__ == '__main__':
 
         
         config.section_("Site")
-        config.Site.storageSite = "T2_CH_CSCS"
+        #config.Site.storageSite = "T2_CH_CSCS"
+        config.Site.storageSite = 'T3_US_FNALLPC' 
         #config.Site.storageSite = "T3_CH_PSI"
         print "submitting ",dataset
         crabCommand('submit',config = config)

@@ -43,9 +43,14 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
     if loglev > 0:
         ROOT.gErrorIgnoreLevel = ROOT.kError# kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
     
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
-    MC2Input = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ST/ST_tW_part_mod_mod_mod.root"
-    MC3Input = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/SantiT/ST_antitW_mod_mod_mod.root"
+    #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    #MC2Input = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ST/ST_tW_part_mod_mod_mod.root"
+    #MC3Input = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/SantiT/ST_antitW_mod_mod_mod.root"
+
+    MCInput  = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    MC2Input = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10/ST/ST_tW_part_mod_mod_mod.root"
+    MC3Input = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10/SantiT/ST_antitW_mod_mod_mod.root"
+
     if run == "C":
         logging.info("Setting file, name and basepath for Run C")
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunC/RunCFull.root"
@@ -63,7 +68,8 @@ def flavourComposition(loglev, run, doData, doCSV, doDeepCSV, plotinclusive, plo
 
     if run == "CDF":
         logging.info("Setting file, pu weight, name and basepath for Run CDF")
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        #DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        DataInput = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10_2/RunCDF.root"
         #puweight = "get_puWeight_CDF(pu)"
         #globalPrefix = "ProdGTData_RunCDF_TESTTESTFull_XS_MWP"
         #puweight = "get_puWeight_CDF(pu)*wDeepCSV"

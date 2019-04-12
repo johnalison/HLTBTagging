@@ -68,10 +68,13 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         MCweight = "get_puWeight_F(pu)"
 
     if run == "CDF":
-        DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+
+        #DataInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10_2/RunCDF.root"
+        DataInput = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10_2/RunCDF.root"
         basepaths = "v10_2nTuples_Finalv2/FlavourSplitting/RunCDF/jetW/"
         MCweight = "get_puWeight_F(pu) *  offTightElectrons_SF[0] * offTightMuons_SF[0]"
         fileprefix = "ProdGTData_RunCDF_LeptonSF_XS_mod_v2_MWP"
+        print "File",DataInput
         
     if run == "Test":
         DataInput = "/mnt/t3nfs01/data01/shome/koschwei/trigger/onlineBTV/CMSSW_9_2_12_patch1/src/HLTBTagging/nTuples/tree_phase1.root"
@@ -80,7 +83,8 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
         
 
     #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v3/ttbar/ttbar_v3.root"
-    MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    #MCInput = "/mnt/t3nfs01/data01/shome/koschwei/scratch/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
+    MCInput = "/eos/user/k/koschwei/HLTBTagging/DiLepton_v10/ttbar/ttbar_98p0_mod_mod_mod_mod_mod_mod.root"
     
     MCSelection = "1"#"(pu > 20 && pu < 70)"
     DataSelection = "1"#"passJson == 1 && doubleEvt == 0"
@@ -89,6 +93,7 @@ def efficiencies(loglev, run, doMC, doData, doCSV, doDeepCSV, CSVWPs, DeepCSVWPs
 
 
     #DeepCSVSelWP = "0.9"
+
     DeepCSVSelWP = "0.8001"
     if looseSel:
         TriggerSelection = "1"
