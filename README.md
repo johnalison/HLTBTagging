@@ -28,6 +28,9 @@ git cms-addpkg PhysicsTools/HeppyCore
 cp HLTBTagging/HeppyFixes/94X/cmsswPreprocessor.py PhysicsTools/Heppy/python/utils/cmsswPreprocessor.py
 cp HLTBTagging/HeppyFixes/94X/config.py PhysicsTools/HeppyCore/python/framework/config.py
 
+git cms-addpkg RecoBTag/SecondaryVertex
+#cp HLTBTagging/HeppyFixes/94X/
+
 git cms-checkdeps -A -a
 scram b -j 6
 ```

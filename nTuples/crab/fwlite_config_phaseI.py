@@ -73,7 +73,6 @@ def FillVectorShallowTag(shallowTag_source,variables, jetVarNames,trkVarNames,ru
 
         for obj in shallowTag_source.productWithCheck():
             tagVars = obj.taggingVariables()
-        
             #
             # Get jet Pt and Eta of the btagging info
             # 
@@ -442,7 +441,7 @@ def LeptonOverlap(jets, muons, electrons, fillVariable, DeltaR = 0.4):
         #print "Jet", j, "-",overlap
         fillVariable[j] = int(overlap)
             
-def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
+def FillMuonVector(source, variables, vertex, muonid = "loose", debug = False):
     if vertex is None:
         return False
     variables.num[0] = 0
@@ -452,7 +451,7 @@ def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
         if debug:
             print "Muon passes loose ",obj.passed(obj.CutBasedIdLoose)
             print "Muon passes medium",obj.passed(obj.CutBasedIdMedium)
-            print "Muon passes tight ",obj.passed(obj.CutBasedIdMedium)
+            print "Muon passes tight ",obj.passed(obj.CutBasedIdTight)
         passesID = False
         if muonid == "tight":
             passesID = obj.passed(obj.CutBasedIdTight)
@@ -467,6 +466,16 @@ def FillMuonVector(source, variables, vertex, muonid = "tight", debug = False):
                 elif name == "mass" :       var[variables.num[0]] = obj.mass()
                 elif name == "energy" :     var[variables.num[0]] = obj.energy()
                 elif name == "iso" :        var[variables.num[0]] = getMuonIso(obj)
+                elif name == "pid" :        
+                    if obj.passed(obj.CutBasedIdTight):
+                        pid = 3
+                    elif obj.passed(obj.CutBasedIdMedium):
+                        pid = 2
+                    elif obj.passed(obj.CutBasedIdLoose):
+                        pid = 1
+                    else: 
+                        pid = 0
+                    var[variables.num[0]] = pid
             variables.num[0] += 1
         return True
 
@@ -480,8 +489,9 @@ def FillElectronVector(source, variables, electronid, runAOD= False, debug = Fal
     variables.num[0] = 0
     if debug:
         print "Electon valid:",source.isValid()
+    print "NElectrons " ,len(source.productWithCheck())
     for iobj, obj in enumerate(source.productWithCheck()):
-        if runAOD: continue 
+        #if runAOD: continue 
         #if debug:
         #    print "Electron passes id - {0}: {1}".format(electronid, obj.electronID(electronid))
 
@@ -493,8 +503,25 @@ def FillElectronVector(source, variables, electronid, runAOD= False, debug = Fal
                 elif name == "phi" :             var[variables.num[0]] = obj.phi()
                 elif name == "mass" :            var[variables.num[0]] = obj.mass()
                 elif name == "superClusterEta" : var[variables.num[0]] = obj.superCluster().eta()
-                
+                elif name == "iso" :             var[variables.num[0]] = getElecIso(obj)
+                elif name == "pid":
+                    if obj.electronID("cutBasedElectronID_Fall17_94X_V1_tight"):
+                        pid = 3
+                    elif obj.electronID("cutBasedElectronID_Fall17_94X_V1_medium"):
+                        pid = 2
+                    elif obj.electronID("cutBasedElectronID_Fall17_94X_V1_loose"):
+                        pid = 1
+                    else: 
+                        pid = 0
+                    var[variables.num[0]] = pid                
+
             variables.num[0] += 1
+
+def getElecIso(elec):
+    ElecIsoVars = elec.pfIsolationVariables();
+    iso = (ElecIsoVars.sumChargedHadronPt + max(0.0, ElecIsoVars.sumNeutralHadronEt + ElecIsoVars.sumPhotonEt - 0.5 * ElecIsoVars.sumPUPt)) / elec.pt();
+    return iso
+
         
 def Matching(phi, eta, jets, debug = False):
     index = -1
@@ -605,7 +632,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     print "preProcessing: ",preProcessing
     print "firstEvent: ",firstEvent
     
-    doTriggerCut = False
+    doTriggerCut = True
     runAOD = False
     if runAOD and False: # Don't do it!
         print "                             +----------------------------+"
@@ -746,7 +773,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     VerticesL3_source, VerticesL3_label                 = Handle("vector<reco::Vertex>"), ("hltVerticesL3")
 
     #The rest
-    triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::MYHLT")
+    triggerBits, triggerBitLabel                        = Handle("edm::TriggerResults"), ("TriggerResults::HLT")
 
 
 
@@ -783,10 +810,10 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     else:
         if isMC:
             #offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT") #NOTE: This should match the process name in your hlt_dump!
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons:RECO")
             idName = "cutBasedElectronID-Spring15-25ns-V1-standalone-tight"
         else:
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons")
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons:MYHLT")
             idName = "cutBasedElectronID-Fall17-94X-V1-tight"
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
@@ -885,8 +912,8 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
 
     ### create output variables ###
     #Leptons
-    offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta"])
-    offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso'])
+    offTightElectrons   = BookVector(tree, "offTightElectrons", ['pt','eta', 'phi','mass', 'energy', "superClusterEta",'iso','pid'])
+    offTightMuons       = BookVector(tree, "offTightMuons", ['pt','eta', 'phi','mass', 'energy', 'iso','pid'])
     
     #Jets:
     #l1Jets              = BookVector(tree,"l1Jets",['pt','eta','phi','energy','matchOff','matchGen'])
@@ -963,8 +990,9 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     nTriggers = len(triggerNames)
     triggerVars = {}
     for trigger in triggerNames:
-        triggerVars[trigger]=array( 'i', [ 0 ] )
-        tree.Branch( trigger, triggerVars[trigger], trigger+'/O' )
+        if trigger.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or trigger.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+            triggerVars[trigger]=array( 'i', [ 0 ] )
+            tree.Branch( trigger, triggerVars[trigger], trigger+'/O' )
 
     ##event loop
     print "Starting event loop"
@@ -1053,15 +1081,18 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
         names = event.object().triggerNames(triggerBits.product())
         triggerspassing = []
         for i,triggerName in enumerate(triggerNames):
-            index = names.triggerIndex(triggerName)
-            if checkTriggerIndex(triggerName,index,names.triggerNames()):
-                triggerVars[triggerName][0] = triggerBits.product().accept(index)
-                #print triggerName,"acc:",triggerBits.product().accept(index)
-                if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
-                    if triggerBits.product().accept(index):
-                        triggerspassing.append(triggerName)
-            else:
-                triggerVars[triggerName][0] = 0
+            if triggerName.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or triggerName.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+                #print "triggerName is ",triggerName
+                index = names.triggerIndex(triggerName)
+                if checkTriggerIndex(triggerName,index,names.triggerNames()):
+                    triggerVars[triggerName][0] = triggerBits.product().accept(index)
+                    #print triggerName,"acc:",triggerBits.product().accept(index)
+                    #if triggerName.startswith("HLT") and not ( triggerName.startswith("NoFilter") or triggerName.endswith("FirstPath") or triggerName.endswith("FinalPath")):
+                    if triggerName.startswith("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_") or triggerName.startswith("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_"):
+                        if triggerBits.product().accept(index):
+                            triggerspassing.append(triggerName)
+                else:
+                    triggerVars[triggerName][0] = 0
 
         # NOTE: Remove this if no trigger selection is required
         if doTriggerCut:
@@ -1109,7 +1140,7 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
                 print "Offline Vertex did not pass the selection"
 
         FillElectronVector(offEle_source, offTightElectrons, idName , runAOD=runAOD,debug = False)
-        FillMuonVector(offMu_source, offTightMuons, offVertex, "tight", debug = False)
+        FillMuonVector(offMu_source, offTightMuons, offVertex, "loose", debug = False)
 
         ####################################################
         ####################################################

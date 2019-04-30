@@ -49,11 +49,11 @@ process = cms.Process("FAKE")
 
 
 # 2018 Testing  (Works in 10_1_7)
-#process.source = cms.Source("PoolSource", 
-#                            fileNames = cms.untracked.vstring("file:Run2018B_MuonEG-PromptReco-v2_MINIAOD_D68078A1-3083-E811-824B-FA163E1B5CE1.root"),
-#                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319310:4-319310:125"),
-#                            secondaryFileNames = cms.untracked.vstring('file:Run2018B_MuonEG_E296D927-8381-E811-9A83-FA163ED918AD.root')
-#                            )
+process.source = cms.Source("PoolSource", 
+                            fileNames = cms.untracked.vstring("file:Run2018B_MuonEG-PromptReco-v2_MINIAOD_D68078A1-3083-E811-824B-FA163E1B5CE1.root"),
+                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319310:4-319310:125"),
+                            secondaryFileNames = cms.untracked.vstring('file:Run2018B_MuonEG_E296D927-8381-E811-9A83-FA163ED918AD.root')
+                            )
 
 
 
@@ -74,13 +74,13 @@ process = cms.Process("FAKE")
 #    secondaryFileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root')
 #)
 
-# for testing data run D:
-process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root'),
-    lumisToProcess = cms.untracked.VLuminosityBlockRange("321012:1-321012:31"),
-    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root')
-)
-
+## for testing data run D:
+#process.source = cms.Source("PoolSource",
+#    fileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root'),
+#    lumisToProcess = cms.untracked.VLuminosityBlockRange("321012:1-321012:31"),
+#    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root')
+#)
+#
 
 #MC
 #process.source = cms.Source("PoolSource",
