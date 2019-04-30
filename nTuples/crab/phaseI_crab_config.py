@@ -41,12 +41,12 @@
 #         False],
 #        ]
 
-#Data = [["Data_2018B",
-#         ("/MuonEG/Run2018B-PromptReco-v2/MINIAOD",
-#          "/MuonEG/Run2018B-v1/RAW"),
-#         "",
-#         False],
-#        ]
+Data = [["Data_2018B",
+         ("/MuonEG/Run2018B-PromptReco-v2/MINIAOD",
+          "/MuonEG/Run2018B-v1/RAW"),
+         "",
+         False],
+        ]
 
 #Data = [["Data_2018C",
 #         ("/MuonEG/Run2018C-PromptReco-v3/MINIAOD",
@@ -55,12 +55,12 @@
 #         False],
 #        ]
 
-Data = [["Data_2018D",
-         ("/MuonEG/Run2018D-PromptReco-v2/MINIAOD",
-         "/MuonEG/Run2018D-v1/RAW"),
-         "",
-         False],
-        ]
+#Data = [["Data_2018D",
+#         ("/MuonEG/Run2018D-PromptReco-v2/MINIAOD",
+#         "/MuonEG/Run2018D-v1/RAW"),
+#         "",
+#         False],
+#        ]
 
 datasets = Data
 print datasets

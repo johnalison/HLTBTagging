@@ -2,8 +2,6 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("FAKE")
 
-
-
 # for testing missing HE sectors 
 #process.source = cms.Source("PoolSource",
     #fileNames = cms.untracked.vstring('/store/relval/CMSSW_10_1_7/MuonEG/MINIAOD/101X_dataRun2_Prompt_HEmiss_v1_RelVal_muEG2018B-v1/10000/44F4B3A0-3080-E811-8D3C-0CC47A4D762A.root'),
@@ -12,14 +10,14 @@ process = cms.Process("FAKE")
 #)
 
 
-## Working (johnda)
-## for testing data without missing HE sectors
+# Working (johnda)
+# for testing data without missing HE sectors
 #process.source = cms.Source("PoolSource",
 #    fileNames = cms.untracked.vstring('/store/relval/CMSSW_10_1_7/MuonEG/MINIAOD/101X_dataRun2_Prompt_v11_RelVal_muEG2018B-v1/10000/4C2407F3-2580-E811-B9CB-0CC47A4D7614.root'),
 #    lumisToProcess = cms.untracked.VLuminosityBlockRange("317435:2-317435:2"),
 #    secondaryFileNames = cms.untracked.vstring('/store/relval/CMSSW_10_1_7/MuonEG/FEVTDEBUGHLT/101X_dataRun2_HLT_v7_RelVal_muEG2018B-v1/10000/008175B3-E67F-E811-9432-0025905AA9CC.root')
 #)
-#
+
 #John 
 
 #process.source = cms.Source("PoolSource",
@@ -42,12 +40,20 @@ process = cms.Process("FAKE")
 #                            )
 
 
-# 2018 Testing
-process.source = cms.Source("PoolSource", 
-                            fileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v3/000/316/995/00000/6468B1E5-E166-E811-AC29-FA163EC1F063.root"),
-                            lumisToProcess = cms.untracked.VLuminosityBlockRange("316995:327-316995:335"),
-                            secondaryFileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/316/995/00000/FABFDCF7-E564-E811-A498-FA163EC31020.root'),
-                            )
+#### 2018 Testing
+##process.source = cms.Source("PoolSource", 
+##                            fileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/MINIAOD/PromptReco-v3/000/316/995/00000/6468B1E5-E166-E811-AC29-FA163EC1F063.root"),
+##                            lumisToProcess = cms.untracked.VLuminosityBlockRange("316995:327-316995:335"),
+##                            secondaryFileNames = cms.untracked.vstring('root://cms-xrd-global.cern.ch//store/data/Run2018A/MuonEG/RAW/v1/000/316/995/00000/FABFDCF7-E564-E811-A498-FA163EC31020.root'),
+##                            )
+
+
+# 2018 Testing  (Works in 10_1_7)
+#process.source = cms.Source("PoolSource", 
+#                            fileNames = cms.untracked.vstring("file:Run2018B_MuonEG-PromptReco-v2_MINIAOD_D68078A1-3083-E811-824B-FA163E1B5CE1.root"),
+#                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319310:4-319310:125"),
+#                            secondaryFileNames = cms.untracked.vstring('file:Run2018B_MuonEG_E296D927-8381-E811-9A83-FA163ED918AD.root')
+#                            )
 
 
 
@@ -68,12 +74,12 @@ process.source = cms.Source("PoolSource",
 #    secondaryFileNames = cms.untracked.vstring('root://xrootd-cms.infn.it//store/mc/RunIISummer17DRStdmix/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/GEN-SIM-RAW/NZSFlatPU28to62_92X_upgrade2017_realistic_v10-v2/50007/FEDCCD34-BFA1-E711-93DE-FA163E3ECCF5.root')
 #)
 
-#### for testing data run D:
-###process.source = cms.Source("PoolSource",
-###    fileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root'),
-###    lumisToProcess = cms.untracked.VLuminosityBlockRange("321012:1-321012:31"),
-###    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root')
-###)
+# for testing data run D:
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root'),
+    lumisToProcess = cms.untracked.VLuminosityBlockRange("321012:1-321012:31"),
+    secondaryFileNames = cms.untracked.vstring('/store/data/Run2018D/MuonEG/MINIAOD/PromptReco-v2/000/321/012/00000/70494CF3-F79C-E811-A87E-FA163EED9E90.root')
+)
 
 
 #MC
