@@ -18568,7 +18568,7 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'drop triggerTriggerEvent_*_*_*',
                                                                                 'keep *_hltGtStage2Digis_*_*',
                                                                                 'keep *_generator_*_*')
-
+                                         )
 
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask
 patAlgosToolsTask = getPatAlgosToolsTask(process)

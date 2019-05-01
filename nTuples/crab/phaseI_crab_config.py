@@ -41,19 +41,19 @@
 #         False],
 #        ]
 
-Data = [["Data_2018B",
-         ("/MuonEG/Run2018B-PromptReco-v2/MINIAOD",
-          "/MuonEG/Run2018B-v1/RAW"),
-         "",
-         False],
-        ]
-
-#Data = [["Data_2018C",
-#         ("/MuonEG/Run2018C-PromptReco-v3/MINIAOD",
-#          "/MuonEG/Run2018C-v1/RAW"),
+#Data = [["Data_2018B",
+#         ("/MuonEG/Run2018B-PromptReco-v2/MINIAOD",
+#          "/MuonEG/Run2018B-v1/RAW"),
 #         "",
 #         False],
 #        ]
+
+Data = [["Data_2018C",
+         ("/MuonEG/Run2018C-PromptReco-v2/MINIAOD",
+          "/MuonEG/Run2018C-v1/RAW"),
+         "",
+         True],
+        ]
 
 #Data = [["Data_2018D",
 #         ("/MuonEG/Run2018D-PromptReco-v2/MINIAOD",
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         config.General.transferLogs=True
 #       config.General.requestName = name+"_"+dataset.replace('/',"_")
         #requestName = name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2].replace("-powheg-pythia8/","")
-        requestName = "Nov13_2018D" #TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIIFall17MiniAOD-TSG_94X_mc2017_v1"
+        requestName = "MuonEG_May12018" #TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIIFall17MiniAOD-TSG_94X_mc2017_v1"
         config.General.requestName = requestName
         print "Requestname: ", requestName
         #name + prefix + "_" + dataset[1][0].split('/')[1].split("-")[0].replace("-powheg-pythia8/","") + dataset[2]
@@ -124,7 +124,8 @@ if __name__ == '__main__':
         config.Data.outLFNDirBase = '/store/user/johnda/' + name + prefix
         config.Data.publication = False
         if dataset[3]:
-            print "Not Using JSON"
+            #print "Not Using JSON"
+            config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325175_13TeV_PromptReco_Collisions18_JSON.txt'
             #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325175_13TeV_PromptReco_Collisions18_JSON.txt'
             
             #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325114_13TeV_PromptReco_Collisions18_JSON.txt'
