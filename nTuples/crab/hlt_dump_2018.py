@@ -18527,6 +18527,8 @@ process.noFilter_CaloDeepCSV = cms.Path(process.HLTBeginSequence+process.hltPren
 from RecoEgamma.EgammaTools.EgammaPostRecoTools import setupEgammaPostRecoSeq
 setupEgammaPostRecoSeq(process,
                        runEnergyCorrections=False, #as energy corrections are not yet availible for 2018
+                       applyVIDOnCorrectedEgamma=False,
+                       isMiniAOD=True,
                        era='2018-Prompt')
 #a sequence egammaPostRecoSeq has now been created and should be added to your path, eg process.p=cms.Path(process.egammaPostRecoSeq)
 
@@ -18566,7 +18568,8 @@ process.hltOutputFULL = cms.OutputModule("PoolOutputModule",
                                                                                 'drop triggerTriggerEvent_*_*_*',
                                                                                 'keep *_hltGtStage2Digis_*_*',
                                                                                 'keep *_generator_*_*')
-                                         )
+
+
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask
 patAlgosToolsTask = getPatAlgosToolsTask(process)
 

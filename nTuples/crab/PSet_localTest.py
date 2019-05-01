@@ -49,19 +49,24 @@ process = cms.Process("FAKE")
 
 
 # 2018 Testing  (Works in 10_1_7)
-process.source = cms.Source("PoolSource", 
-                            fileNames = cms.untracked.vstring("file:Run2018B_MuonEG-PromptReco-v2_MINIAOD_D68078A1-3083-E811-824B-FA163E1B5CE1.root"),
-                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319310:4-319310:125"),
-                            secondaryFileNames = cms.untracked.vstring('file:Run2018B_MuonEG_E296D927-8381-E811-9A83-FA163ED918AD.root')
+#process.source = cms.Source("PoolSource", 
+#                            fileNames = cms.untracked.vstring("file:Run2018B_MuonEG-PromptReco-v2_MINIAOD_D68078A1-3083-E811-824B-FA163E1B5CE1.root"),
+#                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319310:4-319310:125"),
+#                            secondaryFileNames = cms.untracked.vstring('file:Run2018B_MuonEG_E296D927-8381-E811-9A83-FA163ED918AD.root')
+#                            )
+
+
+process.source = cms.Source("PoolSource",
+                            fileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/data/Run2018C/MuonEG/MINIAOD/PromptReco-v2/000/319/658/00000/3A208A88-0F8A-E811-8B3B-FA163E7835F3.root"),
+                            lumisToProcess = cms.untracked.VLuminosityBlockRange("319658:204-319658:212"),
+                            secondaryFileNames = cms.untracked.vstring("root://cms-xrd-global.cern.ch//store/data/Run2018C/MuonEG/RAW/v1/000/319/658/00000/20EAE113-2E88-E811-AC16-FA163EB809DD.root"),
                             )
-
-
-
+                            
 
 #process.source = cms.Source("PoolSource",
 #                            fileNames = cms.untracked.vstring('/store/mc/RunIIFall17MiniAOD/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/TSG_94X_mc2017_realistic_v11-v1/70000/F065E54E-4622-E811-B1F8-008CFAFBE0DC.root'),
 #                            lumisToProcess = cms.untracked.VLuminosityBlockRange("1:9225-1:9225"),
-#                            secondaryFileNames = cms.untracked.vstring('/store/relval/CMSSW_9_4_0/RelValProdTTbar_13/GEN-SIM-RAW/94X_mcRun2_asymptotic_v0-v1/10000/2C420C43-B8C8-E711-808F-0CC47A4D76A0.root '),
+#                            secondaryFileNames = cms.untracked.vstring('/store/relval/CMSSW_9_4_0/RelValProdTTbar_13/GEN-SIM-RAW/94X_mcRun2_asymptotic_v0-v1/10000/2C420C43-B8C8-E711-808F-0CC47A4D76A0.root'),
 #                            )
 
 
