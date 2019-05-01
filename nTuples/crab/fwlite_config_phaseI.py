@@ -494,7 +494,9 @@ def FillElectronVector(source, variables, electronid, runAOD= False, debug = Fal
         #if runAOD: continue 
         #if debug:
         #    print "Electron passes id - {0}: {1}".format(electronid, obj.electronID(electronid))
-
+        #print "\tPass ID",bool(obj.electronID(electronid)),bool(obj.electronID("cutBasedElectronID_Fall17_94X_V1_veto"))
+        print "\tPass ID",bool(obj.electronID("cutBasedElectronID-Fall17-94X-V1-loose")),bool(obj.electronID("cutBasedElectronID-Fall17-94X-V1-veto"))
+        
         if bool(obj.electronID(electronid)): #returns float so explicit conversion necessary
             #print obj, obj.pt(), electronids.get(iobj)
             for (name, var) in variables.__dict__.items():
@@ -810,11 +812,13 @@ def launchNtupleFromHLT(fileOutput,filesInput, secondaryFiles, maxEvents,preProc
     else:
         if isMC:
             #offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::MYHLT") #NOTE: This should match the process name in your hlt_dump!
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons:RECO")
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::RECO")
             idName = "cutBasedElectronID-Spring15-25ns-V1-standalone-tight"
         else:
-            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons:MYHLT")
-            idName = "cutBasedElectronID-Fall17-94X-V1-tight"
+            offEle_source, offEle_label                         = Handle("vector<pat::Electron>"), ("slimmedElectrons::RECO")
+            #idName = "cutBasedElectronID_Fall17_94X_V1_loose"  #cutBasedElectronID_Fall17_94X_V1_loose"
+            idName = "cutBasedElectronID-Fall17-94X-V1-loose"
+
         offMu_source, offMu_label                           = Handle("vector<pat::Muon>"), ("slimmedMuons")
         MuGlobalTracks_source, MuGlobalTracks_label         = Handle("vector<reco::Track>"), ("globalTracks")
 
